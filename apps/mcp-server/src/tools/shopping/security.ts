@@ -1,4 +1,4 @@
-import { SupportedWebsite } from "./types";
+import { SiteAdapterNameValues } from "@shopping-copilot/shared";
 
 /**
  * Security validation utilities for shopping operations
@@ -35,7 +35,7 @@ export class ShoppingSecurity {
   /**
    * Validate product ID format
    */
-  static validateProductId(productId: string, website: SupportedWebsite): { isValid: boolean; error?: string } {
+  static validateProductId(productId: string, website: SiteAdapterNameValues): { isValid: boolean; error?: string } {
     if (!productId || typeof productId !== 'string') {
       return { isValid: false, error: 'Product ID is required' };
     }
@@ -58,20 +58,6 @@ export class ShoppingSecurity {
           return { isValid: false, error: 'Invalid Rami Levy product ID format (must be numeric)' };
         }
         break;
-
-      // case "amazon":
-      //   // Amazon product IDs (ASIN) are typically alphanumeric, 10 characters
-      //   if (!/^[A-Z0-9]{10}$/i.test(sanitized) && !/^amazon-/.test(sanitized)) {
-      //     return { isValid: false, error: 'Invalid Amazon product ID format' };
-      //   }
-      //   break;
-
-      // case "shopify":
-      //   // Shopify product IDs are typically numeric or GID format
-      //   if (!/^(shopify-gid:\/\/shopify\/Product\/\d+|\d+)$/.test(sanitized)) {
-      //     return { isValid: false, error: 'Invalid Shopify product ID format' };
-      //   }
-      //   break;
     }
 
     return { isValid: true };

@@ -9,10 +9,10 @@ import {
 } from "../types";
 import { ShoppingAdapterFactory } from "./shopping/factory";
 import { ShoppingSecurity } from "./shopping/security";
-import { SupportedWebsite } from "./shopping/types";
+import { SiteAdapterNameValues } from "@shopping-copilot/shared";
 
 // Helper function to get credentials for a website
-function getCredentialsForWebsite(website: SupportedWebsite, env: Env, props: Props) {
+function getCredentialsForWebsite(website: SiteAdapterNameValues, env: Env, props: Props) {
   // First try to get credentials from headers (dynamic per-request)
   if (props.headerCredentials) {
     if (website === "rami-levy" && props.headerCredentials.ramiLevyCredentials) {

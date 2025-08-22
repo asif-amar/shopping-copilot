@@ -1,4 +1,4 @@
-import { ApiRequestOptions } from "../tools/shopping/types";
+import { ApiRequestOptions } from "@shopping-copilot/shared";
 
 /**
  * Secure HTTP client for making API requests to shopping websites
