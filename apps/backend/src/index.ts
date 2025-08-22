@@ -30,7 +30,9 @@ app.get("/health", async (_req, res) => {
     });
   } catch (error) {
     logger.error(
-      `Health check failed: ${error instanceof Error ? error.message : String(error)}`
+      `Health check failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
     res.status(500).json({
       status: "ERROR",
@@ -43,17 +45,21 @@ app.get("/health", async (_req, res) => {
 
 app.listen(PORT, async () => {
   logger.info(
-    `Server started successfully on port ${PORT} (${process.env.NODE_ENV || "development"})`
+    `Server started successfully on port ${PORT} (${
+      process.env.NODE_ENV || "development"
+    })`
   );
   logger.info(`Health check available at: http://localhost:${PORT}/health`);
   logger.info(
     `Chat endpoint available at: http://localhost:${PORT}/api/chat/stream`
   );
 
-  // Initialize database on startup
-  // try {
-  //   await initializeDatabase();
-  // } catch (error) {
-  //   logger.error('Failed to initialize database - server will continue but database features may not work');
-  // }
+  // Initialize database on startup if needed
+  try {
+    await initializeDatabase();
+  } catch (error) {
+    logger.error(
+      "Failed to initialize database - server will continue but database features may not work"
+    );
+  }
 });

@@ -1,17 +1,14 @@
 import { BaseShoppingAdapter } from "./adapters/base-adapter";
-// import { AmazonAdapter } from "./adapters/amazon-adapter"; // Commented out
-// import { ShopifyAdapter } from "./adapters/shopify-adapter"; // Commented out
 import { RamiLevyAdapter } from "./adapters/rami-levy-adapter";
 import { ShufersalAdapter } from "./adapters/shufersal-adapter";
-import { SupportedWebsite, WebsiteCredentials } from "./types";
-import { RamiLevyCredentials, ShufersalCredentials } from "@shopping-copilot/shared";
+import { RamiLevyCredentials, ShufersalCredentials, SiteAdapterNameValues, SiteAdapterName } from "@shopping-copilot/shared";
 
 /**
  * Factory class for creating shopping website adapters
  * Handles routing operations to the correct website implementation
  */
 export class ShoppingAdapterFactory {
-  private static adapters: Map<SupportedWebsite, BaseShoppingAdapter> =
+  private static adapters: Map<SiteAdapterNameValues, BaseShoppingAdapter> =
     new Map();
 
   /**
@@ -19,7 +16,7 @@ export class ShoppingAdapterFactory {
    * Adapters are stateless and can be safely cached and reused
    * Credentials are passed per-method call, not stored in the adapter
    */
-  static getAdapter(website: SupportedWebsite, _credentials?: any, env?: Env): BaseShoppingAdapter {
+  static getAdapter(website: SiteAdapterNameValues, _credentials?: any, env?: Env): BaseShoppingAdapter {
     // Check if adapter already exists
     if (this.adapters.has(website)) {
       const adapter = this.adapters.get(website)!;
@@ -31,11 +28,11 @@ export class ShoppingAdapterFactory {
 
     try {
       switch (website) {
-        case "rami-levy":
+        case SiteAdapterName.ramiLevy:
           adapter = new RamiLevyAdapter();
           break;
 
-        case "shufersal":
+        case SiteAdapterName.shufersal:
           adapter = new ShufersalAdapter();
           break;
 
@@ -58,15 +55,15 @@ export class ShoppingAdapterFactory {
   /**
    * Get list of supported websites
    */
-  static getSupportedWebsites(): SupportedWebsite[] {
-    return ["rami-levy", "shufersal"]; // "amazon", "shopify" - commented out for now
+  static getSupportedWebsites(): SiteAdapterNameValues[] {
+    return [SiteAdapterName.ramiLevy, SiteAdapterName.shufersal];
   }
 
   /**
    * Check if a website is supported
    */
-  static isWebsiteSupported(website: string): website is SupportedWebsite {
-    return this.getSupportedWebsites().includes(website as SupportedWebsite);
+  static isWebsiteSupported(website: string): website is SiteAdapterNameValues {
+    return this.getSupportedWebsites().includes(website as SiteAdapterNameValues);
   }
 
   /**
@@ -123,13 +120,13 @@ export class ShoppingAdapterFactory {
    * Validate that all required environment variables are set for a website
    */
   static validateWebsiteConfig(
-    website: SupportedWebsite,
+    website: SiteAdapterNameValues,
     env?: Env
   ): { isValid: boolean; missingVars: string[] } {
     const missingVars: string[] = [];
 
     switch (website) {
-      case "rami-levy":
+      case SiteAdapterName.ramiLevy:
         if (!env || !(env as any).RAMI_LEVY_API_KEY) {
           missingVars.push("RAMI_LEVY_API_KEY");
         }
@@ -144,7 +141,7 @@ export class ShoppingAdapterFactory {
         }
         break;
 
-      case "shufersal":
+      case SiteAdapterName.shufersal:
         // Cart operations require authentication credentials
         if (!env || !(env as any).SHUFERSAL_CSRF_TOKEN) {
           missingVars.push("SHUFERSAL_CSRF_TOKEN");
@@ -165,7 +162,7 @@ export class ShoppingAdapterFactory {
   /**
    * Get rate limit information for a website
    */
-  static getRateLimit(website: SupportedWebsite): number {
+  static getRateLimit(website: SiteAdapterNameValues): number {
     try {
       const adapter = this.adapters.get(website);
       if (adapter) {
@@ -174,9 +171,9 @@ export class ShoppingAdapterFactory {
 
       // Return default rate limits if adapter not initialized
       switch (website) {
-        case "rami-levy":
+        case SiteAdapterName.ramiLevy:
           return 60;
-        case "shufersal":
+        case SiteAdapterName.shufersal:
           return 60;
         default:
           return 60;

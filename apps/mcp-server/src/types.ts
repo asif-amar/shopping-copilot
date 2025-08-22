@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RamiLevyCredentials, ShufersalCredentials } from "@shopping-copilot/shared";
+import { RamiLevyCredentials, ShufersalCredentials, SiteAdapterName } from "@shopping-copilot/shared";
 
 // Header credentials extracted from requests
 export type HeaderCredentials = {
@@ -17,19 +17,10 @@ export type Props = {
   headerCredentials?: HeaderCredentials | null;
 };
 
-// MCP tool schemas using Zod
-export const CalculateSchema = {
-  operation: z
-    .enum(["add", "subtract", "multiply", "divide"])
-    .describe("The mathematical operation to perform"),
-  a: z.number().describe("First number"),
-  b: z.number().describe("Second number"),
-};
-
 // Shopping tool schemas
 export const SearchProductsSchema = {
   website: z
-    .enum(["rami-levy", "shufersal"]) // "amazon", "shopify" - commented out for now
+    .enum([SiteAdapterName.ramiLevy, SiteAdapterName.shufersal] as const)
     .describe("Shopping website to search"),
   query: z
     .string()
@@ -50,7 +41,7 @@ export const SearchProductsSchema = {
 
 export const AddToCartSchema = {
   website: z
-    .enum(["rami-levy", "shufersal"]) // "amazon", "shopify" - commented out for now
+    .enum([SiteAdapterName.ramiLevy, SiteAdapterName.shufersal] as const)
     .describe("Shopping website"),
   productId: z
     .string()
@@ -71,7 +62,7 @@ export const AddToCartSchema = {
 
 export const RemoveFromCartSchema = {
   website: z
-    .enum(["rami-levy", "shufersal"]) // "amazon", "shopify" - commented out for now
+    .enum([SiteAdapterName.ramiLevy, SiteAdapterName.shufersal] as const)
     .describe("Shopping website"),
   cartItemId: z
     .string()
@@ -81,7 +72,7 @@ export const RemoveFromCartSchema = {
 
 export const UpdateCartQuantitySchema = {
   website: z
-    .enum(["rami-levy", "shufersal"]) // "amazon", "shopify" - commented out for now
+    .enum([SiteAdapterName.ramiLevy, SiteAdapterName.shufersal] as const)
     .describe("Shopping website"),
   cartItemId: z
     .string()
@@ -97,7 +88,7 @@ export const UpdateCartQuantitySchema = {
 
 export const GetCartContentsSchema = {
   website: z
-    .enum(["rami-levy", "shufersal"]) // "amazon", "shopify" - commented out for now
+    .enum([SiteAdapterName.ramiLevy, SiteAdapterName.shufersal] as const)
     .describe("Shopping website"),
 };
 

@@ -5,21 +5,20 @@ import {
   CartItem,
   Cart,
   ShoppingOperationResult,
-  SupportedWebsite,
-  WebsiteConfig,
-  WebsiteCredentials,
-} from "../types";
+  SiteAdapterNameValues
+} from "@shopping-copilot/shared";
+import { WebsiteConfig } from "../types";
 
 /**
  * Abstract base class for shopping website adapters
  * Each website implementation must extend this class
  */
 export abstract class BaseShoppingAdapter {
-  protected website: SupportedWebsite;
+  protected website: SiteAdapterNameValues;
   protected config: WebsiteConfig;
 
   constructor(
-    website: SupportedWebsite,
+    website: SiteAdapterNameValues,
     config: WebsiteConfig
   ) {
     this.website = website;
@@ -74,17 +73,15 @@ export abstract class BaseShoppingAdapter {
       return false;
     }
 
-    if (this.config.requiresAuth && !this.credentials) {
-      return false;
-    }
-
+    // Note: Authentication validation is done per-method call
+    // since credentials are passed as parameters, not stored in the adapter
     return true;
   }
 
   /**
    * Get website name for identification
    */
-  getWebsiteName(): SupportedWebsite {
+  getWebsiteName(): SiteAdapterNameValues {
     return this.website;
   }
 
