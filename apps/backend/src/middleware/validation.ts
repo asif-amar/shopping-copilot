@@ -30,17 +30,18 @@ const streamRequestSchema = z.object({
   credentials: z.union([ramiLevyCredentialsSchema, shufersalCredentialsSchema]).optional()
 });
 
-export const validateStreamRequest = (req: Request, res: Response, next: NextFunction) => {
+export const validateStreamRequest = (req: Request, res: Response, next: NextFunction): void => {
   try {
     streamRequestSchema.parse(req.body);
     next();
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Invalid request format',
         details: error.errors
       });
+      return;
     }
-    return res.status(400).json({ error: 'Invalid request' });
+    res.status(400).json({ error: 'Invalid request' });
   }
 };

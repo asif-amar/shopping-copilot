@@ -1,10 +1,10 @@
 import { sql } from './connection';
 import { 
   User, 
-  ChatSession, 
-  ChatMessageDB, 
+  Conversation, 
+  MessageDB, 
   CreateUserRequest, 
-  CreateChatSessionRequest, 
+  CreateConversationRequest, 
   CreateMessageRequest 
 } from '../types';
 import logger from '../utils/logger';
@@ -13,12 +13,11 @@ import logger from '../utils/logger';
 export async function createUser(data: CreateUserRequest): Promise<User> {
   try {
     const result = await sql`
-      INSERT INTO users (session_id)
-      VALUES (${data.session_id})
-      ON CONFLICT (session_id) DO UPDATE SET updated_at = NOW()
+      INSERT INTO users (email, name)
+      VALUES (${data.email || null}, ${data.name || null})
       RETURNING *
     `;
-    logger.info(`User created/updated: ${data.session_id}`);
+    logger.info(`User created: ${result[0].id}`);
     return result[0] as User;
   } catch (error) {
     logger.error(`Failed to create user: ${error instanceof Error ? error.message : String(error)}`);
@@ -26,10 +25,10 @@ export async function createUser(data: CreateUserRequest): Promise<User> {
   }
 }
 
-export async function getUserBySessionId(sessionId: string): Promise<User | null> {
+export async function getUserById(userId: number): Promise<User | null> {
   try {
     const result = await sql`
-      SELECT * FROM users WHERE session_id = ${sessionId}
+      SELECT * FROM users WHERE id = ${userId}
     `;
     return result[0] as User || null;
   } catch (error) {
@@ -38,72 +37,84 @@ export async function getUserBySessionId(sessionId: string): Promise<User | null
   }
 }
 
-// Chat session operations
-export async function createChatSession(data: CreateChatSessionRequest): Promise<ChatSession> {
+export async function getUserByEmail(email: string): Promise<User | null> {
   try {
     const result = await sql`
-      INSERT INTO chat_sessions (user_id, session_id, title)
-      VALUES (${data.user_id}, ${data.session_id}, ${data.title || null})
-      RETURNING *
+      SELECT * FROM users WHERE email = ${email}
     `;
-    logger.info(`Chat session created: ${data.session_id}`);
-    return result[0] as ChatSession;
+    return result[0] as User || null;
   } catch (error) {
-    logger.error(`Failed to create chat session: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`Failed to get user by email: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
   }
 }
 
-export async function getChatSessionsByUserId(userId: number): Promise<ChatSession[]> {
+// Conversation operations
+export async function createConversation(data: CreateConversationRequest): Promise<Conversation> {
   try {
     const result = await sql`
-      SELECT * FROM chat_sessions 
+      INSERT INTO conversations (user_id, title)
+      VALUES (${data.user_id}, ${data.title || null})
+      RETURNING *
+    `;
+    logger.info(`Conversation created: ${result[0].id}`);
+    return result[0] as Conversation;
+  } catch (error) {
+    logger.error(`Failed to create conversation: ${error instanceof Error ? error.message : String(error)}`);
+    throw error;
+  }
+}
+
+export async function getConversationsByUserId(userId: number): Promise<Conversation[]> {
+  try {
+    const result = await sql`
+      SELECT * FROM conversations 
       WHERE user_id = ${userId}
       ORDER BY updated_at DESC
     `;
-    return result as ChatSession[];
+    return result as Conversation[];
   } catch (error) {
-    logger.error(`Failed to get chat sessions: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`Failed to get conversations: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
   }
 }
 
-export async function getChatSessionById(sessionId: number): Promise<ChatSession | null> {
+export async function getConversationById(conversationId: string): Promise<Conversation | null> {
   try {
     const result = await sql`
-      SELECT * FROM chat_sessions WHERE id = ${sessionId}
+      SELECT * FROM conversations WHERE id = ${conversationId}
     `;
-    return result[0] as ChatSession || null;
+    return result[0] as Conversation || null;
   } catch (error) {
-    logger.error(`Failed to get chat session: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`Failed to get conversation: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
   }
 }
 
 // Message operations
-export async function createMessage(data: CreateMessageRequest): Promise<ChatMessageDB> {
+export async function createMessage(data: CreateMessageRequest): Promise<MessageDB> {
   try {
     const result = await sql`
-      INSERT INTO chat_messages (chat_session_id, role, content, model, temperature)
-      VALUES (${data.chat_session_id}, ${data.role}, ${data.content}, ${data.model || null}, ${data.temperature || null})
+      INSERT INTO messages (conversation_id, role, content)
+      VALUES (${data.conversation_id}, ${data.role}, ${data.content})
       RETURNING *
     `;
-    logger.info(`Message created for session ${data.chat_session_id}: ${data.role}`);
-    return result[0] as ChatMessageDB;
+    logger.info(`Message created for conversation ${data.conversation_id}: ${data.role}`);
+    return result[0] as MessageDB;
   } catch (error) {
     logger.error(`Failed to create message: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
   }
 }
 
-export async function getMessagesBySessionId(sessionId: number): Promise<ChatMessageDB[]> {
+export async function getMessagesByConversationId(conversationId: string): Promise<MessageDB[]> {
   try {
     const result = await sql`
-      SELECT * FROM chat_messages 
-      WHERE chat_session_id = ${sessionId}
+      SELECT * FROM messages 
+      WHERE conversation_id = ${conversationId}
       ORDER BY created_at ASC
     `;
-    return result as ChatMessageDB[];
+    return result as MessageDB[];
   } catch (error) {
     logger.error(`Failed to get messages: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
@@ -113,61 +124,61 @@ export async function getMessagesBySessionId(sessionId: number): Promise<ChatMes
 export async function deleteMessage(messageId: number): Promise<boolean> {
   try {
     const result = await sql`
-      DELETE FROM chat_messages WHERE id = ${messageId}
+      DELETE FROM messages WHERE id = ${messageId}
     `;
     logger.info(`Message deleted: ${messageId}`);
-    return result.count > 0;
+    return (result as any).count > 0;
   } catch (error) {
     logger.error(`Failed to delete message: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
   }
 }
 
-// Update chat session title
-export async function updateChatSessionTitle(sessionId: number, title: string): Promise<ChatSession | null> {
+// Update conversation title
+export async function updateConversationTitle(conversationId: string, title: string): Promise<Conversation | null> {
   try {
     const result = await sql`
-      UPDATE chat_sessions 
+      UPDATE conversations 
       SET title = ${title}, updated_at = NOW()
-      WHERE id = ${sessionId}
+      WHERE id = ${conversationId}
       RETURNING *
     `;
-    logger.info(`Chat session title updated: ${sessionId}`);
-    return result[0] as ChatSession || null;
+    logger.info(`Conversation title updated: ${conversationId}`);
+    return result[0] as Conversation || null;
   } catch (error) {
-    logger.error(`Failed to update chat session title: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`Failed to update conversation title: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
   }
 }
 
 // Analytics/reporting functions
-export async function getChatStats(userId?: number) {
+export async function getConversationStats(userId?: number) {
   try {
     const baseQuery = userId 
       ? sql`
           SELECT 
-            COUNT(DISTINCT cs.id) as total_sessions,
-            COUNT(cm.id) as total_messages,
-            COUNT(CASE WHEN cm.role = 'user' THEN 1 END) as user_messages,
-            COUNT(CASE WHEN cm.role = 'assistant' THEN 1 END) as assistant_messages
-          FROM chat_sessions cs
-          LEFT JOIN chat_messages cm ON cs.id = cm.chat_session_id
-          WHERE cs.user_id = ${userId}
+            COUNT(DISTINCT c.id) as total_conversations,
+            COUNT(m.id) as total_messages,
+            COUNT(CASE WHEN m.role = 'user' THEN 1 END) as user_messages,
+            COUNT(CASE WHEN m.role = 'assistant' THEN 1 END) as assistant_messages
+          FROM conversations c
+          LEFT JOIN messages m ON c.id = m.conversation_id
+          WHERE c.user_id = ${userId}
         `
       : sql`
           SELECT 
-            COUNT(DISTINCT cs.id) as total_sessions,
-            COUNT(cm.id) as total_messages,
-            COUNT(CASE WHEN cm.role = 'user' THEN 1 END) as user_messages,
-            COUNT(CASE WHEN cm.role = 'assistant' THEN 1 END) as assistant_messages
-          FROM chat_sessions cs
-          LEFT JOIN chat_messages cm ON cs.id = cm.chat_session_id
+            COUNT(DISTINCT c.id) as total_conversations,
+            COUNT(m.id) as total_messages,
+            COUNT(CASE WHEN m.role = 'user' THEN 1 END) as user_messages,
+            COUNT(CASE WHEN m.role = 'assistant' THEN 1 END) as assistant_messages
+          FROM conversations c
+          LEFT JOIN messages m ON c.id = m.conversation_id
         `;
 
     const result = await baseQuery;
     return result[0];
   } catch (error) {
-    logger.error(`Failed to get chat stats: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`Failed to get conversation stats: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
   }
 }
