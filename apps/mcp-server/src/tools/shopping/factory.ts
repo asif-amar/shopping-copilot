@@ -16,8 +16,10 @@ export class ShoppingAdapterFactory {
 
   /**
    * Get or create an adapter for the specified website
+   * Adapters are stateless and can be safely cached and reused
+   * Credentials are passed per-method call, not stored in the adapter
    */
-  static getAdapter(website: SupportedWebsite, env?: Env): BaseShoppingAdapter {
+  static getAdapter(website: SupportedWebsite, _credentials?: any, env?: Env): BaseShoppingAdapter {
     // Check if adapter already exists
     if (this.adapters.has(website)) {
       const adapter = this.adapters.get(website)!;
@@ -37,19 +39,11 @@ export class ShoppingAdapterFactory {
           adapter = new ShufersalAdapter();
           break;
 
-        // case "amazon":
-        //   adapter = new AmazonAdapter(this.getAmazonCredentials(env));
-        //   break;
-
-        // case "shopify":
-        //   adapter = new ShopifyAdapter(this.getShopifyCredentials(env));
-        //   break;
-
         default:
           throw new Error(`Unsupported website: ${website}`);
       }
 
-      // Cache the adapter for reuse
+      // Cache the adapter for reuse (stateless adapters are safe to cache)
       this.adapters.set(website, adapter);
       return adapter;
     } catch (error) {
@@ -124,29 +118,6 @@ export class ShoppingAdapterFactory {
     };
   }
 
-  // /**
-  //  * Get Amazon credentials from environment
-  //  */
-  // private static getAmazonCredentials(env?: Env): WebsiteCredentials | undefined {
-  //   if (!env) return undefined;
-  //   const credentials: WebsiteCredentials = {};
-  //   if ((env as any).AMAZON_API_KEY) {
-  //     credentials.apiKey = (env as any).AMAZON_API_KEY;
-  //   }
-  //   return Object.keys(credentials).length > 0 ? credentials : undefined;
-  // }
-
-  // /**
-  //  * Get Shopify credentials from environment
-  //  */
-  // private static getShopifyCredentials(env?: Env): WebsiteCredentials | undefined {
-  //   if (!env) return undefined;
-  //   const credentials: WebsiteCredentials = {};
-  //   if ((env as any).SHOPIFY_ACCESS_TOKEN) {
-  //     credentials.accessToken = (env as any).SHOPIFY_ACCESS_TOKEN;
-  //   }
-  //   return Object.keys(credentials).length > 0 ? credentials : undefined;
-  // }
 
   /**
    * Validate that all required environment variables are set for a website
@@ -183,17 +154,6 @@ export class ShoppingAdapterFactory {
         }
         break;
 
-      // case "amazon":
-      //   if (!env || !(env as any).AMAZON_API_KEY) {
-      //     missingVars.push('AMAZON_API_KEY');
-      //   }
-      //   break;
-
-      // case "shopify":
-      //   if (!env || !(env as any).SHOPIFY_ACCESS_TOKEN) {
-      //     missingVars.push('SHOPIFY_ACCESS_TOKEN');
-      //   }
-      //   break;
     }
 
     return {
@@ -218,10 +178,6 @@ export class ShoppingAdapterFactory {
           return 60;
         case "shufersal":
           return 60;
-        // case "amazon":
-        //   return 100;
-        // case "shopify":
-        //   return 80;
         default:
           return 60;
       }

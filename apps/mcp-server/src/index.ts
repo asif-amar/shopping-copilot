@@ -1,7 +1,8 @@
 import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { Props } from "./types";
+import { Props, HeaderCredentials } from "./types";
 import { registerAllTools } from "./tools/register-tools";
+import { SITE_CREDENTIAL_HEADERS } from "@shopping-copilot/shared";
 
 export class ShoppingMCP extends McpAgent<Env, Record<string, never>, Props> {
   server = new McpServer({
@@ -42,26 +43,61 @@ function extractHeaders(request: Request) {
   return headers;
 }
 
+// Extract site credentials from headers
+function extractSiteCredentialsFromHeaders(request: Request): HeaderCredentials {
+  const headers = extractHeaders(request);
+  
+  // Extract Rami Levy credentials
+  const ramiLevyCredentials = {
+    authorization: headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_AUTHORIZATION],
+    ecomtoken: headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_ECOM_TOKEN],
+    cookie: headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_COOKIE],
+    userId: headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_USER_ID],
+  };
+  
+  // Extract Shufersal credentials
+  const shufersalCredentials = {
+    csrftoken: headers[SITE_CREDENTIAL_HEADERS.SHUFERSAL_CSRF_TOKEN],
+    cookie: headers[SITE_CREDENTIAL_HEADERS.SHUFERSAL_COOKIE],
+  };
+  
+  // Get site name from header
+  const siteName = headers[SITE_CREDENTIAL_HEADERS.SITE_NAME];
+  
+  return {
+    siteName,
+    ramiLevyCredentials: 
+      ramiLevyCredentials.authorization && ramiLevyCredentials.ecomtoken && 
+      ramiLevyCredentials.cookie && ramiLevyCredentials.userId 
+        ? ramiLevyCredentials 
+        : null,
+    shufersalCredentials:
+      shufersalCredentials.csrftoken && shufersalCredentials.cookie
+        ? shufersalCredentials 
+        : null,
+  };
+}
+
 // Log headers for debugging
 function logIncomingHeaders(request: Request, endpoint: string) {
   const headers = extractHeaders(request);
+  const credentials = extractSiteCredentialsFromHeaders(request);
   const timestamp = new Date().toISOString();
 
   console.log(`[${timestamp}] Incoming request to ${endpoint}`);
   console.log(`[${timestamp}] Method: ${request.method}`);
-  console.log(
-    `[${timestamp}] Headers received:`,
-    JSON.stringify(headers, null, 2)
-  );
-
-  // Specifically check for our test header
-  if (headers["test-header"]) {
-    console.log(
-      `[${timestamp}] ✅ TEST-HEADER FOUND: ${headers["test-header"]}`
-    );
-  } else {
-    console.log(`[${timestamp}] ❌ test-header not found in request`);
-  }
+  console.log(`[${timestamp}] Site: ${credentials.siteName || 'none'}`);
+  console.log(`[${timestamp}] Has Rami Levy credentials: ${!!credentials.ramiLevyCredentials}`);
+  console.log(`[${timestamp}] Has Shufersal credentials: ${!!credentials.shufersalCredentials}`);
+  
+  // Log all headers for debugging (but don't log credential values for security)
+  const safeHeaders = { ...headers };
+  Object.values(SITE_CREDENTIAL_HEADERS).forEach(headerName => {
+    if (safeHeaders[headerName as string]) {
+      safeHeaders[headerName as string] = '[REDACTED]';
+    }
+  });
+  console.log(`[${timestamp}] Headers received:`, JSON.stringify(safeHeaders, null, 2));
 
   return headers;
 }

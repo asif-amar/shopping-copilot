@@ -1,4 +1,12 @@
 import { z } from "zod";
+import { RamiLevyCredentials, ShufersalCredentials } from "@shopping-copilot/shared";
+
+// Header credentials extracted from requests
+export type HeaderCredentials = {
+  siteName?: string;
+  ramiLevyCredentials?: RamiLevyCredentials | null;
+  shufersalCredentials?: ShufersalCredentials | null;
+};
 
 // User context passed through OAuth (will be used later for authentication)
 export type Props = {
@@ -6,6 +14,7 @@ export type Props = {
   name?: string;
   email?: string;
   accessToken?: string;
+  headerCredentials?: HeaderCredentials | null;
 };
 
 // MCP tool schemas using Zod

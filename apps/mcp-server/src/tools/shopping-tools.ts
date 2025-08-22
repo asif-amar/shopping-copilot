@@ -12,13 +12,23 @@ import { ShoppingSecurity } from "./shopping/security";
 import { SupportedWebsite } from "./shopping/types";
 
 // Helper function to get credentials for a website
-function getCredentialsForWebsite(website: SupportedWebsite, env: Env) {
+function getCredentialsForWebsite(website: SupportedWebsite, env: Env, props: Props) {
+  // First try to get credentials from headers (dynamic per-request)
+  if (props.headerCredentials) {
+    if (website === "rami-levy" && props.headerCredentials.ramiLevyCredentials) {
+      return { credentials: props.headerCredentials.ramiLevyCredentials, error: null };
+    } else if (website === "shufersal" && props.headerCredentials.shufersalCredentials) {
+      return { credentials: props.headerCredentials.shufersalCredentials, error: null };
+    }
+  }
+  
+  // Fallback to environment variables (static global credentials)
   if (website === "rami-levy") {
     const credentials = ShoppingAdapterFactory.getRamiLevyCredentials(env);
     if (!credentials) {
       return {
         credentials: null,
-        error: "Missing Rami Levy credentials. Please check environment variables: RAMI_LEVY_API_KEY, RAMI_LEVY_ECOM_TOKEN, RAMI_LEVY_COOKIE, RAMI_LEVY_USER_ID"
+        error: "Missing Rami Levy credentials. Please provide credentials via request headers or check environment variables: RAMI_LEVY_API_KEY, RAMI_LEVY_ECOM_TOKEN, RAMI_LEVY_COOKIE, RAMI_LEVY_USER_ID"
       };
     }
     return { credentials, error: null };
@@ -27,7 +37,7 @@ function getCredentialsForWebsite(website: SupportedWebsite, env: Env) {
     if (!credentials) {
       return {
         credentials: null,
-        error: "Missing Shufersal credentials. Please check environment variables: SHUFERSAL_CSRF_TOKEN, SHUFERSAL_COOKIE"
+        error: "Missing Shufersal credentials. Please provide credentials via request headers or check environment variables: SHUFERSAL_CSRF_TOKEN, SHUFERSAL_COOKIE"
       };
     }
     return { credentials, error: null };
@@ -39,7 +49,7 @@ function getCredentialsForWebsite(website: SupportedWebsite, env: Env) {
 export function registerShoppingTools(
   server: McpServer,
   env: Env,
-  _props: Props
+  props: Props
 ) {
   // Tool 1: Search Products
   server.tool(
@@ -91,11 +101,8 @@ export function registerShoppingTools(
           };
         }
 
-        // Get adapter for the website
-        const adapter = ShoppingAdapterFactory.getAdapter(website, env);
-
-        // Get credentials for the website
-        const credentialsResult = getCredentialsForWebsite(website, env);
+        // Get credentials for the website first
+        const credentialsResult = getCredentialsForWebsite(website, env, props);
         if (!credentialsResult.credentials) {
           return {
             content: [
@@ -107,6 +114,9 @@ export function registerShoppingTools(
             ],
           };
         }
+
+        // Get adapter for the website with credentials
+        const adapter = ShoppingAdapterFactory.getAdapter(website, credentialsResult.credentials, env);
 
         // Execute search
         const result = await adapter.searchProducts({
@@ -218,11 +228,8 @@ export function registerShoppingTools(
           };
         }
 
-        // Get adapter for the website
-        const adapter = ShoppingAdapterFactory.getAdapter(website, env);
-
-        // Get credentials for the website
-        const credentialsResult = getCredentialsForWebsite(website, env);
+        // Get credentials for the website first
+        const credentialsResult = getCredentialsForWebsite(website, env, props);
         if (!credentialsResult.credentials) {
           return {
             content: [
@@ -234,6 +241,9 @@ export function registerShoppingTools(
             ],
           };
         }
+
+        // Get adapter for the website with credentials
+        const adapter = ShoppingAdapterFactory.getAdapter(website, credentialsResult.credentials, env);
 
         // Add to cart
         const result = await adapter.addToCart(
@@ -320,11 +330,8 @@ export function registerShoppingTools(
           };
         }
 
-        // Get adapter for the website
-        const adapter = ShoppingAdapterFactory.getAdapter(website, env);
-
-        // Get credentials for the website
-        const credentialsResult = getCredentialsForWebsite(website, env);
+        // Get credentials for the website first
+        const credentialsResult = getCredentialsForWebsite(website, env, props);
         if (!credentialsResult.credentials) {
           return {
             content: [
@@ -336,6 +343,9 @@ export function registerShoppingTools(
             ],
           };
         }
+
+        // Get adapter for the website with credentials
+        const adapter = ShoppingAdapterFactory.getAdapter(website, credentialsResult.credentials, env);
 
         // Remove from cart
         const result = await adapter.removeFromCart(cartItemId, credentialsResult.credentials);
@@ -414,11 +424,8 @@ export function registerShoppingTools(
           };
         }
 
-        // Get adapter for the website
-        const adapter = ShoppingAdapterFactory.getAdapter(website, env);
-
-        // Get credentials for the website
-        const credentialsResult = getCredentialsForWebsite(website, env);
+        // Get credentials for the website first
+        const credentialsResult = getCredentialsForWebsite(website, env, props);
         if (!credentialsResult.credentials) {
           return {
             content: [
@@ -430,6 +437,9 @@ export function registerShoppingTools(
             ],
           };
         }
+
+        // Get adapter for the website with credentials
+        const adapter = ShoppingAdapterFactory.getAdapter(website, credentialsResult.credentials, env);
 
         // Update quantity
         const result = await adapter.updateCartQuantity(cartItemId, quantity, credentialsResult.credentials);
@@ -480,11 +490,8 @@ export function registerShoppingTools(
       try {
         console.log(`[Shopping] Getting cart contents for ${website}`);
 
-        // Get adapter for the website
-        const adapter = ShoppingAdapterFactory.getAdapter(website, env);
-
-        // Get credentials for the website
-        const credentialsResult = getCredentialsForWebsite(website, env);
+        // Get credentials for the website first
+        const credentialsResult = getCredentialsForWebsite(website, env, props);
         if (!credentialsResult.credentials) {
           return {
             content: [
@@ -496,6 +503,9 @@ export function registerShoppingTools(
             ],
           };
         }
+
+        // Get adapter for the website with credentials
+        const adapter = ShoppingAdapterFactory.getAdapter(website, credentialsResult.credentials, env);
 
         // Get cart contents
         const result = await adapter.getCartContents(credentialsResult.credentials);

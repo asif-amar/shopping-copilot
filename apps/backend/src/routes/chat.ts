@@ -14,6 +14,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { experimental_createMCPClient } from "ai";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp";
 import logger from "../utils/logger";
+import { SITE_CREDENTIAL_HEADERS, SiteAdapterName } from "@shopping-copilot/shared";
 import {
   createUser,
   getUserBySessionId,
@@ -27,6 +28,33 @@ import {
 const HARDCODED_USER_SESSION_ID = "demo-user-session";
 const HARDCODED_CHAT_SESSION_ID = "demo-chat-session";
 
+// Convert adapter name and credentials to MCP headers
+function createMCPHeaders(adapterName?: string, credentials?: any): Record<string, string> {
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+  };
+  
+  // Add site name header if provided
+  if (adapterName) {
+    headers[SITE_CREDENTIAL_HEADERS.SITE_NAME] = adapterName;
+  }
+  
+  // Add credentials based on adapter type
+  if (credentials && adapterName) {
+    if (adapterName === SiteAdapterName.ramiLevy) {
+      if (credentials.authorization) headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_AUTHORIZATION] = credentials.authorization;
+      if (credentials.ecomtoken) headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_ECOM_TOKEN] = credentials.ecomtoken;
+      if (credentials.cookie) headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_COOKIE] = credentials.cookie;
+      if (credentials.userId) headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_USER_ID] = credentials.userId;
+    } else if (adapterName === SiteAdapterName.shufersal) {
+      if (credentials.csrftoken) headers[SITE_CREDENTIAL_HEADERS.SHUFERSAL_CSRF_TOKEN] = credentials.csrftoken;
+      if (credentials.cookie) headers[SITE_CREDENTIAL_HEADERS.SHUFERSAL_COOKIE] = credentials.cookie;
+    }
+  }
+  
+  return headers;
+}
+
 const router = Router();
 
 // Convert database messages to chat message format
@@ -39,6 +67,15 @@ function convertDBMessagesToChat(dbMessages: any[]) {
 
 // Initialize user and chat session
 async function ensureUserAndSession() {
+  // For testing with dummy database, return mock objects
+  if (process.env.DATABASE_URL === "postgresql://user:pass@localhost:5432/test") {
+    logger.info("Using mock user/session for testing");
+    return { 
+      user: { id: 1, session_id: HARDCODED_USER_SESSION_ID }, 
+      chatSession: { id: 1, user_id: 1, session_id: HARDCODED_CHAT_SESSION_ID } 
+    };
+  }
+
   try {
     // Create or get user
     let user = await getUserBySessionId(HARDCODED_USER_SESSION_ID);
@@ -76,6 +113,8 @@ router.post("/stream", validateStreamRequest, async (req, res) => {
       model,
       temperature = 0.7,
       maxTokens = 1000,
+      adapterName,
+      credentials,
     }: StreamRequest = req.body;
 
     logger.info(
@@ -85,9 +124,9 @@ router.post("/stream", validateStreamRequest, async (req, res) => {
     // Initialize user and chat session
     const { chatSession } = await ensureUserAndSession();
 
-    // Store user message to database
+    // Store user message to database (skip for testing)
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.role === "user") {
+    if (lastMessage && lastMessage.role === "user" && process.env.DATABASE_URL !== "postgresql://user:pass@localhost:5432/test") {
       await createMessage({
         chat_session_id: chatSession.id,
         role: lastMessage.role,
@@ -98,27 +137,34 @@ router.post("/stream", validateStreamRequest, async (req, res) => {
       logger.info(`Stored user message to database`);
     }
 
-    // Load full conversation history from database
-    const dbMessages = await getMessagesBySessionId(chatSession.id);
-    const conversationHistory = convertDBMessagesToChat(dbMessages);
-
-    logger.info(
-      `Loaded ${conversationHistory.length} messages from database for context`
-    );
+    // Load full conversation history from database (use request messages for testing)
+    let conversationHistory;
+    if (process.env.DATABASE_URL === "postgresql://user:pass@localhost:5432/test") {
+      conversationHistory = messages;
+      logger.info(`Using request messages for testing: ${conversationHistory.length} messages`);
+    } else {
+      const dbMessages = await getMessagesBySessionId(chatSession.id);
+      conversationHistory = convertDBMessagesToChat(dbMessages);
+      logger.info(
+        `Loaded ${conversationHistory.length} messages from database for context`
+      );
+    }
 
     const google = createGoogleGenerativeAI({
       apiKey: process.env.GEMINI_API_KEY,
     });
 
+    // Create MCP headers from request data
+    const mcpHeaders = createMCPHeaders(adapterName, credentials);
+    
     logger.info("Creating MCP client at http://localhost:8787/mcp");
+    logger.info(`Forwarding adapter: ${adapterName || 'none'} with ${Object.keys(mcpHeaders).length} headers`);
 
     const httpTransport = new StreamableHTTPClientTransport(
       new URL("http://localhost:8787/mcp"),
       {
         requestInit: {
-          headers: {
-            "test-header": "test-value",
-          },
+          headers: mcpHeaders,
         },
       }
     );
@@ -210,8 +256,9 @@ router.post("/complete", validateStreamRequest, async (req, res) => {
       model,
       temperature = 0.7,
       maxTokens = 1000,
-    }: // reqHeaders
-    StreamRequest = req.body;
+      adapterName,
+      credentials,
+    }: StreamRequest = req.body;
 
     logger.info(
       `Complete endpoint called: /complete (${messages.length} messages)`
@@ -220,9 +267,9 @@ router.post("/complete", validateStreamRequest, async (req, res) => {
     // Initialize user and chat session
     const { chatSession } = await ensureUserAndSession();
 
-    // Store user message to database
+    // Store user message to database (skip for testing)
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.role === "user") {
+    if (lastMessage && lastMessage.role === "user" && process.env.DATABASE_URL !== "postgresql://user:pass@localhost:5432/test") {
       await createMessage({
         chat_session_id: chatSession.id,
         role: lastMessage.role,
@@ -233,28 +280,37 @@ router.post("/complete", validateStreamRequest, async (req, res) => {
       logger.info(`Stored user message to database`);
     }
 
-    // Load full conversation history from database
-    const dbMessages = await getMessagesBySessionId(chatSession.id);
-    const conversationHistory = convertDBMessagesToChat(dbMessages);
-
-    logger.info(
-      `Loaded ${conversationHistory.length} messages from database for context`
-    );
+    // Load full conversation history from database (use request messages for testing)
+    let conversationHistory;
+    if (process.env.DATABASE_URL === "postgresql://user:pass@localhost:5432/test") {
+      conversationHistory = messages;
+      logger.info(`Using request messages for testing: ${conversationHistory.length} messages`);
+    } else {
+      const dbMessages = await getMessagesBySessionId(chatSession.id);
+      conversationHistory = convertDBMessagesToChat(dbMessages);
+      logger.info(
+        `Loaded ${conversationHistory.length} messages from database for context`
+      );
+    }
 
     const google = createGoogleGenerativeAI({
       apiKey: process.env.GEMINI_API_KEY,
     });
 
+    // Create MCP headers from request data
+    const mcpHeaders = createMCPHeaders(adapterName, credentials);
+    
+    logger.info("Creating MCP client at http://localhost:8787/mcp");
+    logger.info(`Forwarding adapter: ${adapterName || 'none'} with ${Object.keys(mcpHeaders).length} headers`);
+
     const httpTransport = new StreamableHTTPClientTransport(
       new URL("http://localhost:8787/mcp"),
       {
         requestInit: {
-          // headers: req.headers,
+          headers: mcpHeaders,
         },
       }
     );
-
-    logger.info("Creating MCP client at http://localhost:8787/mcp");
 
     const mcpClient = await experimental_createMCPClient({
       transport: httpTransport,
