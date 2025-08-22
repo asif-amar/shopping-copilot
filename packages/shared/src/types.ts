@@ -1,3 +1,5 @@
+import { SiteAdapterName } from './constants.js';
+
 export interface RamiLevyCredentials {
   authorization: string;
   ecomtoken: string;
@@ -9,8 +11,6 @@ export interface ShufersalCredentials {
   csrftoken: string;
   cookie: string;
 }
-
-import { SiteAdapterName } from './constants.js';
 
 export type SiteCredentials = {
   [SiteAdapterName.ramiLevy]: RamiLevyCredentials;
