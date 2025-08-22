@@ -41,7 +41,7 @@ export const SearchProductsSchema = {
 
 export const AddToCartSchema = {
   website: z
-    .enum(["rami-levy", "shufersal"]) // "amazon", "shopify" - commented out for now
+    .enum(["rami-levy", "shufersal"])
     .describe("Shopping website"),
   productId: z
     .string()
