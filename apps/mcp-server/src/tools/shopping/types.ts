@@ -1,6 +1,6 @@
 // Shopping-specific types and interfaces
 
-export type SupportedWebsite = "rami-levy" | "shufersal"; // | "amazon" | "shopify" - commented out for now
+export type SupportedWebsite = "rami-levy" | "shufersal";
 
 // Product data structures
 export interface Product {

@@ -1,6 +1,4 @@
 import { BaseShoppingAdapter } from "./adapters/base-adapter";
-// import { AmazonAdapter } from "./adapters/amazon-adapter"; // Commented out
-// import { ShopifyAdapter } from "./adapters/shopify-adapter"; // Commented out
 import { RamiLevyAdapter } from "./adapters/rami-levy-adapter";
 import { ShufersalAdapter } from "./adapters/shufersal-adapter";
 import { SupportedWebsite, WebsiteCredentials } from "./types";
@@ -59,7 +57,7 @@ export class ShoppingAdapterFactory {
    * Get list of supported websites
    */
   static getSupportedWebsites(): SupportedWebsite[] {
-    return ["rami-levy", "shufersal"]; // "amazon", "shopify" - commented out for now
+    return ["rami-levy", "shufersal"];
   }
 
   /**

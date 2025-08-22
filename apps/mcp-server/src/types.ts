@@ -29,7 +29,7 @@ export const CalculateSchema = {
 // Shopping tool schemas
 export const SearchProductsSchema = {
   website: z
-    .enum(["rami-levy", "shufersal"]) // "amazon", "shopify" - commented out for now
+    .enum(["rami-levy", "shufersal"])
     .describe("Shopping website to search"),
   query: z
     .string()
@@ -71,7 +71,7 @@ export const AddToCartSchema = {
 
 export const RemoveFromCartSchema = {
   website: z
-    .enum(["rami-levy", "shufersal"]) // "amazon", "shopify" - commented out for now
+    .enum(["rami-levy", "shufersal"])
     .describe("Shopping website"),
   cartItemId: z
     .string()
@@ -81,7 +81,7 @@ export const RemoveFromCartSchema = {
 
 export const UpdateCartQuantitySchema = {
   website: z
-    .enum(["rami-levy", "shufersal"]) // "amazon", "shopify" - commented out for now
+    .enum(["rami-levy", "shufersal"])
     .describe("Shopping website"),
   cartItemId: z
     .string()
@@ -97,7 +97,7 @@ export const UpdateCartQuantitySchema = {
 
 export const GetCartContentsSchema = {
   website: z
-    .enum(["rami-levy", "shufersal"]) // "amazon", "shopify" - commented out for now
+    .enum(["rami-levy", "shufersal"])
     .describe("Shopping website"),
 };
 
