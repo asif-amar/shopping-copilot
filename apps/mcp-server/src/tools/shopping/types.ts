@@ -72,15 +72,6 @@ export interface WebsiteConfig {
   authType?: 'api_key' | 'oauth' | 'basic';
 }
 
-// Authentication credentials
-export interface WebsiteCredentials {
-  apiKey?: string;
-  clientId?: string;
-  clientSecret?: string;
-  accessToken?: string;
-  refreshToken?: string;
-}
-
 // Request options for API calls
 export interface ApiRequestOptions {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';

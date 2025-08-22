@@ -6,7 +6,6 @@ import {
   Cart,
   ShoppingOperationResult,
   WebsiteConfig,
-  WebsiteCredentials,
   Product,
 } from "../types";
 import { ShufersalCredentials, SiteAdapterName } from "@shopping-copilot/shared";

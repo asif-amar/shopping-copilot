@@ -17,15 +17,6 @@ export type Props = {
   headerCredentials?: HeaderCredentials | null;
 };
 
-// MCP tool schemas using Zod
-export const CalculateSchema = {
-  operation: z
-    .enum(["add", "subtract", "multiply", "divide"])
-    .describe("The mathematical operation to perform"),
-  a: z.number().describe("First number"),
-  b: z.number().describe("Second number"),
-};
-
 // Shopping tool schemas
 export const SearchProductsSchema = {
   website: z

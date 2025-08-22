@@ -7,7 +7,6 @@ import {
   ShoppingOperationResult,
   SupportedWebsite,
   WebsiteConfig,
-  WebsiteCredentials,
 } from "../types";
 
 /**

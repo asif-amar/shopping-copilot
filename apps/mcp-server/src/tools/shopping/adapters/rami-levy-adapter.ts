@@ -6,7 +6,6 @@ import {
   Cart,
   ShoppingOperationResult,
   WebsiteConfig,
-  WebsiteCredentials,
   Product,
 } from "../types";
 import { RamiLevyCredentials, SiteAdapterName } from "@shopping-copilot/shared";

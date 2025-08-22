@@ -1,7 +1,7 @@
 import { BaseShoppingAdapter } from "./adapters/base-adapter";
 import { RamiLevyAdapter } from "./adapters/rami-levy-adapter";
 import { ShufersalAdapter } from "./adapters/shufersal-adapter";
-import { SupportedWebsite, WebsiteCredentials } from "./types";
+import { SupportedWebsite } from "./types";
 import { RamiLevyCredentials, ShufersalCredentials } from "@shopping-copilot/shared";
 
 /**
