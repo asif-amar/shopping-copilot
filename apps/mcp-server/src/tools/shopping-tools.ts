@@ -9,6 +9,32 @@ import {
 } from "../types";
 import { ShoppingAdapterFactory } from "./shopping/factory";
 import { ShoppingSecurity } from "./shopping/security";
+import { SupportedWebsite } from "./shopping/types";
+
+// Helper function to get credentials for a website
+function getCredentialsForWebsite(website: SupportedWebsite, env: Env) {
+  if (website === "rami-levy") {
+    const credentials = ShoppingAdapterFactory.getRamiLevyCredentials(env);
+    if (!credentials) {
+      return {
+        credentials: null,
+        error: "Missing Rami Levy credentials. Please check environment variables: RAMI_LEVY_API_KEY, RAMI_LEVY_ECOM_TOKEN, RAMI_LEVY_COOKIE, RAMI_LEVY_USER_ID"
+      };
+    }
+    return { credentials, error: null };
+  } else if (website === "shufersal") {
+    const credentials = ShoppingAdapterFactory.getShufersalCredentials(env);
+    if (!credentials) {
+      return {
+        credentials: null,
+        error: "Missing Shufersal credentials. Please check environment variables: SHUFERSAL_CSRF_TOKEN, SHUFERSAL_COOKIE"
+      };
+    }
+    return { credentials, error: null };
+  }
+  
+  return { credentials: null, error: `Unsupported website: ${website}` };
+}
 
 export function registerShoppingTools(
   server: McpServer,
@@ -68,12 +94,26 @@ export function registerShoppingTools(
         // Get adapter for the website
         const adapter = ShoppingAdapterFactory.getAdapter(website, env);
 
+        // Get credentials for the website
+        const credentialsResult = getCredentialsForWebsite(website, env);
+        if (!credentialsResult.credentials) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `**Error**\n\n${credentialsResult.error}`,
+                isError: true,
+              },
+            ],
+          };
+        }
+
         // Execute search
         const result = await adapter.searchProducts({
           query: queryValidation.sanitized,
           category: categoryValidation.sanitized,
           priceRange,
-        });
+        }, credentialsResult.credentials);
 
         if (!result.success) {
           return {
@@ -181,10 +221,25 @@ export function registerShoppingTools(
         // Get adapter for the website
         const adapter = ShoppingAdapterFactory.getAdapter(website, env);
 
+        // Get credentials for the website
+        const credentialsResult = getCredentialsForWebsite(website, env);
+        if (!credentialsResult.credentials) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `**Error**\n\n${credentialsResult.error}`,
+                isError: true,
+              },
+            ],
+          };
+        }
+
         // Add to cart
         const result = await adapter.addToCart(
           productId,
           quantity,
+          credentialsResult.credentials,
           variantValidation.sanitized
         );
 
@@ -268,8 +323,22 @@ export function registerShoppingTools(
         // Get adapter for the website
         const adapter = ShoppingAdapterFactory.getAdapter(website, env);
 
+        // Get credentials for the website
+        const credentialsResult = getCredentialsForWebsite(website, env);
+        if (!credentialsResult.credentials) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `**Error**\n\n${credentialsResult.error}`,
+                isError: true,
+              },
+            ],
+          };
+        }
+
         // Remove from cart
-        const result = await adapter.removeFromCart(cartItemId);
+        const result = await adapter.removeFromCart(cartItemId, credentialsResult.credentials);
 
         if (!result.success) {
           return {
@@ -348,8 +417,22 @@ export function registerShoppingTools(
         // Get adapter for the website
         const adapter = ShoppingAdapterFactory.getAdapter(website, env);
 
+        // Get credentials for the website
+        const credentialsResult = getCredentialsForWebsite(website, env);
+        if (!credentialsResult.credentials) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `**Error**\n\n${credentialsResult.error}`,
+                isError: true,
+              },
+            ],
+          };
+        }
+
         // Update quantity
-        const result = await adapter.updateCartQuantity(cartItemId, quantity);
+        const result = await adapter.updateCartQuantity(cartItemId, quantity, credentialsResult.credentials);
 
         if (!result.success) {
           return {
@@ -400,8 +483,22 @@ export function registerShoppingTools(
         // Get adapter for the website
         const adapter = ShoppingAdapterFactory.getAdapter(website, env);
 
+        // Get credentials for the website
+        const credentialsResult = getCredentialsForWebsite(website, env);
+        if (!credentialsResult.credentials) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `**Error**\n\n${credentialsResult.error}`,
+                isError: true,
+              },
+            ],
+          };
+        }
+
         // Get cart contents
-        const result = await adapter.getCartContents();
+        const result = await adapter.getCartContents(credentialsResult.credentials);
 
         if (!result.success) {
           return {

@@ -17,23 +17,21 @@ import {
 export abstract class BaseShoppingAdapter {
   protected website: SupportedWebsite;
   protected config: WebsiteConfig;
-  protected credentials?: WebsiteCredentials;
 
   constructor(
     website: SupportedWebsite,
-    config: WebsiteConfig,
-    credentials?: WebsiteCredentials
+    config: WebsiteConfig
   ) {
     this.website = website;
     this.config = config;
-    this.credentials = credentials;
   }
 
   /**
    * Search for products on the website
    */
   abstract searchProducts(
-    options: ProductSearchOptions
+    options: ProductSearchOptions,
+    credentials: any
   ): Promise<ShoppingOperationResult<ProductSearchResult>>;
 
   /**
@@ -42,6 +40,7 @@ export abstract class BaseShoppingAdapter {
   abstract addToCart(
     productId: string,
     quantity: number,
+    credentials: any,
     variant?: string
   ): Promise<ShoppingOperationResult<CartItem | string>>;
 
@@ -49,7 +48,8 @@ export abstract class BaseShoppingAdapter {
    * Remove an item from the shopping cart
    */
   abstract removeFromCart(
-    cartItemId: string
+    cartItemId: string,
+    credentials: any
   ): Promise<ShoppingOperationResult<boolean>>;
 
   /**
@@ -57,13 +57,14 @@ export abstract class BaseShoppingAdapter {
    */
   abstract updateCartQuantity(
     cartItemId: string,
-    quantity: number
+    quantity: number,
+    credentials: any
   ): Promise<ShoppingOperationResult<CartItem>>;
 
   /**
    * Get current cart contents
    */
-  abstract getCartContents(): Promise<ShoppingOperationResult<Cart>>;
+  abstract getCartContents(credentials: any): Promise<ShoppingOperationResult<Cart>>;
 
   /**
    * Validate that the adapter is properly configured

@@ -73,7 +73,14 @@ interface ShufersalSearchResultItem {
 export class ShufersalAdapter extends BaseShoppingAdapter {
   private apiClient: ApiClient;
 
-  constructor(credentials?: WebsiteCredentials) {
+  private createAuthHeaders(credentials: ShufersalCredentials): Record<string, string> {
+    return {
+      "X-CSRFToken": credentials.csrftoken,
+      Cookie: credentials.cookie,
+    };
+  }
+
+  constructor() {
     console.log("[ShufersalAdapter] Constructor called");
 
     const config: WebsiteConfig = {
@@ -84,10 +91,10 @@ export class ShufersalAdapter extends BaseShoppingAdapter {
       requiresAuth: true, // Cart operations require auth
     };
 
-    super("shufersal", config, credentials);
+    super("shufersal", config);
 
-    // Initialize API client with headers based on your working example
-    const headers: Record<string, string> = {
+    // Initialize API client with basic headers (no auth headers)
+    const baseHeaders: Record<string, string> = {
       accept: "application/json",
       "x-requested-with": "XMLHttpRequest",
       // 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
@@ -95,11 +102,12 @@ export class ShufersalAdapter extends BaseShoppingAdapter {
       "referrer-policy": "strict-origin-when-cross-origin",
     };
 
-    this.apiClient = new ApiClient(config.baseUrl, headers);
+    this.apiClient = new ApiClient(config.baseUrl, baseHeaders);
   }
 
   async searchProducts(
-    options: ProductSearchOptions
+    options: ProductSearchOptions,
+    credentials: ShufersalCredentials
   ): Promise<ShoppingOperationResult<ProductSearchResult>> {
     try {
       console.log(`[Shufersal] Searching for: "${options.query}"`);
@@ -238,6 +246,7 @@ export class ShufersalAdapter extends BaseShoppingAdapter {
   async addToCart(
     productId: string,
     quantity: number = 1,
+    credentials: ShufersalCredentials,
     variant?: string
   ): Promise<ShoppingOperationResult<string>> {
     try {
@@ -247,9 +256,9 @@ export class ShufersalAdapter extends BaseShoppingAdapter {
 
       // Get authentication credentials from adapter credentials or environment fallback
       const csrfToken =
-        this.credentials?.apiKey || process.env.SHUFERSAL_CSRF_TOKEN;
+        credentials?.csrftoken || process.env.SHUFERSAL_CSRF_TOKEN;
       const cookie =
-        this.credentials?.accessToken || process.env.SHUFERSAL_COOKIE;
+        credentials?.cookie || process.env.SHUFERSAL_COOKIE;
 
       if (!csrfToken || !cookie) {
         return this.createErrorResult(
@@ -268,33 +277,25 @@ export class ShufersalAdapter extends BaseShoppingAdapter {
         affiliateCode: "",
       };
 
-      // Prepare headers with authentication
-      const headers: Record<string, string> = {
+      // Prepare dynamic headers with authentication
+      const dynamicHeaders = {
+        ...this.createAuthHeaders(credentials),
         "Content-Type": "application/json",
         Origin: "https://www.shufersal.co.il",
         Referer:
           "https://www.shufersal.co.il/online/he/search?text=%D7%99%D7%95%D7%92%D7%95%D7%A8%D7%98",
-        "X-Requested-With": "XMLHttpRequest",
         "Accept-Encoding": "gzip, deflate, br, zstd",
         "Accept-Language": "en-US,en;q=0.9",
         Accept: "*/*",
-        Cookie: cookie,
-        csrftoken: csrfToken,
         Connection: "keep-alive",
       };
 
-      // Create a separate API client for cart operations with proper base URL
-      const cartApiClient = new ApiClient(
-        "https://www.shufersal.co.il/online/he",
-        headers
-      );
-
       // Make the add to cart request - Shufersal returns HTML, not JSON
-      const response = await cartApiClient.request<string>({
+      const response = await this.apiClient.request<string>({
         method: "POST",
         endpoint: "/cart/add",
         body: requestBody,
-        headers,
+        headers: dynamicHeaders,
       });
 
       // Validate response type
@@ -347,16 +348,17 @@ export class ShufersalAdapter extends BaseShoppingAdapter {
   }
 
   async removeFromCart(
-    cartItemId: string
+    cartItemId: string,
+    credentials: ShufersalCredentials
   ): Promise<ShoppingOperationResult<boolean>> {
     try {
       console.log(`[Shufersal] Removing cart item: ${cartItemId}`);
 
       // Get authentication credentials from adapter credentials or environment fallback
       const csrfToken =
-        this.credentials?.apiKey || process.env.SHUFERSAL_CSRF_TOKEN;
+        credentials?.csrftoken || process.env.SHUFERSAL_CSRF_TOKEN;
       const cookie =
-        this.credentials?.accessToken || process.env.SHUFERSAL_COOKIE;
+        credentials?.cookie || process.env.SHUFERSAL_COOKIE;
 
       if (!csrfToken || !cookie) {
         return this.createErrorResult(
@@ -382,17 +384,15 @@ export class ShufersalAdapter extends BaseShoppingAdapter {
         );
       }
 
-      // Prepare headers with authentication
-      const headers: Record<string, string> = {
+      // Prepare dynamic headers with authentication
+      const dynamicHeaders = {
+        ...this.createAuthHeaders(credentials),
         "Content-Type": "application/x-www-form-urlencoded",
         Origin: "https://www.shufersal.co.il",
         Referer: "https://www.shufersal.co.il/online/he/cart",
-        "X-Requested-With": "XMLHttpRequest",
         "Accept-Encoding": "gzip, deflate, br, zstd",
         "Accept-Language": "en-US,en;q=0.9",
         Accept: "*/*",
-        Cookie: cookie,
-        csrftoken: csrfToken,
         Connection: "keep-alive",
       };
 
@@ -407,16 +407,11 @@ export class ShufersalAdapter extends BaseShoppingAdapter {
       });
 
       // Create API client for cart operations
-      const cartApiClient = new ApiClient(
-        "https://www.shufersal.co.il/online/he",
-        headers
-      );
-
       // Make the remove request
-      const response = await cartApiClient.request<string>({
+      const response = await this.apiClient.request<string>({
         method: "POST",
         endpoint: `/cart/update?${params.toString()}`,
-        headers,
+        headers: dynamicHeaders,
       });
 
       // Validate response
@@ -458,21 +453,21 @@ export class ShufersalAdapter extends BaseShoppingAdapter {
     }
   }
 
-  async updateCartQuantity(): Promise<ShoppingOperationResult<CartItem>> {
+  async updateCartQuantity(cartItemId: string, quantity: number, credentials: ShufersalCredentials): Promise<ShoppingOperationResult<CartItem>> {
     return this.createErrorResult(
       "Cart operations not implemented for Shufersal"
     );
   }
 
-  async getCartContents(): Promise<ShoppingOperationResult<Cart>> {
+  async getCartContents(credentials: ShufersalCredentials): Promise<ShoppingOperationResult<Cart>> {
     try {
       console.log("[Shufersal] Getting cart contents");
 
       // Get authentication credentials
       const csrfToken =
-        this.credentials?.apiKey || process.env.SHUFERSAL_CSRF_TOKEN;
+        credentials?.csrftoken || process.env.SHUFERSAL_CSRF_TOKEN;
       const cookie =
-        this.credentials?.accessToken || process.env.SHUFERSAL_COOKIE;
+        credentials?.cookie || process.env.SHUFERSAL_COOKIE;
 
       if (!csrfToken || !cookie) {
         return this.createErrorResult(
@@ -480,30 +475,22 @@ export class ShufersalAdapter extends BaseShoppingAdapter {
         );
       }
 
-      // Prepare headers with authentication
-      const headers: Record<string, string> = {
+      // Prepare dynamic headers with authentication
+      const dynamicHeaders = {
+        ...this.createAuthHeaders(credentials),
         Accept: "application/json",
         Origin: "https://www.shufersal.co.il",
         Referer: "https://www.shufersal.co.il/online/he/cart",
-        "X-Requested-With": "XMLHttpRequest",
         "Accept-Encoding": "gzip, deflate, br, zstd",
         "Accept-Language": "en-US,en;q=0.9",
-        Cookie: cookie,
-        csrftoken: csrfToken,
         Connection: "keep-alive",
       };
 
-      // Create API client for cart operations
-      const cartApiClient = new ApiClient(
-        "https://www.shufersal.co.il/online/he",
-        headers
-      );
-
       // Make the request to get cart contents
-      const response = await cartApiClient.request<ShufersalCartEntry[]>({
+      const response = await this.apiClient.request<ShufersalCartEntry[]>({
         method: "GET",
         endpoint: "/recommendations/entry-recommendations",
-        headers,
+        headers: dynamicHeaders,
       });
 
       // Validate response

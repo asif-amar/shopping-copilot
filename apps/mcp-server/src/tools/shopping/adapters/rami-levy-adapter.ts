@@ -231,7 +231,8 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
    * Update the entire cart with new items and quantities
    */
   private async updateCart(
-    items: Record<string, number>
+    items: Record<string, number>,
+    credentials: RamiLevyCredentials
   ): Promise<ShoppingOperationResult<boolean>> {
     try {
       const payload = {
@@ -247,7 +248,11 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
         meta: null,
       };
 
-      await this.apiClient.post("/v2/cart", payload);
+      await this.apiClient.post(
+        "/v2/cart",
+        payload,
+        this.createAuthHeaders(credentials)
+      );
 
       // The API typically returns a success response, we assume success if no error
       return this.createSuccessResult(true);
@@ -259,7 +264,17 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
     }
   }
 
-  constructor(credentials?: WebsiteCredentials) {
+  private createAuthHeaders(
+    credentials: RamiLevyCredentials
+  ): Record<string, string> {
+    return {
+      Authorization: credentials.authorization,
+      Ecomtoken: credentials.ecomtoken,
+      Cookie: credentials.cookie,
+    };
+  }
+
+  constructor() {
     const config: WebsiteConfig = {
       name: "Rami Levy",
       baseUrl: "https://www.rami-levy.co.il/api", // For product operations
@@ -269,16 +284,10 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
       authType: "api_key",
     };
 
-    super("rami-levy", config, credentials);
+    super("rami-levy", config);
 
-    if (!this.validateConfig()) {
-      throw new Error(
-        "Rami Levy adapter requires API key, ecom token, and cookie credentials"
-      );
-    }
-
-    // Initialize API client with Rami Levy specific headers
-    const headers: Record<string, string> = {
+    // Initialize API client with basic headers (no auth headers)
+    const baseHeaders: Record<string, string> = {
       accept: "application/json",
       "content-type": "application/json",
       locale: "he",
@@ -286,33 +295,16 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
       referer: "https://www.rami-levy.co.il/he/online/search",
     };
 
-    if (credentials?.apiKey) {
-      headers["Authorization"] = `Bearer ${credentials.apiKey}`;
-    } else {
-      throw new Error("Rami Levy adapter requires API key");
-    }
-    if (credentials?.accessToken) {
-      // Using accessToken for ecomtoken
-      headers["Ecomtoken"] = credentials.accessToken;
-    } else {
-      throw new Error("Rami Levy adapter requires ecom token");
-    }
-    if (credentials?.refreshToken) {
-      // Using refreshToken for cookie
-      headers["Cookie"] = credentials.refreshToken;
-    } else {
-      throw new Error("Rami Levy adapter requires cookie");
-    }
-
-    this.apiClient = new ApiClient(config.baseUrl, headers);
+    this.apiClient = new ApiClient(config.baseUrl, baseHeaders);
     this.userApiClient = new ApiClient(
       "https://www-api.rami-levy.co.il/api",
-      headers
+      baseHeaders
     );
   }
 
   async searchProducts(
-    options: ProductSearchOptions
+    options: ProductSearchOptions,
+    credentials: RamiLevyCredentials
   ): Promise<ShoppingOperationResult<ProductSearchResult>> {
     try {
       console.log(`[Rami Levy] Searching for: "${options.query}"`);
@@ -324,9 +316,12 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
         aggs: 1,
       };
 
-      // TODO: dynamic headers
-
-      const response = await this.apiClient.post("/catalog", payload);
+      // Use dynamic headers with credentials
+      const response = await this.apiClient.post(
+        "/catalog",
+        payload,
+        this.createAuthHeaders(credentials)
+      );
 
       // Parse response according to Rami Levy API structure
       const ramiLevyResponse = response as {
@@ -394,6 +389,7 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
   async addToCart(
     productId: string,
     quantity: number,
+    credentials: RamiLevyCredentials,
     variant?: string
   ): Promise<ShoppingOperationResult<CartItem | string>> {
     try {
@@ -409,7 +405,11 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
         meta: null,
       };
 
-      const response = await this.apiClient.post("/v2/cart", payload);
+      const response = await this.apiClient.post(
+        "/v2/cart",
+        payload,
+        this.createAuthHeaders(credentials)
+      );
 
       // Parse cart response
       const cartResponse = response as {
@@ -458,13 +458,14 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
   }
 
   async removeFromCart(
-    cartItemId: string
+    cartItemId: string,
+    credentials: RamiLevyCredentials
   ): Promise<ShoppingOperationResult<boolean>> {
     try {
       console.log(`[Rami Levy] Removing from cart: ${cartItemId}`);
 
       // First get current cart to build updated items list
-      const currentCartResult = await this.getCartContents();
+      const currentCartResult = await this.getCartContents(credentials);
       if (!currentCartResult.success) {
         return this.createErrorResult("Failed to get current cart contents");
       }
@@ -493,7 +494,7 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
       );
 
       // Use the helper method to update the cart
-      return await this.updateCart(updatedItems);
+      return await this.updateCart(updatedItems, credentials);
     } catch (error) {
       console.error("[Rami Levy] Remove from cart error:", error);
       return this.createErrorResult(
@@ -504,7 +505,8 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
 
   async updateCartQuantity(
     cartItemId: string,
-    quantity: number
+    quantity: number,
+    credentials: RamiLevyCredentials
   ): Promise<ShoppingOperationResult<CartItem>> {
     try {
       console.log(
@@ -512,7 +514,7 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
       );
 
       // Get current cart to build updated items list
-      const currentCartResult = await this.getCartContents();
+      const currentCartResult = await this.getCartContents(credentials);
       if (!currentCartResult.success) {
         return this.createErrorResult("Failed to get current cart contents");
       }
@@ -529,7 +531,7 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
 
       // If quantity is 0, remove the item
       if (quantity === 0) {
-        const removeResult = await this.removeFromCart(cartItemId);
+        const removeResult = await this.removeFromCart(cartItemId, credentials);
         if (!removeResult.success) {
           return this.createErrorResult(
             removeResult.error || "Failed to remove item"
@@ -570,7 +572,7 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
       );
 
       // Use the helper method to update the cart
-      const updateResult = await this.updateCart(updatedItems);
+      const updateResult = await this.updateCart(updatedItems, credentials);
       if (!updateResult.success) {
         return this.createErrorResult(
           updateResult.error || "Failed to update cart"
@@ -578,7 +580,7 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
       }
 
       // Get updated cart to return the updated item details
-      const updatedCartResult = await this.getCartContents();
+      const updatedCartResult = await this.getCartContents(credentials);
       if (!updatedCartResult.success) {
         return this.createErrorResult("Failed to get updated cart contents");
       }
@@ -605,13 +607,14 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
     }
   }
 
-  async getCartContents(): Promise<ShoppingOperationResult<Cart>> {
+  async getCartContents(
+    credentials: RamiLevyCredentials
+  ): Promise<ShoppingOperationResult<Cart>> {
     try {
       console.log(`[Rami Levy] Getting cart contents`);
 
       // Get user ID from credentials
-      const userId =
-        this.credentials?.clientId || process.env.RAMI_LEVY_USER_ID || "1";
+      const userId = credentials.userId;
       if (!userId) {
         return this.createErrorResult(
           "Missing Rami Levy user ID (RAMI_LEVY_USER_ID)"
@@ -620,7 +623,9 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
 
       // Step 1: Get cart from user data
       const userResponse = await this.userApiClient.get(
-        `/v2/site/clubs/customer/${userId}`
+        `/v2/site/clubs/customer/${userId}`,
+        undefined,
+        this.createAuthHeaders(credentials)
       );
 
       const userCartData = userResponse as RamiLevyUserCartResponse;
@@ -651,10 +656,14 @@ export class RamiLevyAdapter extends BaseShoppingAdapter {
       }
 
       // Step 2: Get product details
-      const productsResponse = await this.apiClient.post("/items", {
-        ids: productIds.join(","),
-        type: "id",
-      });
+      const productsResponse = await this.apiClient.post(
+        "/items",
+        {
+          ids: productIds.join(","),
+          type: "id",
+        },
+        this.createAuthHeaders(credentials)
+      );
 
       console.log("productsResponse\n", productsResponse);
 

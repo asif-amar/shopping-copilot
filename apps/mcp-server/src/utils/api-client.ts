@@ -179,29 +179,41 @@ export class ApiClient {
    */
   async get<T = any>(
     endpoint: string,
-    params?: Record<string, string | number | boolean>
+    params?: Record<string, string | number | boolean>,
+    headers?: Record<string, string>
   ): Promise<T> {
-    return this.request<T>({ method: "GET", endpoint, params });
+    return this.request<T>({ method: "GET", endpoint, params, headers });
   }
 
   /**
    * Make POST request
    */
-  async post<T = any>(endpoint: string, body?: any): Promise<T> {
-    return this.request<T>({ method: "POST", endpoint, body });
+  async post<T = any>(
+    endpoint: string, 
+    body?: any,
+    headers?: Record<string, string>
+  ): Promise<T> {
+    return this.request<T>({ method: "POST", endpoint, body, headers });
   }
 
   /**
    * Make PUT request
    */
-  async put<T = any>(endpoint: string, body?: any): Promise<T> {
-    return this.request<T>({ method: "PUT", endpoint, body });
+  async put<T = any>(
+    endpoint: string, 
+    body?: any,
+    headers?: Record<string, string>
+  ): Promise<T> {
+    return this.request<T>({ method: "PUT", endpoint, body, headers });
   }
 
   /**
    * Make DELETE request
    */
-  async delete<T = any>(endpoint: string): Promise<T> {
-    return this.request<T>({ method: "DELETE", endpoint });
+  async delete<T = any>(
+    endpoint: string,
+    headers?: Record<string, string>
+  ): Promise<T> {
+    return this.request<T>({ method: "DELETE", endpoint, headers });
   }
 }

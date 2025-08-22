@@ -2,7 +2,6 @@ export interface RamiLevyCredentials {
   authorization: string;
   ecomtoken: string;
   cookie: string;
-  userId: string;
 }
 
 export interface ShufersalCredentials {

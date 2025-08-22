@@ -4,6 +4,7 @@ import { BaseShoppingAdapter } from "./adapters/base-adapter";
 import { RamiLevyAdapter } from "./adapters/rami-levy-adapter";
 import { ShufersalAdapter } from "./adapters/shufersal-adapter";
 import { SupportedWebsite, WebsiteCredentials } from "./types";
+import { RamiLevyCredentials, ShufersalCredentials } from "@shopping-copilot/shared";
 
 /**
  * Factory class for creating shopping website adapters
@@ -29,11 +30,11 @@ export class ShoppingAdapterFactory {
     try {
       switch (website) {
         case "rami-levy":
-          adapter = new RamiLevyAdapter(this.getRamiLevyCredentials(env));
+          adapter = new RamiLevyAdapter();
           break;
 
         case "shufersal":
-          adapter = new ShufersalAdapter(this.getShufersalCredentials(env));
+          adapter = new ShufersalAdapter();
           break;
 
         // case "amazon":
@@ -84,54 +85,43 @@ export class ShoppingAdapterFactory {
   /**
    * Get Rami Levy credentials from environment
    */
-  private static getRamiLevyCredentials(
-    env?: Env
-  ): WebsiteCredentials | undefined {
-    if (!env) return undefined;
+  static getRamiLevyCredentials(env?: Env): RamiLevyCredentials | null {
+    if (!env) return null;
 
-    const credentials: WebsiteCredentials = {};
+    const authorization = (env as any).RAMI_LEVY_API_KEY;
+    const ecomtoken = (env as any).RAMI_LEVY_ECOM_TOKEN;
+    const cookie = (env as any).RAMI_LEVY_COOKIE;
+    const userId = (env as any).RAMI_LEVY_USER_ID;
 
-    // Check for Rami Levy API credentials in environment variables
-    if ((env as any).RAMI_LEVY_API_KEY) {
-      credentials.apiKey = (env as any).RAMI_LEVY_API_KEY; // Bearer token
+    if (!authorization || !ecomtoken || !cookie || !userId) {
+      return null;
     }
 
-    if ((env as any).RAMI_LEVY_ECOM_TOKEN) {
-      credentials.accessToken = (env as any).RAMI_LEVY_ECOM_TOKEN; // ecomtoken header
-    }
-
-    if ((env as any).RAMI_LEVY_COOKIE) {
-      credentials.refreshToken = (env as any).RAMI_LEVY_COOKIE; // cookie header
-    }
-
-    if ((env as any).RAMI_LEVY_USER_ID) {
-      credentials.clientId = (env as any).RAMI_LEVY_USER_ID; // user ID for cart operations
-    }
-
-    return Object.keys(credentials).length > 0 ? credentials : undefined;
+    return {
+      authorization,
+      ecomtoken,
+      cookie,
+      userId,
+    };
   }
 
   /**
    * Get Shufersal credentials from environment
    */
-  private static getShufersalCredentials(
-    env?: Env
-  ): WebsiteCredentials | undefined {
-    if (!env) return undefined;
+  static getShufersalCredentials(env?: Env): ShufersalCredentials | null {
+    if (!env) return null;
 
-    const credentials: WebsiteCredentials = {};
+    const csrftoken = (env as any).SHUFERSAL_CSRF_TOKEN;
+    const cookie = (env as any).SHUFERSAL_COOKIE;
 
-    // Check for Shufersal cart credentials in environment variables
-    // These are needed for cart operations like add to cart
-    if ((env as any).SHUFERSAL_CSRF_TOKEN) {
-      credentials.apiKey = (env as any).SHUFERSAL_CSRF_TOKEN; // CSRF token
+    if (!csrftoken || !cookie) {
+      return null;
     }
 
-    if ((env as any).SHUFERSAL_COOKIE) {
-      credentials.accessToken = (env as any).SHUFERSAL_COOKIE; // cookie header
-    }
-
-    return Object.keys(credentials).length > 0 ? credentials : undefined;
+    return {
+      csrftoken,
+      cookie,
+    };
   }
 
   // /**

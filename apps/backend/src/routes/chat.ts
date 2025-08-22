@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { generateText, stepCountIs, streamText, convertToModelMessages } from "ai";
+import {
+  generateText,
+  stepCountIs,
+  streamText,
+  convertToModelMessages,
+} from "ai";
 // import { openai } from '@ai-sdk/openai';
 // import { anthropic } from '@ai-sdk/anthropic';
 import { validateStreamRequest } from "../middleware/validation";
@@ -15,7 +20,7 @@ import {
   createChatSession,
   getChatSessionById,
   createMessage,
-  getMessagesBySessionId
+  getMessagesBySessionId,
 } from "../database/queries";
 
 // Hardcoded constants for demo
@@ -26,9 +31,9 @@ const router = Router();
 
 // Convert database messages to chat message format
 function convertDBMessagesToChat(dbMessages: any[]) {
-  return dbMessages.map(msg => ({
-    role: msg.role as 'user' | 'assistant' | 'system',
-    content: msg.content
+  return dbMessages.map((msg) => ({
+    role: msg.role as "user" | "assistant" | "system",
+    content: msg.content,
   }));
 }
 
@@ -48,14 +53,18 @@ async function ensureUserAndSession() {
       chatSession = await createChatSession({
         user_id: user.id,
         session_id: HARDCODED_CHAT_SESSION_ID,
-        title: "Demo Chat Session"
+        title: "Demo Chat Session",
       });
       logger.info(`Created demo chat session: ${chatSession.id}`);
     }
 
     return { user, chatSession };
   } catch (error) {
-    logger.error(`Failed to initialize user/session: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(
+      `Failed to initialize user/session: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
     throw error;
   }
 }
@@ -68,21 +77,23 @@ router.post("/stream", validateStreamRequest, async (req, res) => {
       temperature = 0.7,
       maxTokens = 1000,
     }: StreamRequest = req.body;
-    
-    logger.info(`Stream endpoint called: /stream (${messages.length} messages)`);
+
+    logger.info(
+      `Stream endpoint called: /stream (${messages.length} messages)`
+    );
 
     // Initialize user and chat session
     const { chatSession } = await ensureUserAndSession();
 
     // Store user message to database
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.role === 'user') {
+    if (lastMessage && lastMessage.role === "user") {
       await createMessage({
         chat_session_id: chatSession.id,
         role: lastMessage.role,
         content: lastMessage.content,
         model: "gemini-2.0-flash-exp",
-        temperature
+        temperature,
       });
       logger.info(`Stored user message to database`);
     }
@@ -90,8 +101,10 @@ router.post("/stream", validateStreamRequest, async (req, res) => {
     // Load full conversation history from database
     const dbMessages = await getMessagesBySessionId(chatSession.id);
     const conversationHistory = convertDBMessagesToChat(dbMessages);
-    
-    logger.info(`Loaded ${conversationHistory.length} messages from database for context`);
+
+    logger.info(
+      `Loaded ${conversationHistory.length} messages from database for context`
+    );
 
     const google = createGoogleGenerativeAI({
       apiKey: process.env.GEMINI_API_KEY,
@@ -100,7 +113,14 @@ router.post("/stream", validateStreamRequest, async (req, res) => {
     logger.info("Creating MCP client at http://localhost:8787/mcp");
 
     const httpTransport = new StreamableHTTPClientTransport(
-      new URL("http://localhost:8787/mcp")
+      new URL("http://localhost:8787/mcp"),
+      {
+        requestInit: {
+          headers: {
+            "test-header": "test-value",
+          },
+        },
+      }
     );
 
     const mcpClient = await experimental_createMCPClient({
@@ -111,55 +131,69 @@ router.post("/stream", validateStreamRequest, async (req, res) => {
 
     const tools = await mcpClient.tools();
 
-    logger.info(`Tools retrieved from MCP client (${tools ? Object.keys(tools).length : 0} tools)`);
+    logger.info(
+      `Tools retrieved from MCP client (${
+        tools ? Object.keys(tools).length : 0
+      } tools)`
+    );
 
     const result = streamText({
       model: google("gemini-2.0-flash-exp"),
       tools,
       stopWhen: stepCountIs(5),
-      messages: conversationHistory.map(msg => ({
+      messages: conversationHistory.map((msg) => ({
         role: msg.role,
-        content: msg.content
+        content: msg.content,
       })),
       temperature,
     });
 
-    logger.info(`Starting streaming response with gemini-2.0-flash-exp (temp: ${temperature})`);
+    logger.info(
+      `Starting streaming response with gemini-2.0-flash-exp (temp: ${temperature})`
+    );
 
     return result.toUIMessageStreamResponse({
-      originalMessages: conversationHistory.map(msg => ({
+      originalMessages: conversationHistory.map((msg) => ({
         id: `msg-${Date.now()}-${Math.random()}`,
         role: msg.role,
         content: msg.content,
-        parts: [{ type: 'text', text: msg.content }]
+        parts: [{ type: "text", text: msg.content }],
       })),
       onFinish: async ({ messages: finalMessages }) => {
         try {
           // Store assistant response to database
           const assistantMessage = finalMessages[finalMessages.length - 1];
-          if (assistantMessage && assistantMessage.role === 'assistant') {
-            const content = assistantMessage.parts
-              ?.map(part => part.type === 'text' ? part.text : '')
-              .join('') || '';
-            
+          if (assistantMessage && assistantMessage.role === "assistant") {
+            const content =
+              assistantMessage.parts
+                ?.map((part) => (part.type === "text" ? part.text : ""))
+                .join("") || "";
+
             await createMessage({
               chat_session_id: chatSession.id,
-              role: 'assistant',
+              role: "assistant",
               content,
               model: "gemini-2.0-flash-exp",
-              temperature
+              temperature,
             });
             logger.info(`Stored assistant message to database`);
           }
         } catch (dbError) {
-          logger.error(`Failed to store assistant message: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
+          logger.error(
+            `Failed to store assistant message: ${
+              dbError instanceof Error ? dbError.message : String(dbError)
+            }`
+          );
         }
-      }
+      },
     });
-
   } catch (error) {
-    logger.error(`Streaming error: ${error instanceof Error ? error.message : String(error)}`);
-    
+    logger.error(
+      `Streaming error: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+
     if (!res.headersSent) {
       return res.status(500).json({
         error: "Failed to stream response",
@@ -176,22 +210,25 @@ router.post("/complete", validateStreamRequest, async (req, res) => {
       model,
       temperature = 0.7,
       maxTokens = 1000,
-    }: StreamRequest = req.body;
+    }: // reqHeaders
+    StreamRequest = req.body;
 
-    logger.info(`Complete endpoint called: /complete (${messages.length} messages)`);
+    logger.info(
+      `Complete endpoint called: /complete (${messages.length} messages)`
+    );
 
     // Initialize user and chat session
     const { chatSession } = await ensureUserAndSession();
 
     // Store user message to database
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.role === 'user') {
+    if (lastMessage && lastMessage.role === "user") {
       await createMessage({
         chat_session_id: chatSession.id,
         role: lastMessage.role,
         content: lastMessage.content,
         model: "gemini-2.0-flash-exp",
-        temperature
+        temperature,
       });
       logger.info(`Stored user message to database`);
     }
@@ -199,15 +236,22 @@ router.post("/complete", validateStreamRequest, async (req, res) => {
     // Load full conversation history from database
     const dbMessages = await getMessagesBySessionId(chatSession.id);
     const conversationHistory = convertDBMessagesToChat(dbMessages);
-    
-    logger.info(`Loaded ${conversationHistory.length} messages from database for context`);
+
+    logger.info(
+      `Loaded ${conversationHistory.length} messages from database for context`
+    );
 
     const google = createGoogleGenerativeAI({
       apiKey: process.env.GEMINI_API_KEY,
     });
 
     const httpTransport = new StreamableHTTPClientTransport(
-      new URL("http://localhost:8787/mcp")
+      new URL("http://localhost:8787/mcp"),
+      {
+        requestInit: {
+          // headers: req.headers,
+        },
+      }
     );
 
     logger.info("Creating MCP client at http://localhost:8787/mcp");
@@ -220,7 +264,11 @@ router.post("/complete", validateStreamRequest, async (req, res) => {
 
     const tools = await mcpClient.tools();
 
-    logger.info(`Tools retrieved from MCP client (${tools ? Object.keys(tools).length : 0} tools)`);
+    logger.info(
+      `Tools retrieved from MCP client (${
+        tools ? Object.keys(tools).length : 0
+      } tools)`
+    );
 
     const result = await generateText({
       model: google("gemini-2.0-flash-exp"),
@@ -234,16 +282,16 @@ router.post("/complete", validateStreamRequest, async (req, res) => {
     });
 
     const fullText = result.text;
-    
+
     logger.info(`Text generation completed (${fullText.length} characters)`);
 
     // Store assistant response to database
     const assistantMessageDB = await createMessage({
       chat_session_id: chatSession.id,
-      role: 'assistant',
+      role: "assistant",
       content: fullText,
       model: "gemini-2.0-flash-exp",
-      temperature
+      temperature,
     });
     logger.info(`Stored assistant message to database`);
 
@@ -254,11 +302,15 @@ router.post("/complete", validateStreamRequest, async (req, res) => {
         content: fullText,
         model: "gemini-2.0-flash-exp",
         temperature,
-        created_at: assistantMessageDB.created_at
+        created_at: assistantMessageDB.created_at,
       },
     });
   } catch (error) {
-    logger.error(`Completion error: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(
+      `Completion error: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
     res.status(500).json({
       error: "Failed to generate response",
       message: error instanceof Error ? error.message : "Unknown error",
