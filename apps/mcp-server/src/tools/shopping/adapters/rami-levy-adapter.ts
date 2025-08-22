@@ -9,6 +9,7 @@ import {
   WebsiteCredentials,
   Product,
 } from "../types";
+import { RamiLevyCredentials, SiteAdapterName } from "@shopping-copilot/shared";
 import { ApiClient } from "../../../utils/api-client";
 
 // Rami Levy API response interfaces

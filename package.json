@@ -5,8 +5,9 @@
   "description": "A unified monorepo for shopping assistant with Chrome extension, backend server, and MCP server",
   "workspaces": [
     "apps/backend",
-    "apps/extension",
-    "apps/mcp-server"
+    "apps/extension", 
+    "apps/mcp-server",
+    "packages/shared"
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:extension\" \"npm run dev:mcp\"",

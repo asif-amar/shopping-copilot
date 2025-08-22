@@ -9,6 +9,7 @@ import {
   WebsiteCredentials,
   Product,
 } from "../types";
+import { ShufersalCredentials, SiteAdapterName } from "@shopping-copilot/shared";
 import { ApiClient } from "../../../utils/api-client";
 
 // Shufersal API response types (based on your example)

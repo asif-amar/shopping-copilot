@@ -17,7 +17,8 @@
   "references": [
     { "path": "./apps/backend" },
     { "path": "./apps/extension" },
-    { "path": "./apps/mcp-server" }
+    { "path": "./apps/mcp-server" },
+    { "path": "./packages/shared" }
   ],
   "files": []
 }
