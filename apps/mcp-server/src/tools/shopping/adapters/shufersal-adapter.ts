@@ -5,9 +5,9 @@ import {
   CartItem,
   Cart,
   ShoppingOperationResult,
-  WebsiteConfig,
   Product,
-} from "../types";
+} from "@shopping-copilot/shared";
+import { WebsiteConfig } from "../types";
 import { ShufersalCredentials, SiteAdapterName } from "@shopping-copilot/shared";
 import { ApiClient } from "../../../utils/api-client";
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RamiLevyCredentials, ShufersalCredentials } from "@shopping-copilot/shared";
+import { RamiLevyCredentials, ShufersalCredentials, SiteAdapterName } from "@shopping-copilot/shared";
 
 // Header credentials extracted from requests
 export type HeaderCredentials = {
@@ -20,7 +20,7 @@ export type Props = {
 // Shopping tool schemas
 export const SearchProductsSchema = {
   website: z
-    .enum(["rami-levy", "shufersal"])
+    .enum([SiteAdapterName.ramiLevy, SiteAdapterName.shufersal] as const)
     .describe("Shopping website to search"),
   query: z
     .string()
@@ -41,7 +41,7 @@ export const SearchProductsSchema = {
 
 export const AddToCartSchema = {
   website: z
-    .enum(["rami-levy", "shufersal"])
+    .enum([SiteAdapterName.ramiLevy, SiteAdapterName.shufersal] as const)
     .describe("Shopping website"),
   productId: z
     .string()
@@ -62,7 +62,7 @@ export const AddToCartSchema = {
 
 export const RemoveFromCartSchema = {
   website: z
-    .enum(["rami-levy", "shufersal"])
+    .enum([SiteAdapterName.ramiLevy, SiteAdapterName.shufersal] as const)
     .describe("Shopping website"),
   cartItemId: z
     .string()
@@ -72,7 +72,7 @@ export const RemoveFromCartSchema = {
 
 export const UpdateCartQuantitySchema = {
   website: z
-    .enum(["rami-levy", "shufersal"])
+    .enum([SiteAdapterName.ramiLevy, SiteAdapterName.shufersal] as const)
     .describe("Shopping website"),
   cartItemId: z
     .string()
@@ -88,7 +88,7 @@ export const UpdateCartQuantitySchema = {
 
 export const GetCartContentsSchema = {
   website: z
-    .enum(["rami-levy", "shufersal"])
+    .enum([SiteAdapterName.ramiLevy, SiteAdapterName.shufersal] as const)
     .describe("Shopping website"),
 };
 

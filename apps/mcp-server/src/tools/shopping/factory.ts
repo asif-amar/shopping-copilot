@@ -1,15 +1,14 @@
 import { BaseShoppingAdapter } from "./adapters/base-adapter";
 import { RamiLevyAdapter } from "./adapters/rami-levy-adapter";
 import { ShufersalAdapter } from "./adapters/shufersal-adapter";
-import { SupportedWebsite } from "./types";
-import { RamiLevyCredentials, ShufersalCredentials } from "@shopping-copilot/shared";
+import { RamiLevyCredentials, ShufersalCredentials, SiteAdapterNameValues } from "@shopping-copilot/shared";
 
 /**
  * Factory class for creating shopping website adapters
  * Handles routing operations to the correct website implementation
  */
 export class ShoppingAdapterFactory {
-  private static adapters: Map<SupportedWebsite, BaseShoppingAdapter> =
+  private static adapters: Map<SiteAdapterNameValues, BaseShoppingAdapter> =
     new Map();
 
   /**
@@ -17,7 +16,7 @@ export class ShoppingAdapterFactory {
    * Adapters are stateless and can be safely cached and reused
    * Credentials are passed per-method call, not stored in the adapter
    */
-  static getAdapter(website: SupportedWebsite, _credentials?: any, env?: Env): BaseShoppingAdapter {
+  static getAdapter(website: SiteAdapterNameValues, _credentials?: any, env?: Env): BaseShoppingAdapter {
     // Check if adapter already exists
     if (this.adapters.has(website)) {
       const adapter = this.adapters.get(website)!;
@@ -56,15 +55,15 @@ export class ShoppingAdapterFactory {
   /**
    * Get list of supported websites
    */
-  static getSupportedWebsites(): SupportedWebsite[] {
+  static getSupportedWebsites(): SiteAdapterNameValues[] {
     return ["rami-levy", "shufersal"];
   }
 
   /**
    * Check if a website is supported
    */
-  static isWebsiteSupported(website: string): website is SupportedWebsite {
-    return this.getSupportedWebsites().includes(website as SupportedWebsite);
+  static isWebsiteSupported(website: string): website is SiteAdapterNameValues {
+    return this.getSupportedWebsites().includes(website as SiteAdapterNameValues);
   }
 
   /**
@@ -121,7 +120,7 @@ export class ShoppingAdapterFactory {
    * Validate that all required environment variables are set for a website
    */
   static validateWebsiteConfig(
-    website: SupportedWebsite,
+    website: SiteAdapterNameValues,
     env?: Env
   ): { isValid: boolean; missingVars: string[] } {
     const missingVars: string[] = [];
@@ -163,7 +162,7 @@ export class ShoppingAdapterFactory {
   /**
    * Get rate limit information for a website
    */
-  static getRateLimit(website: SupportedWebsite): number {
+  static getRateLimit(website: SiteAdapterNameValues): number {
     try {
       const adapter = this.adapters.get(website);
       if (adapter) {

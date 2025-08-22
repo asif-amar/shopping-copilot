@@ -1,4 +1,4 @@
-import { SupportedWebsite } from "./types";
+import { SiteAdapterNameValues } from "@shopping-copilot/shared";
 
 /**
  * Security validation utilities for shopping operations
@@ -35,7 +35,7 @@ export class ShoppingSecurity {
   /**
    * Validate product ID format
    */
-  static validateProductId(productId: string, website: SupportedWebsite): { isValid: boolean; error?: string } {
+  static validateProductId(productId: string, website: SiteAdapterNameValues): { isValid: boolean; error?: string } {
     if (!productId || typeof productId !== 'string') {
       return { isValid: false, error: 'Product ID is required' };
     }
