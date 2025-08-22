@@ -1,0 +1,47 @@
+{
+  "name": "shopping-copilot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A unified monorepo for shopping assistant with Chrome extension, backend server, and MCP server",
+  "workspaces": [
+    "apps/backend",
+    "apps/extension",
+    "apps/mcp-server"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:extension\" \"npm run dev:mcp\"",
+    "dev:backend": "npm run dev --workspace=apps/backend",
+    "dev:extension": "npm run dev --workspace=apps/extension",
+    "dev:mcp": "npm run dev --workspace=apps/mcp-server",
+    "build": "npm run build --workspace=apps/backend && npm run build --workspace=apps/extension",
+    "build:backend": "npm run build --workspace=apps/backend",
+    "build:extension": "npm run build --workspace=apps/extension",
+    "build:mcp": "npm run deploy --workspace=apps/mcp-server",
+    "type-check": "npm run type-check --workspace=apps/backend && npm run typecheck --workspace=apps/extension && npm run type-check --workspace=apps/mcp-server",
+    "lint": "npm run lint --workspace=apps/extension",
+    "lint:fix": "npm run lint:fix --workspace=apps/extension",
+    "test": "npm run test --workspaces --if-present",
+    "clean": "npm run clean --workspace=apps/extension && npm run clean --workspaces --if-present",
+    "install-all": "npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "author": "Shopping Copilot Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/shopping-copilot.git"
+  },
+  "keywords": [
+    "shopping",
+    "chrome-extension",
+    "mcp",
+    "ai-assistant",
+    "monorepo"
+  ]
+}

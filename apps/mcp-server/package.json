@@ -1,5 +1,5 @@
 {
-  "name": "shopping-mcp-server",
+  "name": "@shopping-copilot/mcp-server",
   "version": "0.0.1",
   "private": true,
   "type": "module",

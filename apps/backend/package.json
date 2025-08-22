@@ -1,5 +1,5 @@
 {
-  "name": "llm-streaming-backend",
+  "name": "@shopping-copilot/backend",
   "version": "1.0.0",
   "description": "Node.js server for streaming LLM responses to Chrome extension",
   "main": "dist/index.js",

@@ -1,5 +1,5 @@
 {
-  "name": "shopai-extension",
+  "name": "@shopping-copilot/extension",
   "version": "1.0.0",
   "description": "Shopping assistant Chrome extension",
   "type": "module",
