@@ -1,7 +1,7 @@
 import { BaseShoppingAdapter } from "./adapters/base-adapter";
 import { RamiLevyAdapter } from "./adapters/rami-levy-adapter";
 import { ShufersalAdapter } from "./adapters/shufersal-adapter";
-import { RamiLevyCredentials, ShufersalCredentials, SiteAdapterNameValues } from "@shopping-copilot/shared";
+import { RamiLevyCredentials, ShufersalCredentials, SiteAdapterNameValues, SiteAdapterName } from "@shopping-copilot/shared";
 
 /**
  * Factory class for creating shopping website adapters
@@ -28,11 +28,11 @@ export class ShoppingAdapterFactory {
 
     try {
       switch (website) {
-        case "rami-levy":
+        case SiteAdapterName.ramiLevy:
           adapter = new RamiLevyAdapter();
           break;
 
-        case "shufersal":
+        case SiteAdapterName.shufersal:
           adapter = new ShufersalAdapter();
           break;
 
@@ -56,7 +56,7 @@ export class ShoppingAdapterFactory {
    * Get list of supported websites
    */
   static getSupportedWebsites(): SiteAdapterNameValues[] {
-    return ["rami-levy", "shufersal"];
+    return [SiteAdapterName.ramiLevy, SiteAdapterName.shufersal];
   }
 
   /**
@@ -126,7 +126,7 @@ export class ShoppingAdapterFactory {
     const missingVars: string[] = [];
 
     switch (website) {
-      case "rami-levy":
+      case SiteAdapterName.ramiLevy:
         if (!env || !(env as any).RAMI_LEVY_API_KEY) {
           missingVars.push("RAMI_LEVY_API_KEY");
         }
@@ -141,7 +141,7 @@ export class ShoppingAdapterFactory {
         }
         break;
 
-      case "shufersal":
+      case SiteAdapterName.shufersal:
         // Cart operations require authentication credentials
         if (!env || !(env as any).SHUFERSAL_CSRF_TOKEN) {
           missingVars.push("SHUFERSAL_CSRF_TOKEN");
@@ -171,9 +171,9 @@ export class ShoppingAdapterFactory {
 
       // Return default rate limits if adapter not initialized
       switch (website) {
-        case "rami-levy":
+        case SiteAdapterName.ramiLevy:
           return 60;
-        case "shufersal":
+        case SiteAdapterName.shufersal:
           return 60;
         default:
           return 60;
