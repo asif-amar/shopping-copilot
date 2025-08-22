@@ -73,10 +73,8 @@ export abstract class BaseShoppingAdapter {
       return false;
     }
 
-    if (this.config.requiresAuth && !this.credentials) {
-      return false;
-    }
-
+    // Note: Authentication validation is done per-method call
+    // since credentials are passed as parameters, not stored in the adapter
     return true;
   }
 
