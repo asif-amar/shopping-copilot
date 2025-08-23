@@ -1,4 +1,4 @@
-import { SiteAdapterNameValues, SiteCredentials } from "@shopping-copilot/shared";
+import { SiteAdapterNameValues, SiteHeaders, RamiLevyHeaders, ShufersalHeaders } from "@shopping-copilot/shared";
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -11,13 +11,20 @@ export interface StreamRequest {
   temperature?: number;
   maxTokens?: number;
   adapterName?: SiteAdapterNameValues;
-  credentials?: SiteCredentials[keyof SiteCredentials];
+  credentials?: SiteHeaders;
 }
 
 export interface ErrorResponse {
   error: string;
   code?: string;
 }
+
+// Header credentials extracted from requests
+export type HeaderCredentials = {
+  siteName?: string;
+  ramiLevyCredentials?: RamiLevyHeaders | null;
+  shufersalCredentials?: ShufersalHeaders | null;
+};
 
 // Database Types
 export interface User {

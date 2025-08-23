@@ -1,5 +1,3 @@
-import { experimental_createMCPClient } from "ai";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import {
   SITE_CREDENTIAL_HEADERS,
@@ -142,50 +140,6 @@ export async function getConversationHistory(
   return conversationHistory;
 }
 
-// Setup MCP client with common configuration
-export async function setupMCPClient(
-  adapterName?: string,
-  credentials?: any
-): Promise<{ mcpClient: any; tools: any }> {
-  const mcpHeaders = createMCPHeaders(adapterName, credentials);
-  const mcpServerUrl = process.env.MCP_SERVER_URL;
-
-  if (!mcpServerUrl) {
-    throw new Error("MCP URL is not defined");
-  }
-
-  logger.info(`Creating MCP client at ${mcpServerUrl}`);
-  logger.info(
-    `Forwarding adapter: ${adapterName || "none"} with ${
-      Object.keys(mcpHeaders).length
-    } headers`
-  );
-
-  const httpTransport = new StreamableHTTPClientTransport(
-    new URL(mcpServerUrl),
-    {
-      requestInit: {
-        headers: mcpHeaders,
-      },
-    }
-  );
-
-  const mcpClient = await experimental_createMCPClient({
-    transport: httpTransport,
-  });
-
-  logger.info("MCP client created successfully");
-
-  const tools = await mcpClient.tools();
-
-  logger.info(
-    `Tools retrieved from MCP client (${
-      tools ? Object.keys(tools).length : 0
-    } tools)`
-  );
-
-  return { mcpClient, tools };
-}
 
 // Setup Google AI model
 export function setupGoogleAI() {
