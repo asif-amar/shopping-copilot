@@ -131,6 +131,7 @@ export default defineConfig(({ mode }): UserConfig => {
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src'),
+        '@shopping-copilot/shared': resolve(__dirname, '../../packages/shared/src/index.ts'),
       },
     },
     define: {

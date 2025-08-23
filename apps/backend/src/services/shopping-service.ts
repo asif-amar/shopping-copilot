@@ -3,8 +3,8 @@ import { ShoppingSecurity } from "../shopping/security";
 import { 
   SiteAdapterNameValues, 
   SITE_CREDENTIAL_HEADERS,
-  RamiLevyHeaders,
-  ShufersalHeaders
+  RAMI_LEVY_CREDENTIAL_HEADERS,
+  SHUFERSAL_CREDENTIAL_HEADERS
 } from "@shopping-copilot/shared";
 import { HeaderCredentials } from "../types";
 
@@ -16,16 +16,16 @@ export class ShoppingService {
   static extractCredentials(headers: Record<string, string>): HeaderCredentials {
     // Extract Rami Levy credentials
     const ramiLevyCredentials = {
-      AUTHORIZATION: headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_AUTHORIZATION],
-      ECOM_TOKEN: headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_ECOM_TOKEN],
-      COOKIE: headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_COOKIE],
-      USER_ID: headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_USER_ID],
+      AUTHORIZATION: headers[RAMI_LEVY_CREDENTIAL_HEADERS.AUTHORIZATION],
+      ECOM_TOKEN: headers[RAMI_LEVY_CREDENTIAL_HEADERS.ECOM_TOKEN],
+      COOKIE: headers[RAMI_LEVY_CREDENTIAL_HEADERS.COOKIE],
+      USER_ID: headers[RAMI_LEVY_CREDENTIAL_HEADERS.USER_ID],
     };
     
     // Extract Shufersal credentials
     const shufersalCredentials = {
-      CSRF_TOKEN: headers[SITE_CREDENTIAL_HEADERS.SHUFERSAL_CSRF_TOKEN],
-      COOKIE: headers[SITE_CREDENTIAL_HEADERS.SHUFERSAL_COOKIE],
+      CSRF_TOKEN: headers[SHUFERSAL_CREDENTIAL_HEADERS.CSRF_TOKEN],
+      COOKIE: headers[SHUFERSAL_CREDENTIAL_HEADERS.COOKIE],
     };
     
     // Get site name from header

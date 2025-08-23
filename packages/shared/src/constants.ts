@@ -24,26 +24,40 @@ export const SHUFERSAL_HEADERS = {
   COOKIE: "cookie",
 };
 
-// Site credential headers (used for API communication)
+// Common site credential headers
 export const SITE_CREDENTIAL_HEADERS = {
   SITE_NAME: "x-site-name",
-  RAMI_LEVY_AUTHORIZATION: "x-rami-levy-authorization",
-  RAMI_LEVY_ECOM_TOKEN: "x-rami-levy-ecom-token", 
-  RAMI_LEVY_COOKIE: "x-rami-levy-cookie",
-  RAMI_LEVY_USER_ID: "x-rami-levy-user-id",
-  SHUFERSAL_CSRF_TOKEN: "x-shufersal-csrf-token",
-  SHUFERSAL_COOKIE: "x-shufersal-cookie",
+};
+
+// Rami Levy credential headers (used for API communication)
+export const RAMI_LEVY_CREDENTIAL_HEADERS = {
+  AUTHORIZATION: "x-rami-levy-authorization",
+  ECOM_TOKEN: "x-rami-levy-ecom-token", 
+  COOKIE: "x-rami-levy-cookie",
+  USER_ID: "x-rami-levy-user-id",
+};
+
+// Shufersal credential headers (used for API communication)
+export const SHUFERSAL_CREDENTIAL_HEADERS = {
+  CSRF_TOKEN: "x-shufersal-csrf-token",
+  COOKIE: "x-shufersal-cookie",
 };
 
 // Header mapping: original header names -> API credential header names
 export const RAMI_LEVY_HEADER_MAPPING = {
-  [RAMI_LEVY_HEADERS.AUTHORIZATION]: SITE_CREDENTIAL_HEADERS.RAMI_LEVY_AUTHORIZATION,
-  [RAMI_LEVY_HEADERS.ECOM_TOKEN]: SITE_CREDENTIAL_HEADERS.RAMI_LEVY_ECOM_TOKEN,
-  [RAMI_LEVY_HEADERS.COOKIE]: SITE_CREDENTIAL_HEADERS.RAMI_LEVY_COOKIE,
-  [RAMI_LEVY_HEADERS.USER_ID]: SITE_CREDENTIAL_HEADERS.RAMI_LEVY_USER_ID,
+  [RAMI_LEVY_HEADERS.AUTHORIZATION]: RAMI_LEVY_CREDENTIAL_HEADERS.AUTHORIZATION,
+  [RAMI_LEVY_HEADERS.ECOM_TOKEN]: RAMI_LEVY_CREDENTIAL_HEADERS.ECOM_TOKEN,
+  [RAMI_LEVY_HEADERS.COOKIE]: RAMI_LEVY_CREDENTIAL_HEADERS.COOKIE,
+  [RAMI_LEVY_HEADERS.USER_ID]: RAMI_LEVY_CREDENTIAL_HEADERS.USER_ID,
 };
 
 export const SHUFERSAL_HEADER_MAPPING = {
-  [SHUFERSAL_HEADERS.CSRF_TOKEN]: SITE_CREDENTIAL_HEADERS.SHUFERSAL_CSRF_TOKEN,
-  [SHUFERSAL_HEADERS.COOKIE]: SITE_CREDENTIAL_HEADERS.SHUFERSAL_COOKIE,
+  [SHUFERSAL_HEADERS.CSRF_TOKEN]: SHUFERSAL_CREDENTIAL_HEADERS.CSRF_TOKEN,
+  [SHUFERSAL_HEADERS.COOKIE]: SHUFERSAL_CREDENTIAL_HEADERS.COOKIE,
 };
+
+// Centralized header mapping by site adapter
+export const SITE_HEADER_MAPPINGS = {
+  [SiteAdapterName.ramiLevy]: RAMI_LEVY_HEADER_MAPPING,
+  [SiteAdapterName.shufersal]: SHUFERSAL_HEADER_MAPPING,
+} as const;

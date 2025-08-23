@@ -1,6 +1,8 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import {
   SITE_CREDENTIAL_HEADERS,
+  RAMI_LEVY_CREDENTIAL_HEADERS,
+  SHUFERSAL_CREDENTIAL_HEADERS,
   SiteAdapterName,
 } from "@shopping-copilot/shared";
 import {
@@ -35,21 +37,21 @@ export function createMCPHeaders(
   if (credentials && adapterName) {
     if (adapterName === SiteAdapterName.ramiLevy) {
       if (credentials.authorization)
-        headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_AUTHORIZATION] =
+        headers[RAMI_LEVY_CREDENTIAL_HEADERS.AUTHORIZATION] =
           credentials.authorization;
       if (credentials.ecomtoken)
-        headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_ECOM_TOKEN] =
+        headers[RAMI_LEVY_CREDENTIAL_HEADERS.ECOM_TOKEN] =
           credentials.ecomtoken;
       if (credentials.cookie)
-        headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_COOKIE] = credentials.cookie;
+        headers[RAMI_LEVY_CREDENTIAL_HEADERS.COOKIE] = credentials.cookie;
       if (credentials.userId)
-        headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_USER_ID] = credentials.userId;
+        headers[RAMI_LEVY_CREDENTIAL_HEADERS.USER_ID] = credentials.userId;
     } else if (adapterName === SiteAdapterName.shufersal) {
       if (credentials.csrftoken)
-        headers[SITE_CREDENTIAL_HEADERS.SHUFERSAL_CSRF_TOKEN] =
+        headers[SHUFERSAL_CREDENTIAL_HEADERS.CSRF_TOKEN] =
           credentials.csrftoken;
       if (credentials.cookie)
-        headers[SITE_CREDENTIAL_HEADERS.SHUFERSAL_COOKIE] = credentials.cookie;
+        headers[SHUFERSAL_CREDENTIAL_HEADERS.COOKIE] = credentials.cookie;
     }
   }
 

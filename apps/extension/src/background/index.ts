@@ -61,7 +61,6 @@ chrome.tabs.onUpdated.addListener(async (_tabId, changeInfo, tab) => {
 
 // Enhanced message handling
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  console.log('Received message:', message);
   
   const handleMessage = async () => {
     const conversationManager = ConversationManager.getInstance();

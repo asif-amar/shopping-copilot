@@ -2,7 +2,7 @@ import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { Props, HeaderCredentials } from "./types";
 import { registerAllTools } from "./tools/register-tools";
-import { SITE_CREDENTIAL_HEADERS } from "@shopping-copilot/shared";
+import { SITE_CREDENTIAL_HEADERS, RAMI_LEVY_CREDENTIAL_HEADERS, SHUFERSAL_CREDENTIAL_HEADERS } from "@shopping-copilot/shared";
 
 export class ShoppingMCP extends McpAgent<Env, Record<string, never>, Props> {
   server = new McpServer({
@@ -49,16 +49,16 @@ function extractSiteCredentialsFromHeaders(request: Request): HeaderCredentials 
   
   // Extract Rami Levy credentials
   const ramiLevyCredentials = {
-    authorization: headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_AUTHORIZATION],
-    ecomtoken: headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_ECOM_TOKEN],
-    cookie: headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_COOKIE],
-    userId: headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_USER_ID],
+    authorization: headers[RAMI_LEVY_CREDENTIAL_HEADERS.AUTHORIZATION],
+    ecomtoken: headers[RAMI_LEVY_CREDENTIAL_HEADERS.ECOM_TOKEN],
+    cookie: headers[RAMI_LEVY_CREDENTIAL_HEADERS.COOKIE],
+    userId: headers[RAMI_LEVY_CREDENTIAL_HEADERS.USER_ID],
   };
   
   // Extract Shufersal credentials
   const shufersalCredentials = {
-    csrftoken: headers[SITE_CREDENTIAL_HEADERS.SHUFERSAL_CSRF_TOKEN],
-    cookie: headers[SITE_CREDENTIAL_HEADERS.SHUFERSAL_COOKIE],
+    csrftoken: headers[SHUFERSAL_CREDENTIAL_HEADERS.CSRF_TOKEN],
+    cookie: headers[SHUFERSAL_CREDENTIAL_HEADERS.COOKIE],
   };
   
   // Get site name from header

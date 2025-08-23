@@ -20,7 +20,9 @@
     "paths": {
       "@/*": ["src/*"],
       "@/types/*": ["src/types/*"], // Better type organization
-      "@/lib/*": ["src/lib/*"]
+      "@/lib/*": ["src/lib/*"],
+      "@shopping-copilot/shared": ["../../packages/shared/src/index.ts"],
+      "@shopping-copilot/shared/*": ["../../packages/shared/src/*"]
     }
   },
   "include": [
