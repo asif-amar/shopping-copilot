@@ -5,18 +5,21 @@ export const SiteAdapterName = {
 
 export type SiteAdapterNameValues = typeof SiteAdapterName[keyof typeof SiteAdapterName];
 
-// Header constants for credential forwarding
-export const SITE_CREDENTIAL_HEADERS = {
-  // Rami Levy headers
-  RAMI_LEVY_AUTHORIZATION: "x-rami-levy-authorization",
-  RAMI_LEVY_ECOM_TOKEN: "x-rami-levy-ecom-token", 
-  RAMI_LEVY_COOKIE: "x-rami-levy-cookie",
-  RAMI_LEVY_USER_ID: "x-rami-levy-user-id",
-  
-  // Shufersal headers
-  SHUFERSAL_CSRF_TOKEN: "x-shufersal-csrf-token",
-  SHUFERSAL_COOKIE: "x-shufersal-cookie",
-  
-  // Generic site identifier
+// Rami Levy header constants
+export const RAMI_LEVY_HEADERS = {
+  AUTHORIZATION: "authorization",
+  COOKIE: "cookie",
+  ECOM_TOKEN: "ecomtoken",
+  USER_ID: "userId"
+};
+
+// Shufersal header constants
+export const SHUFERSAL_HEADERS = {
+  CSRF_TOKEN: "x-csrf-token",
+  COOKIE: "cookie",
+};
+
+// Generic site identifier
+export const SITE_HEADER = {
   SITE_NAME: "x-site-name",
 } as const;

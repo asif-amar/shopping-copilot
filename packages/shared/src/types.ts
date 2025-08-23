@@ -1,4 +1,20 @@
-import { SiteAdapterName, SiteAdapterNameValues } from './constants.js';
+import { SiteAdapterName, SiteAdapterNameValues, RAMI_LEVY_HEADERS, SHUFERSAL_HEADERS } from './constants.js';
+
+// Header types for each adapter
+export type RamiLevyHeaders = {
+  AUTHORIZATION: string;
+  COOKIE: string;
+  ECOM_TOKEN?: string;
+  USER_ID?: string;
+};
+
+export type ShufersalHeaders = {
+  CSRF_TOKEN: string;
+  COOKIE: string;
+};
+
+// Generic union type for all site headers
+export type SiteHeaders = RamiLevyHeaders | ShufersalHeaders;
 
 export interface RamiLevyCredentials {
   authorization: string;
