@@ -16,24 +16,10 @@ export type ShufersalHeaders = {
 // Generic union type for all site headers
 export type SiteHeaders = RamiLevyHeaders | ShufersalHeaders;
 
-export interface RamiLevyCredentials {
-  authorization: string;
-  ecomtoken: string;
-  cookie: string;
-  userId: string;
-}
-
-export interface ShufersalCredentials {
-  csrftoken: string;
-  cookie: string;
-}
-
-export type SiteCredentials = {
-  [SiteAdapterName.ramiLevy]: RamiLevyCredentials;
-  [SiteAdapterName.shufersal]: ShufersalCredentials;
+export type SiteHeadersByAdapter = {
+  [SiteAdapterName.ramiLevy]: RamiLevyHeaders;
+  [SiteAdapterName.shufersal]: ShufersalHeaders;
 };
-
-export type SiteName = keyof SiteCredentials;
 
 // Product data structures (shared across apps)
 export interface Product {

@@ -18,8 +18,3 @@ export const SHUFERSAL_HEADERS = {
   CSRF_TOKEN: "x-csrf-token",
   COOKIE: "cookie",
 };
-
-// Generic site identifier
-export const SITE_HEADER = {
-  SITE_NAME: "x-site-name",
-} as const;
