@@ -1,23 +1,25 @@
-import { SiteAdapterName, SiteAdapterNameValues } from './constants.js';
+import { SiteAdapterName, SiteAdapterNameValues, RAMI_LEVY_HEADERS, SHUFERSAL_HEADERS } from './constants.js';
 
-export interface RamiLevyCredentials {
-  authorization: string;
-  ecomtoken: string;
-  cookie: string;
-  userId: string;
-}
-
-export interface ShufersalCredentials {
-  csrftoken: string;
-  cookie: string;
-}
-
-export type SiteCredentials = {
-  [SiteAdapterName.ramiLevy]: RamiLevyCredentials;
-  [SiteAdapterName.shufersal]: ShufersalCredentials;
+// Header types for each adapter
+export type RamiLevyHeaders = {
+  AUTHORIZATION: string;
+  COOKIE: string;
+  ECOM_TOKEN?: string;
+  USER_ID?: string;
 };
 
-export type SiteName = keyof SiteCredentials;
+export type ShufersalHeaders = {
+  CSRF_TOKEN: string;
+  COOKIE: string;
+};
+
+// Generic union type for all site headers
+export type SiteHeaders = RamiLevyHeaders | ShufersalHeaders;
+
+export type SiteHeadersByAdapter = {
+  [SiteAdapterName.ramiLevy]: RamiLevyHeaders;
+  [SiteAdapterName.shufersal]: ShufersalHeaders;
+};
 
 // Product data structures (shared across apps)
 export interface Product {
