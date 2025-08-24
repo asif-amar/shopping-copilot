@@ -1,7 +1,10 @@
-import { SiteAdapterNameValues, SiteCredentials } from "@shopping-copilot/shared";
+import {
+  SiteAdapterNameValues,
+  SiteHeadersByAdapter,
+} from "@shopping-copilot/shared";
 
 export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
 }
 
@@ -11,7 +14,9 @@ export interface StreamRequest {
   temperature?: number;
   maxTokens?: number;
   adapterName?: SiteAdapterNameValues;
-  credentials?: SiteCredentials[keyof SiteCredentials];
+  credentials?: SiteHeadersByAdapter[keyof SiteHeadersByAdapter];
+  user_id?: number;
+  conversation_id?: string;
 }
 
 export interface ErrorResponse {
@@ -39,7 +44,7 @@ export interface Conversation {
 export interface MessageDB {
   id: number;
   conversation_id: string; // UUID
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   created_at: Date;
 }
@@ -56,6 +61,6 @@ export interface CreateConversationRequest {
 
 export interface CreateMessageRequest {
   conversation_id: string; // UUID
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
 }

@@ -25,6 +25,8 @@ router.post(
         temperature = 0.7,
         adapterName,
         credentials,
+        user_id,
+        conversation_id,
       }: StreamRequest = req.body;
 
       logger.info(
@@ -32,7 +34,10 @@ router.post(
       );
 
       // Initialize user and conversation
-      const { conversation } = await ensureUserAndConversation();
+      const { conversation } = await ensureUserAndConversation(
+        user_id,
+        conversation_id
+      );
 
       // Store user message to database
       await storeUserMessage(messages, conversation.id);
@@ -109,24 +114,29 @@ router.post(
 );
 
 router.post("/complete", validateStreamRequest, async (req, res) => {
-  let mcpClient: any;
+  // TODO: check about MCPClient .close()
   try {
+    // const {id: user_id} = req.user;
+
     const {
       messages,
       temperature = 0.7,
       adapterName,
       credentials,
+      user_id, // TODO: change to proper Auth later, add req.user in middleware
+      conversation_id,
     }: StreamRequest = req.body;
 
     logger.info(
       `Complete endpoint called: /complete (${messages.length} messages)`
     );
+    console.log("adapterName", adapterName);
+    console.log(credentials);
 
-    // TODO: change that to get the conversation_id from frontend, user_id in req with a middleware.
     // Initialize user and conversation
     const { conversation } = await ensureUserAndConversation(
-      1,
-      "b64ad4c6-137a-41ff-8d19-e5e0f93c1a43"
+      user_id,
+      conversation_id
     );
 
     // Store user message to database
@@ -137,13 +147,7 @@ router.post("/complete", validateStreamRequest, async (req, res) => {
 
     // Setup Google AI and MCP client
     const google = setupGoogleAI();
-    const { tools, mcpClient: mcp } = await setupMCPClient(
-      adapterName,
-      credentials
-    );
-    mcpClient = mcp;
-
-    console.log(conversationHistory);
+    const { tools } = await setupMCPClient(adapterName, credentials);
 
     const result = await generateText({
       model: google("gemini-2.0-flash-exp"),
@@ -184,8 +188,6 @@ router.post("/complete", validateStreamRequest, async (req, res) => {
       error: "Failed to generate response",
       message: error instanceof Error ? error.message : "Unknown error",
     });
-  } finally {
-    await mcpClient?.close();
   }
 });
 

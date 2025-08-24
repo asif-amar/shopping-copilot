@@ -2,7 +2,8 @@ import { experimental_createMCPClient } from "ai";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import {
-  SITE_CREDENTIAL_HEADERS,
+  RAMI_LEVY_CREDENTIALS,
+  SHUFERSAL_CREDENTIALS,
   SiteAdapterName,
 } from "@shopping-copilot/shared";
 import {
@@ -30,28 +31,31 @@ export function createMCPHeaders(
 
   // Add site name header if provided
   if (adapterName) {
-    headers[SITE_CREDENTIAL_HEADERS.SITE_NAME] = adapterName;
+    headers["site-name"] = adapterName;
   }
 
   // Add credentials based on adapter type
   if (credentials && adapterName) {
     if (adapterName === SiteAdapterName.ramiLevy) {
-      if (credentials.authorization)
-        headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_AUTHORIZATION] =
-          credentials.authorization;
-      if (credentials.ecomtoken)
-        headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_ECOM_TOKEN] =
-          credentials.ecomtoken;
-      if (credentials.cookie)
-        headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_COOKIE] = credentials.cookie;
-      if (credentials.userId)
-        headers[SITE_CREDENTIAL_HEADERS.RAMI_LEVY_USER_ID] = credentials.userId;
+      if (credentials[RAMI_LEVY_CREDENTIALS.AUTHORIZATION])
+        headers[RAMI_LEVY_CREDENTIALS.AUTHORIZATION] =
+          credentials[RAMI_LEVY_CREDENTIALS.AUTHORIZATION];
+      if (credentials[RAMI_LEVY_CREDENTIALS.ECOM_TOKEN])
+        headers[RAMI_LEVY_CREDENTIALS.ECOM_TOKEN] =
+          credentials[RAMI_LEVY_CREDENTIALS.ECOM_TOKEN];
+      if (credentials[RAMI_LEVY_CREDENTIALS.COOKIE])
+        headers[RAMI_LEVY_CREDENTIALS.COOKIE] =
+          credentials[RAMI_LEVY_CREDENTIALS.COOKIE];
+      if (credentials[RAMI_LEVY_CREDENTIALS.USER_ID])
+        headers[RAMI_LEVY_CREDENTIALS.USER_ID] =
+          credentials[RAMI_LEVY_CREDENTIALS.USER_ID];
     } else if (adapterName === SiteAdapterName.shufersal) {
-      if (credentials.csrftoken)
-        headers[SITE_CREDENTIAL_HEADERS.SHUFERSAL_CSRF_TOKEN] =
-          credentials.csrftoken;
-      if (credentials.cookie)
-        headers[SITE_CREDENTIAL_HEADERS.SHUFERSAL_COOKIE] = credentials.cookie;
+      if (credentials[SHUFERSAL_CREDENTIALS.CSRF_TOKEN])
+        headers[SHUFERSAL_CREDENTIALS.CSRF_TOKEN] =
+          credentials[SHUFERSAL_CREDENTIALS.CSRF_TOKEN];
+      if (credentials[SHUFERSAL_CREDENTIALS.COOKIE])
+        headers[SHUFERSAL_CREDENTIALS.COOKIE] =
+          credentials[SHUFERSAL_CREDENTIALS.COOKIE];
     }
   }
 

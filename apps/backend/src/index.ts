@@ -53,13 +53,4 @@ app.listen(PORT, async () => {
   logger.info(
     `Chat endpoint available at: http://localhost:${PORT}/api/chat/stream`
   );
-
-  // Initialize database on startup if needed
-  try {
-    await initializeDatabase();
-  } catch (error) {
-    logger.error(
-      "Failed to initialize database - server will continue but database features may not work"
-    );
-  }
 });

@@ -12,23 +12,40 @@ import { ShoppingSecurity } from "./shopping/security";
 import { SiteAdapterNameValues } from "@shopping-copilot/shared";
 
 // Helper function to get credentials for a website
-function getCredentialsForWebsite(website: SiteAdapterNameValues, env: Env, props: Props) {
+function getCredentialsForWebsite(
+  website: SiteAdapterNameValues,
+  env: Env,
+  props: Props
+) {
   // First try to get credentials from headers (dynamic per-request)
   if (props.headerCredentials) {
-    if (website === "rami-levy" && props.headerCredentials.ramiLevyCredentials) {
-      return { credentials: props.headerCredentials.ramiLevyCredentials, error: null };
-    } else if (website === "shufersal" && props.headerCredentials.shufersalCredentials) {
-      return { credentials: props.headerCredentials.shufersalCredentials, error: null };
+    if (
+      website === "rami-levy" &&
+      props.headerCredentials.ramiLevyCredentials
+    ) {
+      return {
+        credentials: props.headerCredentials.ramiLevyCredentials,
+        error: null,
+      };
+    } else if (
+      website === "shufersal" &&
+      props.headerCredentials.shufersalCredentials
+    ) {
+      return {
+        credentials: props.headerCredentials.shufersalCredentials,
+        error: null,
+      };
     }
   }
-  
+
   // Fallback to environment variables (static global credentials)
   if (website === "rami-levy") {
     const credentials = ShoppingAdapterFactory.getRamiLevyCredentials(env);
     if (!credentials) {
       return {
         credentials: null,
-        error: "Missing Rami Levy credentials. Please provide credentials via request headers or check environment variables: RAMI_LEVY_API_KEY, RAMI_LEVY_ECOM_TOKEN, RAMI_LEVY_COOKIE, RAMI_LEVY_USER_ID"
+        error:
+          "Missing Rami Levy credentials. Please provide credentials via request headers or check environment variables: RAMI_LEVY_API_KEY, RAMI_LEVY_ECOM_TOKEN, RAMI_LEVY_COOKIE, RAMI_LEVY_USER_ID",
       };
     }
     return { credentials, error: null };
@@ -37,12 +54,13 @@ function getCredentialsForWebsite(website: SiteAdapterNameValues, env: Env, prop
     if (!credentials) {
       return {
         credentials: null,
-        error: "Missing Shufersal credentials. Please provide credentials via request headers or check environment variables: SHUFERSAL_CSRF_TOKEN, SHUFERSAL_COOKIE"
+        error:
+          "Missing Shufersal credentials. Please provide credentials via request headers or check environment variables: SHUFERSAL_CSRF_TOKEN, SHUFERSAL_COOKIE",
       };
     }
     return { credentials, error: null };
   }
-  
+
   return { credentials: null, error: `Unsupported website: ${website}` };
 }
 
@@ -116,14 +134,21 @@ export function registerShoppingTools(
         }
 
         // Get adapter for the website with credentials
-        const adapter = ShoppingAdapterFactory.getAdapter(website, credentialsResult.credentials, env);
+        const adapter = ShoppingAdapterFactory.getAdapter(
+          website,
+          credentialsResult.credentials,
+          env
+        );
 
         // Execute search
-        const result = await adapter.searchProducts({
-          query: queryValidation.sanitized,
-          category: categoryValidation.sanitized,
-          priceRange,
-        }, credentialsResult.credentials);
+        const result = await adapter.searchProducts(
+          {
+            query: queryValidation.sanitized,
+            category: categoryValidation.sanitized,
+            priceRange,
+          },
+          credentialsResult.credentials
+        );
 
         if (!result.success) {
           return {
@@ -243,7 +268,11 @@ export function registerShoppingTools(
         }
 
         // Get adapter for the website with credentials
-        const adapter = ShoppingAdapterFactory.getAdapter(website, credentialsResult.credentials, env);
+        const adapter = ShoppingAdapterFactory.getAdapter(
+          website,
+          credentialsResult.credentials,
+          env
+        );
 
         // Add to cart
         const result = await adapter.addToCart(
@@ -268,7 +297,7 @@ export function registerShoppingTools(
         const cartResult = result.data!;
 
         // Handle both string and CartItem responses
-        if (typeof cartResult === 'string') {
+        if (typeof cartResult === "string") {
           return {
             content: [
               {
@@ -284,7 +313,7 @@ export function registerShoppingTools(
             content: [
               {
                 type: "text",
-                text: `**Added to Cart**\n\n**Website:** ${website.toUpperCase()}\n**Product:** ${cartItem.productTitle}\n**Quantity:** ${cartItem.quantity}${cartItem.unitPrice !== undefined ? `\n**Unit Price:** ${cartItem.unitPrice.toFixed(2)}` : ''}${cartItem.totalPrice !== undefined ? `\n**Total Price:** ${cartItem.totalPrice.toFixed(2)}` : ''}\n**Cart Item ID:** ${cartItem.id}${cartItem.variant ? `\n**Variant:** ${cartItem.variant}` : ""}`,
+                text: `**Added to Cart**\n\n**Website:** ${website.toUpperCase()}\n**Product:** ${cartItem.productTitle}\n**Quantity:** ${cartItem.quantity}${cartItem.unitPrice !== undefined ? `\n**Unit Price:** ${cartItem.unitPrice.toFixed(2)}` : ""}${cartItem.totalPrice !== undefined ? `\n**Total Price:** ${cartItem.totalPrice.toFixed(2)}` : ""}\n**Cart Item ID:** ${cartItem.id}${cartItem.variant ? `\n**Variant:** ${cartItem.variant}` : ""}`,
               },
             ],
           };
@@ -345,10 +374,17 @@ export function registerShoppingTools(
         }
 
         // Get adapter for the website with credentials
-        const adapter = ShoppingAdapterFactory.getAdapter(website, credentialsResult.credentials, env);
+        const adapter = ShoppingAdapterFactory.getAdapter(
+          website,
+          credentialsResult.credentials,
+          env
+        );
 
         // Remove from cart
-        const result = await adapter.removeFromCart(cartItemId, credentialsResult.credentials);
+        const result = await adapter.removeFromCart(
+          cartItemId,
+          credentialsResult.credentials
+        );
 
         if (!result.success) {
           return {
@@ -439,10 +475,18 @@ export function registerShoppingTools(
         }
 
         // Get adapter for the website with credentials
-        const adapter = ShoppingAdapterFactory.getAdapter(website, credentialsResult.credentials, env);
+        const adapter = ShoppingAdapterFactory.getAdapter(
+          website,
+          credentialsResult.credentials,
+          env
+        );
 
         // Update quantity
-        const result = await adapter.updateCartQuantity(cartItemId, quantity, credentialsResult.credentials);
+        const result = await adapter.updateCartQuantity(
+          cartItemId,
+          quantity,
+          credentialsResult.credentials
+        );
 
         if (!result.success) {
           return {
@@ -505,10 +549,16 @@ export function registerShoppingTools(
         }
 
         // Get adapter for the website with credentials
-        const adapter = ShoppingAdapterFactory.getAdapter(website, credentialsResult.credentials, env);
+        const adapter = ShoppingAdapterFactory.getAdapter(
+          website,
+          credentialsResult.credentials,
+          env
+        );
 
         // Get cart contents
-        const result = await adapter.getCartContents(credentialsResult.credentials);
+        const result = await adapter.getCartContents(
+          credentialsResult.credentials
+        );
 
         if (!result.success) {
           return {
@@ -529,7 +579,7 @@ export function registerShoppingTools(
             content: [
               {
                 type: "text",
-                text: `**Shopping Cart**\n\n**Website:** ${website.toUpperCase()}\n**Status:** Empty\n**Total Items:** 0${cart.totalPrice !== undefined ? `\n**Total Price:** ${cart.currency} ${cart.totalPrice.toFixed(2)}` : ''}`,
+                text: `**Shopping Cart**\n\n**Website:** ${website.toUpperCase()}\n**Status:** Empty\n**Total Items:** 0${cart.totalPrice !== undefined ? `\n**Total Price:** ${cart.currency} ${cart.totalPrice.toFixed(2)}` : ""}`,
               },
             ],
           };
@@ -539,13 +589,13 @@ export function registerShoppingTools(
           content: [
             {
               type: "text",
-              text: `**Shopping Cart**\n\n**Website:** ${website.toUpperCase()}\n**Total Items:** ${cart.totalItems}${cart.totalPrice !== undefined ? `\n**Total Price:** ${cart.currency} ${cart.totalPrice.toFixed(2)}` : ''}\n\n**Items:**\n${cart.items
+              text: `**Shopping Cart**\n\n**Website:** ${website.toUpperCase()}\n**Total Items:** ${cart.totalItems}${cart.totalPrice !== undefined ? `\n**Total Price:** ${cart.currency} ${cart.totalPrice.toFixed(2)}` : ""}\n\n**Items:**\n${cart.items
                 .map(
                   (item, index) =>
                     `${index + 1}. **${item.productTitle}**\n` +
                     `   - Quantity: ${item.quantity}\n` +
-                    `${item.unitPrice !== undefined ? `   - Unit Price: ${cart.currency} ${item.unitPrice.toFixed(2)}\n` : ''}` +
-                    `${item.totalPrice !== undefined ? `   - Total: ${cart.currency} ${item.totalPrice.toFixed(2)}\n` : ''}` +
+                    `${item.unitPrice !== undefined ? `   - Unit Price: ${cart.currency} ${item.unitPrice.toFixed(2)}\n` : ""}` +
+                    `${item.totalPrice !== undefined ? `   - Total: ${cart.currency} ${item.totalPrice.toFixed(2)}\n` : ""}` +
                     `   - Cart Item ID: ${item.id}` +
                     `${item.variant ? `\n   - Variant: ${item.variant}` : ""}`
                 )
