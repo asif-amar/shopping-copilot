@@ -76,18 +76,14 @@ export class ApiService {
   static async sendMessage(content: string, hostname?: string): Promise<ReadableStreamDefaultReader<Uint8Array>> {
     const headers = await this.getHeaders(hostname);
     
-    const response = await fetch(`${this.BASE_URL}/api/chat/stream`, {
+    const response = await fetch(`${this.BASE_URL}/api/chat/agent`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        messages: [
-          {
-            role: 'user' as const,
-            content,
-          },
-        ],
-        temperature: 0.7,
-      } as StreamRequest),
+        messages: content,
+        //Should be retreived by oauth
+        user_id: '1',
+      } as unknown as StreamRequest),
     });
 
     if (!response.ok) {

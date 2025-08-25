@@ -99,11 +99,7 @@ export interface ChatMessage {
 
 export interface StreamRequest {
   messages: ChatMessage[];
-  model?: string;
-  temperature?: number;
-  maxTokens?: number;
-  adapterName?: SiteAdapterNameValues;
-  credentials?: SiteHeaders;
+  user_id: string;
 }
 
 // Utility function to map credentials to API headers
