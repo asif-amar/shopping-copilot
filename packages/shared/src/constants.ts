@@ -10,12 +10,11 @@ export const SiteAdapterNameList = [
 
 export type SiteAdapterNameValues = typeof SiteAdapterName[keyof typeof SiteAdapterName];
 
-// Rami Levy header constants
 export const RAMI_LEVY_HEADERS = {
   AUTHORIZATION: "authorization",
   COOKIE: "cookie",
   ECOM_TOKEN: "ecomtoken",
-  USER_ID: "userId"
+  USER_ID: "userId",
 };
 
 // Shufersal header constants

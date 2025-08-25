@@ -1,0 +1,140 @@
+import logging
+import os
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
+from agno.agent import Agent
+from agno.models.google import Gemini
+from dotenv import load_dotenv
+from agno.storage.sqlite import SqliteStorage
+
+# Import shopping tools and constants
+from ..tools.shopping_tools import ShoppingTools
+from ..tools.shopping.constants import get_supported_sites
+
+load_dotenv()
+
+logger = logging.getLogger(__name__)
+router = APIRouter(tags=["chat"])
+
+# Credentials are now handled via headers only - no body credentials needed
+
+class ChatRequest(BaseModel):
+    message: str
+    user_id: str = "default_user"
+
+class ChatResponse(BaseModel):
+    response: str
+    status: str
+
+def create_basic_agent() -> Agent:
+    """Create a basic Agno agent with Gemini model"""
+    
+    gemini_api_key = os.getenv("GEMINI_API_KEY")
+    gemini_model = os.getenv("GEMINI_MODEL")
+    model = Gemini(id=gemini_model, api_key=gemini_api_key)
+    db_url = os.getenv("DATABASE_URL", "sqlite:///./agent_sessions.db")
+    
+    if not db_url:
+        raise ValueError("DATABASE_URL environment variable is required")
+    
+    storage = SqliteStorage(
+        table_name="agent_sessions",
+        db_url=db_url,
+        auto_upgrade_schema=True
+    )
+
+    agent = Agent(
+        name="Shopping Copilot",
+        agent_id="shopping-copilot",
+        model=model,
+        tools=[tools],
+        # TODO: The prompt must be enhance. For example if one search went wrong because of bad credentials, the followup search might not even occur.
+        instructions=[
+            "You are a shopping assistant that can help users search for products and manage their shopping carts on Israeli e-commerce websites.",
+            f"You can search for products on the following websites: {', '.join([site.value for site in get_supported_sites()])}.",
+            "Always search in Hebrew for Israeli websites (e.g., milk -> חלב).",
+            "When helping with shopping, use the available tools to search products, add items to cart, and manage cart contents.",
+            "Be helpful and provide detailed product information including prices, availability, and descriptions.",
+            "If credentials are missing or invalid, inform the user about the required credentials for each website.",
+            "If one website search fails due to credentials, try searching other available websites.",
+            "Always return your results in Hebrew."
+        ],
+        markdown=True,
+        storage=storage,
+        add_datetime_to_instructions=True,
+        add_history_to_messages=True,
+        num_history_runs=3, # TODO: Find the magic number for us...
+        show_tool_calls=True,
+    )
+    return agent
+
+@router.post("/chat/complete")
+async def chat_complete():
+    logger.info("Chat complete endpoint accessed")
+    return {"message": "Chat complete endpoint is working", "status": "success"}
+
+@router.post("/chat/agent", response_model=ChatResponse)
+async def chat_with_agent(request: ChatRequest, http_request: Request):
+    """Chat with Agno agent endpoint"""
+    try:
+        logger.info(f"Agent chat endpoint accessed for user: {request.user_id}")
+        logger.info(f"Processing request with dynamic credentials")
+        
+        # Extract headers for credential management
+        request_headers = dict(http_request.headers)
+        logger.info(f"Request headers available: {list(request_headers.keys())}")
+        
+        # Create the agent without credentials
+        agent = create_basic_agent()
+        
+        # Set headers on the shopping tools for credential extraction at runtime
+        for tool in agent.tools:
+            if isinstance(tool, ShoppingTools):
+                tool.set_request_headers(request_headers)
+                logger.info("Set request headers on ShoppingTools instance")
+        
+        # Get response from agent
+        response = await agent.arun(request.message, user_id="2", session_id="your_session_id")
+        
+        logger.info(f"Agent response generated for user: {request.user_id}")
+        
+        return ChatResponse(
+            response=response.content,
+            status="success"
+        )
+
+        # Streaming example for later (NOT FOR NOW):
+        # async def generate_stream():
+        #     # Stream response with intermediate steps
+        #     response_stream = await agent.arun(
+        #         request.message, 
+        #         user_id=request.user_id, 
+        #         session_id="your_session_id",
+        #         stream=True,
+        #         stream_intermediate_steps=True
+        #     )
+            
+        #     async for event in response_stream:
+        #         # Stream thinking process events
+        #         if event.event == "ToolCallStarted":
+        #             print(f"\nEvent tool: {event.tool}\n")
+        #             yield f"data: {json.dumps({'type': 'thinking', 'content': f'🔧 Searching {event.tool.tool_name}...'})}\n\n"
+        #         elif event.event == "ToolCallCompleted":
+        #             print(f"\nTool call completed: {event.tool.tool_name}\n")
+        #             yield f"data: {json.dumps({'type': 'thinking', 'content': f'✅ Found results from {event.tool.tool_name}'})}\n\n"
+        #         elif event.event == "ReasoningStep":
+        #             print(f"\nReasoning step: {event.content}\n")
+        #             yield f"data: {json.dumps({'type': 'thinking', 'content': f'💭 {event.content}'})}\n\n"
+        #         elif event.event == "RunResponseContent":
+        #             print(f"\nRun response content: {event.content}\n")
+        #             yield f"data: {json.dumps({'type': 'response', 'content': event.content})}\n\n"
+        
+        # return StreamingResponse(generate_stream(), media_type="text/event-stream")
+
+        
+    except ValueError as ve:
+        logger.error(f"Configuration error: {ve}")
+        raise HTTPException(status_code=500, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Agent chat error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate response: {str(e)}")

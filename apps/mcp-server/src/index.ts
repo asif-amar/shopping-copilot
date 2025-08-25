@@ -2,7 +2,16 @@ import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { Props, HeaderCredentials } from "./types";
 import { registerAllTools } from "./tools/register-tools";
+<<<<<<< HEAD
 import { SITE_CREDENTIAL_HEADERS, RAMI_LEVY_CREDENTIAL_HEADERS, SHUFERSAL_CREDENTIAL_HEADERS } from "@shopping-copilot/shared";
+=======
+import {
+  RAMI_LEVY_HEADERS,
+  SHUFERSAL_HEADERS,
+  RAMI_LEVY_CREDENTIALS,
+  SHUFERSAL_CREDENTIALS,
+} from "@shopping-copilot/shared";
+>>>>>>> backend-adjustments
 
 export class ShoppingMCP extends McpAgent<Env, Record<string, never>, Props> {
   server = new McpServer({
@@ -44,37 +53,46 @@ function extractHeaders(request: Request) {
 }
 
 // Extract site credentials from headers
-function extractSiteCredentialsFromHeaders(request: Request): HeaderCredentials {
+function extractSiteCredentialsFromHeaders(
+  request: Request
+): HeaderCredentials {
   const headers = extractHeaders(request);
-  
+  console.log("headers", headers);
+
   // Extract Rami Levy credentials
   const ramiLevyCredentials = {
+<<<<<<< HEAD
     authorization: headers[RAMI_LEVY_CREDENTIAL_HEADERS.AUTHORIZATION],
     ecomtoken: headers[RAMI_LEVY_CREDENTIAL_HEADERS.ECOM_TOKEN],
     cookie: headers[RAMI_LEVY_CREDENTIAL_HEADERS.COOKIE],
     userId: headers[RAMI_LEVY_CREDENTIAL_HEADERS.USER_ID],
+=======
+    [RAMI_LEVY_HEADERS.AUTHORIZATION]:
+      headers[RAMI_LEVY_CREDENTIALS.AUTHORIZATION],
+    [RAMI_LEVY_HEADERS.ECOM_TOKEN]: headers[RAMI_LEVY_CREDENTIALS.ECOM_TOKEN],
+    [RAMI_LEVY_HEADERS.COOKIE]: headers[RAMI_LEVY_CREDENTIALS.COOKIE],
+    [RAMI_LEVY_HEADERS.USER_ID]: headers[RAMI_LEVY_CREDENTIALS.USER_ID],
+>>>>>>> backend-adjustments
   };
-  
+
   // Extract Shufersal credentials
   const shufersalCredentials = {
+<<<<<<< HEAD
     csrftoken: headers[SHUFERSAL_CREDENTIAL_HEADERS.CSRF_TOKEN],
     cookie: headers[SHUFERSAL_CREDENTIAL_HEADERS.COOKIE],
+=======
+    [SHUFERSAL_HEADERS.CSRF_TOKEN]: headers[SHUFERSAL_CREDENTIALS.CSRF_TOKEN],
+    [SHUFERSAL_HEADERS.COOKIE]: headers[SHUFERSAL_CREDENTIALS.COOKIE],
+>>>>>>> backend-adjustments
   };
-  
+
   // Get site name from header
-  const siteName = headers[SITE_CREDENTIAL_HEADERS.SITE_NAME];
-  
+  const siteName = headers["site-name"];
+
   return {
     siteName,
-    ramiLevyCredentials: 
-      ramiLevyCredentials.authorization && ramiLevyCredentials.ecomtoken && 
-      ramiLevyCredentials.cookie && ramiLevyCredentials.userId 
-        ? ramiLevyCredentials 
-        : null,
-    shufersalCredentials:
-      shufersalCredentials.csrftoken && shufersalCredentials.cookie
-        ? shufersalCredentials 
-        : null,
+    ramiLevyCredentials,
+    shufersalCredentials,
   };
 }
 
@@ -82,22 +100,35 @@ function extractSiteCredentialsFromHeaders(request: Request): HeaderCredentials 
 function logIncomingHeaders(request: Request, endpoint: string) {
   const headers = extractHeaders(request);
   const credentials = extractSiteCredentialsFromHeaders(request);
+  console.log("credentials logIncomingHeaders", credentials);
   const timestamp = new Date().toISOString();
 
   console.log(`[${timestamp}] Incoming request to ${endpoint}`);
   console.log(`[${timestamp}] Method: ${request.method}`);
-  console.log(`[${timestamp}] Site: ${credentials.siteName || 'none'}`);
-  console.log(`[${timestamp}] Has Rami Levy credentials: ${!!credentials.ramiLevyCredentials}`);
-  console.log(`[${timestamp}] Has Shufersal credentials: ${!!credentials.shufersalCredentials}`);
-  
+  console.log(`[${timestamp}] Site: ${credentials.siteName || "none"}`);
+  console.log(
+    `[${timestamp}] Has Rami Levy credentials: ${!!credentials.ramiLevyCredentials}`
+  );
+  console.log(
+    `[${timestamp}] Has Shufersal credentials: ${!!credentials.shufersalCredentials}`
+  );
+
   // Log all headers for debugging (but don't log credential values for security)
   const safeHeaders = { ...headers };
-  Object.values(SITE_CREDENTIAL_HEADERS).forEach(headerName => {
+  Object.values(RAMI_LEVY_HEADERS).forEach((headerName) => {
     if (safeHeaders[headerName as string]) {
-      safeHeaders[headerName as string] = '[REDACTED]';
+      safeHeaders[headerName as string] = "[REDACTED]";
     }
   });
-  console.log(`[${timestamp}] Headers received:`, JSON.stringify(safeHeaders, null, 2));
+  Object.values(SHUFERSAL_HEADERS).forEach((headerName) => {
+    if (safeHeaders[headerName as string]) {
+      safeHeaders[headerName as string] = "[REDACTED]";
+    }
+  });
+  console.log(
+    `[${timestamp}] Headers received:`,
+    JSON.stringify(safeHeaders, null, 2)
+  );
 
   return headers;
 }
