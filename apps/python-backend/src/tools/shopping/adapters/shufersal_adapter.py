@@ -7,9 +7,10 @@ import logging
 from typing import Dict, Any, Optional, List
 
 from .base_adapter import BaseShoppingAdapter
+from ..constants import SiteAdapterName
 from ..types import (
-    SiteAdapterName, WebsiteConfig, ProductSearchOptions, ProductSearchResult,
-    ShoppingOperationResult, Product, CartItem, Cart, ShufersalCredentials
+    WebsiteConfig, ProductSearchOptions, ProductSearchResult,
+    ShoppingOperationResult, CartItem, Cart, ShufersalCredentials
 )
 from ..api_client import ApiClient
 
@@ -47,12 +48,15 @@ class ShufersalAdapter(BaseShoppingAdapter):
             self.api_client = ApiClient(self.config.base_url, self.base_headers)
     
     def _create_auth_headers(self, credentials: ShufersalCredentials) -> Dict[str, str]:
-        """Create authentication headers"""
-        return {
-            **self.base_headers,
-            "X-CSRFToken": credentials.csrf_token,
-            "Cookie": credentials.cookie
-        }
+        """Create authentication headers using dynamic credential mapping"""
+        # Import here to avoid circular import
+        from ..credential_manager import CredentialManager
+        
+        return CredentialManager.create_api_headers(
+            site=self.website,
+            credentials=credentials,
+            base_headers=self.base_headers
+        )
     
     def _extract_price(self, item: Dict[str, Any]) -> float:
         """Extract price from Shufersal item data"""

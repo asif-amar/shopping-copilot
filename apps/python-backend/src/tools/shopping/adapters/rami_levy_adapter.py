@@ -8,9 +8,10 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 
 from .base_adapter import BaseShoppingAdapter
+from ..constants import SiteAdapterName
 from ..types import (
-    SiteAdapterName, WebsiteConfig, ProductSearchOptions, ProductSearchResult,
-    ShoppingOperationResult, Product, CartItem, Cart, RamiLevyCredentials
+    WebsiteConfig, ProductSearchOptions, ProductSearchResult,
+    ShoppingOperationResult, CartItem, Cart, RamiLevyCredentials
 )
 from ..api_client import ApiClient
 
@@ -48,6 +49,7 @@ class RamiLevyAdapter(BaseShoppingAdapter):
         
         super().__init__(SiteAdapterName.RAMI_LEVY, config)
         
+        # Configuration values - could be made configurable via environment
         self.store = "331"  # Default store
         
         # Base headers for API requests
@@ -73,13 +75,15 @@ class RamiLevyAdapter(BaseShoppingAdapter):
             )
     
     def _create_auth_headers(self, credentials: RamiLevyCredentials) -> Dict[str, str]:
-        """Create authentication headers"""
-        return {
-            **self.base_headers,
-            "Authorization": credentials.api_key,
-            "Ecomtoken": credentials.ecom_token,
-            "Cookie": credentials.cookie
-        }
+        """Create authentication headers using dynamic credential mapping"""
+        # Import here to avoid circular import
+        from ..credential_manager import CredentialManager
+        
+        return CredentialManager.create_api_headers(
+            site=self.website,
+            credentials=credentials,
+            base_headers=self.base_headers
+        )
     
     def _calculate_best_price(self, product_data: Dict[str, Any], quantity: int) -> Dict[str, Any]:
         """Calculate the best price considering sales and quantity"""

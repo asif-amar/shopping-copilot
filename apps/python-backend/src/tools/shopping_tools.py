@@ -4,10 +4,11 @@ Port of the MCP server shopping tools functionality
 """
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict
 
 from agno.tools import Toolkit
-from .shopping.types import SiteAdapterName, ProductSearchOptions, PriceRange
+from .shopping.constants import SiteAdapterName
+from .shopping.types import ProductSearchOptions, PriceRange
 from .shopping.factory import ShoppingAdapterFactory
 from .shopping.security import ShoppingSecurity
 
@@ -16,15 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 class ShoppingTools(Toolkit):
-    def __init__(
-        self,
-        rami_levy_credentials: Optional[Dict[str, str]] = None,
-        shufersal_credentials: Optional[Dict[str, str]] = None,
-        **kwargs
-    ):
-        # Store credentials as instance variables
-        self.rami_levy_credentials = rami_levy_credentials
-        self.shufersal_credentials = shufersal_credentials
+    def __init__(self, **kwargs):
+        # Store request headers - will be set during tool execution
+        self._request_headers: Optional[Dict[str, str]] = None
         
         super().__init__(
             name="shopping_tools",
@@ -38,25 +33,10 @@ class ShoppingTools(Toolkit):
             **kwargs
         )
     
-    def _get_credentials_for_request(self) -> Optional[Dict[str, Any]]:
-        """Convert instance credentials to the header_credentials format expected by the factory"""
-        header_credentials = {}
-        
-        if self.rami_levy_credentials:
-            header_credentials["rami_levy_credentials"] = {
-                "api_key": self.rami_levy_credentials.get("rami_levy_api_key"),
-                "ecom_token": self.rami_levy_credentials.get("rami_levy_ecom_token"), 
-                "cookie": self.rami_levy_credentials.get("rami_levy_cookie"),
-                "user_id": self.rami_levy_credentials.get("rami_levy_user_id")
-            }
-        
-        if self.shufersal_credentials:
-            header_credentials["shufersal_credentials"] = {
-                "csrf_token": self.shufersal_credentials.get("shufersal_csrf_token"),
-                "cookie": self.shufersal_credentials.get("shufersal_cookie")
-            }
-        
-        return header_credentials if header_credentials else None
+    def set_request_headers(self, headers: Dict[str, str]):
+        """Set request headers for credential extraction"""
+        self._request_headers = headers
+    
 
     async def search_products(
         self,
@@ -93,9 +73,13 @@ class ShoppingTools(Toolkit):
                 if not price_range_validation.is_valid:
                     return f"**Error**\n\n{price_range_validation.error}"
             
-            # Get credentials
+            # Get credentials from headers
+            if not self._request_headers:
+                return f"**Error**\n\nNo request headers available. Please provide authentication headers."
+            
             credentials, credentials_error = ShoppingAdapterFactory.get_credentials_for_website(
-                site, self._get_credentials_for_request()
+                website=site, 
+                headers=self._request_headers
             )
             if not credentials:
                 return f"**Error**\n\n{credentials_error}"
@@ -199,9 +183,13 @@ class ShoppingTools(Toolkit):
             if not variant_validation.is_valid:
                 return f"**Error**\n\n{variant_validation.error}"
             
-            # Get credentials
+            # Get credentials from headers
+            if not self._request_headers:
+                return f"**Error**\n\nNo request headers available. Please provide authentication headers."
+            
             credentials, credentials_error = ShoppingAdapterFactory.get_credentials_for_website(
-                site, self._get_credentials_for_request()
+                website=site, 
+                headers=self._request_headers
             )
             if not credentials:
                 return f"**Error**\n\n{credentials_error}"
@@ -274,9 +262,13 @@ class ShoppingTools(Toolkit):
             if not cart_item_validation.is_valid:
                 return f"**Error**\n\n{cart_item_validation.error}"
             
-            # Get credentials
+            # Get credentials from headers
+            if not self._request_headers:
+                return f"**Error**\n\nNo request headers available. Please provide authentication headers."
+            
             credentials, credentials_error = ShoppingAdapterFactory.get_credentials_for_website(
-                site, self._get_credentials_for_request()
+                website=site, 
+                headers=self._request_headers
             )
             if not credentials:
                 return f"**Error**\n\n{credentials_error}"
@@ -323,9 +315,13 @@ class ShoppingTools(Toolkit):
             if not quantity_validation.is_valid:
                 return f"**Error**\n\n{quantity_validation.error}"
             
-            # Get credentials
+            # Get credentials from headers
+            if not self._request_headers:
+                return f"**Error**\n\nNo request headers available. Please provide authentication headers."
+            
             credentials, credentials_error = ShoppingAdapterFactory.get_credentials_for_website(
-                site, self._get_credentials_for_request()
+                website=site, 
+                headers=self._request_headers
             )
             if not credentials:
                 return f"**Error**\n\n{credentials_error}"
@@ -372,9 +368,13 @@ class ShoppingTools(Toolkit):
             except ValueError:
                 return f"**Error**\n\nUnsupported website: {website}"
             
-            # Get credentials
+            # Get credentials from headers
+            if not self._request_headers:
+                return f"**Error**\n\nNo request headers available. Please provide authentication headers."
+            
             credentials, credentials_error = ShoppingAdapterFactory.get_credentials_for_website(
-                site, self._get_credentials_for_request()
+                website=site, 
+                headers=self._request_headers
             )
             if not credentials:
                 return f"**Error**\n\n{credentials_error}"

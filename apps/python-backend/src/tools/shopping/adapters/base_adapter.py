@@ -8,9 +8,9 @@ from typing import Optional, Union
 import re
 from urllib.parse import urlparse
 
+from ..constants import SiteAdapterName
 from ..types import (
-    SiteAdapterName, Product, ProductSearchOptions, ProductSearchResult,
-    CartItem, Cart, ShoppingOperationResult, WebsiteConfig, CredentialsType
+    Product, ProductSearchOptions, ShoppingOperationResult, WebsiteConfig, CredentialsType
 )
 from ..security import ShoppingSecurity
 

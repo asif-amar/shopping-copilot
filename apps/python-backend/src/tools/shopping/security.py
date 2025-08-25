@@ -6,7 +6,8 @@ Port of the TypeScript ShoppingSecurity class
 import re
 from typing import Dict, Any, Optional
 from urllib.parse import urlparse
-from .types import SiteAdapterName, PriceRange
+from .constants import SiteAdapterName
+from .types import PriceRange
 
 
 class ValidationResult:

@@ -3,15 +3,8 @@ Shopping-specific types and data classes
 Port of TypeScript interfaces from the MCP server
 """
 
-from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Any, Literal
-from enum import Enum
-
-
-class SiteAdapterName(str, Enum):
-    """Supported shopping website adapters"""
-    RAMI_LEVY = "rami-levy"
-    SHUFERSAL = "shufersal"
+from dataclasses import dataclass
+from typing import Optional, List, Literal, Any
 
 
 @dataclass
