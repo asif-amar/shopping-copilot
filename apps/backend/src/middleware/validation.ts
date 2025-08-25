@@ -10,7 +10,7 @@ const chatMessageSchema = z.object({
 // Rami Levy credentials schema
 const ramiLevyCredentialsSchema = z.object({
   "x-rami-levy-authorization": z.string(),
-  "x-rami-levy-ecomtoken": z.string().optional(),
+  "x-rami-levy-ecom-token": z.string().optional(),
   "x-rami-levy-cookie": z.string(),
   "x-rami-levy-user-id": z.string().optional(),
 });

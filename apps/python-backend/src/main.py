@@ -1,0 +1,42 @@
+import logging
+import os
+from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from .routes.chat import router as chat_router
+
+load_dotenv()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(
+    title="Shopping Copilot API",
+    version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
+app.include_router(chat_router, prefix="/api")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "src.main:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=True,
+        reload_dirs=["src"],
+        reload_excludes=["**/venv/**", "**/site-packages/**", "*.pyc", "**/__pycache__/**", ".git/**"]
+    )

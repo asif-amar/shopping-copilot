@@ -1,5 +1,3 @@
-import { experimental_createMCPClient } from "ai";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import {
   RAMI_LEVY_CREDENTIALS,
@@ -16,50 +14,36 @@ import {
 } from "../database/queries";
 import logger from "./logger";
 import { ChatMessage } from "../types";
+import { shoppingTools } from "../tools/shopping-tools";
 
 // Default user ID for development/testing
 const DEFAULT_USER_ID = 1;
 
-// Convert adapter name and credentials to MCP headers
-export function createMCPHeaders(
+// Helper function to prepare credentials for shopping tools
+function prepareCredentialsForTools(
   adapterName?: string,
   credentials?: any
-): Record<string, string> {
-  const headers: Record<string, string> = {
-    "content-type": "application/json",
-  };
-
-  // Add site name header if provided
-  if (adapterName) {
-    headers["site-name"] = adapterName;
+): any {
+  if (!credentials || !adapterName) {
+    return null;
   }
 
-  // Add credentials based on adapter type
-  if (credentials && adapterName) {
-    if (adapterName === SiteAdapterName.ramiLevy) {
-      if (credentials[RAMI_LEVY_CREDENTIALS.AUTHORIZATION])
-        headers[RAMI_LEVY_CREDENTIALS.AUTHORIZATION] =
-          credentials[RAMI_LEVY_CREDENTIALS.AUTHORIZATION];
-      if (credentials[RAMI_LEVY_CREDENTIALS.ECOM_TOKEN])
-        headers[RAMI_LEVY_CREDENTIALS.ECOM_TOKEN] =
-          credentials[RAMI_LEVY_CREDENTIALS.ECOM_TOKEN];
-      if (credentials[RAMI_LEVY_CREDENTIALS.COOKIE])
-        headers[RAMI_LEVY_CREDENTIALS.COOKIE] =
-          credentials[RAMI_LEVY_CREDENTIALS.COOKIE];
-      if (credentials[RAMI_LEVY_CREDENTIALS.USER_ID])
-        headers[RAMI_LEVY_CREDENTIALS.USER_ID] =
-          credentials[RAMI_LEVY_CREDENTIALS.USER_ID];
-    } else if (adapterName === SiteAdapterName.shufersal) {
-      if (credentials[SHUFERSAL_CREDENTIALS.CSRF_TOKEN])
-        headers[SHUFERSAL_CREDENTIALS.CSRF_TOKEN] =
-          credentials[SHUFERSAL_CREDENTIALS.CSRF_TOKEN];
-      if (credentials[SHUFERSAL_CREDENTIALS.COOKIE])
-        headers[SHUFERSAL_CREDENTIALS.COOKIE] =
-          credentials[SHUFERSAL_CREDENTIALS.COOKIE];
-    }
+  // Convert credentials from the format used in the request to the format expected by tools
+  if (adapterName === SiteAdapterName.ramiLevy) {
+    return {
+      authorization: credentials[RAMI_LEVY_CREDENTIALS.AUTHORIZATION],
+      ecomtoken: credentials[RAMI_LEVY_CREDENTIALS.ECOM_TOKEN],
+      cookie: credentials[RAMI_LEVY_CREDENTIALS.COOKIE],
+      userId: credentials[RAMI_LEVY_CREDENTIALS.USER_ID],
+    };
+  } else if (adapterName === SiteAdapterName.shufersal) {
+    return {
+      csrftoken: credentials[SHUFERSAL_CREDENTIALS.CSRF_TOKEN],
+      cookie: credentials[SHUFERSAL_CREDENTIALS.COOKIE],
+    };
   }
 
-  return headers;
+  return null;
 }
 
 // Convert database messages to chat message format
@@ -146,49 +130,47 @@ export async function getConversationHistory(
   return conversationHistory;
 }
 
-// Setup MCP client with common configuration
-export async function setupMCPClient(
+// Setup shopping tools with credentials
+export function setupShoppingTools(
   adapterName?: string,
   credentials?: any
-): Promise<{ mcpClient: any; tools: any }> {
-  const mcpHeaders = createMCPHeaders(adapterName, credentials);
-  const mcpServerUrl = process.env.MCP_SERVER_URL;
+): any {
+  logger.info(`Setting up shopping tools for: ${adapterName || "none"}`);
 
-  if (!mcpServerUrl) {
-    throw new Error("MCP URL is not defined");
-  }
-
-  logger.info(`Creating MCP client at ${mcpServerUrl}`);
-  logger.info(
-    `Forwarding adapter: ${adapterName || "none"} with ${
-      Object.keys(mcpHeaders).length
-    } headers`
+  const preparedCredentials = prepareCredentialsForTools(
+    adapterName,
+    credentials
   );
 
-  const httpTransport = new StreamableHTTPClientTransport(
-    new URL(mcpServerUrl),
-    {
-      requestInit: {
-        headers: mcpHeaders,
+  logger.info(
+    `Credentials prepared: ${
+      preparedCredentials ? "✅" : "❌"
+    } for adapter: ${adapterName}`
+  );
+
+  console.log(preparedCredentials);
+
+  // Create tools with bound credentials using spread operator to include credentials in all calls
+  const tools = Object.fromEntries(
+    Object.entries(shoppingTools).map(([toolName, tool]) => [
+      toolName,
+      {
+        ...tool,
+        execute: async (params: any) => {
+          return (tool as any).execute({
+            ...params,
+            credentials: preparedCredentials,
+          });
+        },
       },
-    }
+    ])
   );
-
-  const mcpClient = await experimental_createMCPClient({
-    transport: httpTransport,
-  });
-
-  logger.info("MCP client created successfully");
-
-  const tools = await mcpClient.tools();
 
   logger.info(
-    `Tools retrieved from MCP client (${
-      tools ? Object.keys(tools).length : 0
-    } tools)`
+    `Shopping tools setup completed (${Object.keys(tools).length} tools)`
   );
 
-  return { mcpClient, tools };
+  return tools;
 }
 
 // Setup Google AI model

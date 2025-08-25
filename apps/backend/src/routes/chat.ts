@@ -7,7 +7,7 @@ import {
   ensureUserAndConversation,
   storeUserMessage,
   getConversationHistory,
-  setupMCPClient,
+  setupShoppingTools,
   setupGoogleAI,
   storeAssistantMessage,
 } from "../utils/chat-helpers";
@@ -45,12 +45,9 @@ router.post(
       // Load conversation history
       const conversationHistory = await getConversationHistory(conversation.id);
 
-      // Setup Google AI and MCP client
+      // Setup Google AI and shopping tools
       const google = setupGoogleAI();
-      const { tools, mcpClient } = await setupMCPClient(
-        adapterName,
-        credentials
-      );
+      const tools = setupShoppingTools(adapterName, credentials);
 
       const result = streamText({
         model: google("gemini-2.0-flash-exp"),
@@ -59,9 +56,6 @@ router.post(
         messages: conversationHistory,
         temperature,
         system: AGENT_PROMPT,
-        onFinish: async () => {
-          await mcpClient.close();
-        },
       });
 
       logger.info(
@@ -130,8 +124,6 @@ router.post("/complete", validateStreamRequest, async (req, res) => {
     logger.info(
       `Complete endpoint called: /complete (${messages.length} messages)`
     );
-    console.log("adapterName", adapterName);
-    console.log(credentials);
 
     // Initialize user and conversation
     const { conversation } = await ensureUserAndConversation(
@@ -145,9 +137,9 @@ router.post("/complete", validateStreamRequest, async (req, res) => {
     // Load conversation history
     const conversationHistory = await getConversationHistory(conversation.id);
 
-    // Setup Google AI and MCP client
+    // Setup Google AI and shopping tools
     const google = setupGoogleAI();
-    const { tools } = await setupMCPClient(adapterName, credentials);
+    const tools = setupShoppingTools(adapterName, credentials);
 
     const result = await generateText({
       model: google("gemini-2.0-flash-exp"),
@@ -155,8 +147,20 @@ router.post("/complete", validateStreamRequest, async (req, res) => {
       messages: conversationHistory,
       stopWhen: stepCountIs(5),
       temperature,
-      system: AGENT_PROMPT,
+      // system: AGENT_PROMPT,
+      onStepFinish({ text, toolCalls, toolResults, finishReason, usage }) {
+        // your own logic, e.g. for saving the chat history or recording usage
+        console.log("onStepFinish");
+        console.log("text", text);
+        console.log("toolCalls", toolCalls);
+        console.log("toolResults", toolResults?.[0]?.output);
+        console.log("finishReason", finishReason);
+        console.log("usage", usage);
+      },
     });
+
+    console.log("llm res");
+    console.log(result.steps);
 
     const fullText = result.text;
     logger.info(`Text generation completed (${fullText.length} characters)`);

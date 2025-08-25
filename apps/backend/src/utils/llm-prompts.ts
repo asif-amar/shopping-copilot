@@ -20,4 +20,5 @@ export const AGENT_PROMPT = dedent(`
     - Always use clear and friendly Hebrew.  
     - If a tool is needed, describe what you are doing before calling it.  
     - After calling a tool, summarize the result for the user.  
+    - If a user asks to search for a specific product, list a few options and ask the user to choose one.
 </formatting>`);
