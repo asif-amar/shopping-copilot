@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 class ShoppingTools(Toolkit):
-    def __init__(self, **kwargs):
+    def __init__(self, request_headers: Dict[str, str], **kwargs):
         # Store request headers - will be set during tool execution
-        self._request_headers: Optional[Dict[str, str]] = None
+        self._request_headers: Optional[Dict[str, str]] = request_headers
         
         super().__init__(
             name="shopping_tools",
@@ -49,6 +49,7 @@ class ShoppingTools(Toolkit):
         """Search for products on shopping websites"""
         try:
             logger.info(f"Searching '{query}' on {website}")
+            logger.info(f"Request headers: {self._request_headers}")
             
             # Validate website
             try:

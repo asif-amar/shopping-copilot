@@ -5,7 +5,8 @@ from pydantic import BaseModel
 from agno.agent import Agent
 from agno.models.google import Gemini
 from dotenv import load_dotenv
-from agno.storage.sqlite import SqliteStorage
+from agno.storage.postgres import PostgresStorage
+from typing import Dict
 
 # Import shopping tools and constants
 from ..tools.shopping_tools import ShoppingTools
@@ -26,29 +27,31 @@ class ChatResponse(BaseModel):
     response: str
     status: str
 
-def create_basic_agent() -> Agent:
+def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
     """Create a basic Agno agent with Gemini model"""
     
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     gemini_model = os.getenv("GEMINI_MODEL")
     model = Gemini(id=gemini_model, api_key=gemini_api_key)
-    db_url = os.getenv("DATABASE_URL", "sqlite:///./agent_sessions.db")
+    db_url = os.getenv("DATABASE_URL")
     
     if not db_url:
         raise ValueError("DATABASE_URL environment variable is required")
     
-    storage = SqliteStorage(
+    storage = PostgresStorage(
         table_name="agent_sessions",
         db_url=db_url,
         auto_upgrade_schema=True
     )
+
+    tools = ShoppingTools(request_headers)
 
     agent = Agent(
         name="Shopping Copilot",
         agent_id="shopping-copilot",
         model=model,
         tools=[tools],
-        # TODO: The prompt must be enhance. For example if one search went wrong because of bad credentials, the followup search might not even occur.
+        # TODO: The prompt must be enhanced. For example if one search went wrong because of bad credentials, the followup search might not even occur.
         instructions=[
             "You are a shopping assistant that can help users search for products and manage their shopping carts on Israeli e-commerce websites.",
             f"You can search for products on the following websites: {', '.join([site.value for site in get_supported_sites()])}.",
@@ -85,13 +88,7 @@ async def chat_with_agent(request: ChatRequest, http_request: Request):
         logger.info(f"Request headers available: {list(request_headers.keys())}")
         
         # Create the agent without credentials
-        agent = create_basic_agent()
-        
-        # Set headers on the shopping tools for credential extraction at runtime
-        for tool in agent.tools:
-            if isinstance(tool, ShoppingTools):
-                tool.set_request_headers(request_headers)
-                logger.info("Set request headers on ShoppingTools instance")
+        agent = create_basic_agent(request_headers)
         
         # Get response from agent
         response = await agent.arun(request.message, user_id="2", session_id="your_session_id")
