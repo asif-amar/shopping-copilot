@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Send, Loader2 } from 'lucide-react';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => Promise<void>;
@@ -7,6 +9,7 @@ interface ChatInputProps {
 
 export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
   const [inputText, setInputText] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,65 +27,98 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }
     }
   };
 
+  const canSend = inputText.trim() && !isLoading;
+
   return (
     <div
       style={{
         padding: '16px 20px',
-        background: 'white',
-        borderTop: '1px solid #e9ecef',
+        background: '#ffffff',
+        borderTop: '1px solid #f1f5f9',
         flexShrink: 0,
       }}
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px' }}>
+      <motion.form 
+        onSubmit={handleSubmit}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        style={{ 
+          position: 'relative',
+          background: '#f8fafc',
+          borderRadius: '20px',
+          border: isFocused ? '1px solid #e2e8f0' : '1px solid #f1f5f9',
+          transition: 'all 0.2s ease',
+          boxShadow: isFocused 
+            ? '0 0 0 2px rgba(59, 130, 246, 0.1)' 
+            : 'none',
+        }}
+      >
         <textarea
           value={inputText}
           onChange={e => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type your message..."
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          placeholder="Message Shopping Assistant..."
           disabled={isLoading}
           style={{
-            flex: 1,
-            minHeight: '40px',
+            width: '100%',
+            minHeight: '44px',
             maxHeight: '120px',
-            padding: '10px 12px',
-            border: '1px solid #e9ecef',
+            padding: '12px 52px 12px 16px',
+            border: 'none',
             borderRadius: '20px',
             fontSize: '14px',
             fontFamily: 'inherit',
             resize: 'none',
             outline: 'none',
-            transition: 'border-color 0.2s ease',
-            background: isLoading ? '#f8f9fa' : 'white',
+            background: 'transparent',
+            color: '#334155',
+            lineHeight: '1.4',
+            boxSizing: 'border-box',
           }}
-          onFocus={e => (e.target.style.borderColor = '#667eea')}
-          onBlur={e => (e.target.style.borderColor = '#e9ecef')}
         />
-        <button
+        
+        <motion.button
           type="submit"
-          disabled={!inputText.trim() || isLoading}
+          disabled={!canSend}
+          whileHover={canSend ? { scale: 1.02 } : {}}
+          whileTap={canSend ? { scale: 0.98 } : {}}
           style={{
-            width: '40px',
-            height: '40px',
+            position: 'absolute',
+            right: '6px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '32px',
+            height: '32px',
             borderRadius: '50%',
             border: 'none',
-            background:
-              !inputText.trim() || isLoading
-                ? '#e9ecef'
-                : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: canSend
+              ? '#3b82f6'
+              : '#cbd5e1',
             color: 'white',
-            cursor:
-              !inputText.trim() || isLoading ? 'not-allowed' : 'pointer',
+            cursor: canSend ? 'pointer' : 'not-allowed',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '16px',
             transition: 'all 0.2s ease',
             flexShrink: 0,
           }}
+          title={canSend ? 'Send message' : 'Type a message to send'}
         >
-          {isLoading ? '⏳' : '➤'}
-        </button>
-      </form>
+          {isLoading ? (
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            >
+              <Loader2 size={14} />
+            </motion.div>
+          ) : (
+            <Send size={14} />
+          )}
+        </motion.button>
+      </motion.form>
     </div>
   );
 };

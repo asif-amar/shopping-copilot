@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChatMessage } from '@/types/chat';
 import { MessageBubble } from './MessageBubble';
 import { TypingIndicator } from './TypingIndicator';
@@ -27,14 +28,15 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isLoading })
         padding: '20px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
       }}
     >
-      {messages.map(message => (
-        <MessageBubble key={message.id} message={message} />
-      ))}
+      <AnimatePresence>
+        {messages.map(message => (
+          <MessageBubble key={message.id} message={message} />
+        ))}
 
-      {isLoading && <TypingIndicator />}
+        {isLoading && <TypingIndicator />}
+      </AnimatePresence>
       <div ref={messagesEndRef} />
     </div>
   );

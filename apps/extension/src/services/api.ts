@@ -1,11 +1,11 @@
-import { 
-  StreamRequest, 
+import {
+  StreamRequest,
   SITE_CREDENTIAL_HEADERS,
-  mapCredentialsToHeaders
-} from '@shopping-copilot/shared';
-import { BACKEND_URL } from '@/utils/constants';
-import { getSiteAdapterFromHostname } from './websiteContext';
-import { CredentialExtractor } from './credentialExtractor';
+  mapCredentialsToHeaders,
+} from "@shopping-copilot/shared";
+import { BACKEND_URL } from "@/utils/constants";
+import { getSiteAdapterFromHostname } from "./websiteContext";
+import { CredentialExtractor } from "./credentialExtractor";
 
 export type ShoppingActionResponse = {
   success: boolean;
@@ -22,15 +22,20 @@ export class ApiService {
   /**
    * Get headers with website context and credentials
    */
-  private static async getHeaders(hostname?: string): Promise<Record<string, string>> {
+  private static async getHeaders(
+    hostname?: string
+  ): Promise<Record<string, string>> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
 
     // If no hostname provided, try to get current one
     if (!hostname) {
       try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
         if (tab.url) {
           const url = new URL(tab.url);
           hostname = url.hostname;
@@ -46,7 +51,7 @@ export class ApiService {
 
     // Get site adapter from hostname
     const siteAdapter = getSiteAdapterFromHostname(hostname);
-    
+
     if (!siteAdapter) {
       return headers;
     }
@@ -56,8 +61,9 @@ export class ApiService {
 
     // Extract and set credentials based on site
     try {
-      const credentials = await CredentialExtractor.extractCredentialsForSite(siteAdapter);
-      
+      const credentials =
+        await CredentialExtractor.extractCredentialsForSite(siteAdapter);
+
       if (credentials) {
         // Use the scalable mapping function
         const mappedHeaders = mapCredentialsToHeaders(siteAdapter, credentials);
@@ -73,27 +79,34 @@ export class ApiService {
   /**
    * Send a message to the streaming endpoint with website context
    */
-  static async sendMessage(content: string, hostname?: string): Promise<ReadableStreamDefaultReader<Uint8Array>> {
+  static async sendMessage(
+    content: string,
+    hostname?: string
+  ): Promise<ReadableStreamDefaultReader<Uint8Array>> {
     const headers = await this.getHeaders(hostname);
-    
-    const response = await fetch(`${this.BASE_URL}/api/chat/agent`, {
-      method: 'POST',
+
+    console.log("headers", headers);
+
+    const response = await fetch(`${this.BASE_URL}/chat/agent`, {
+      method: "POST",
       headers,
       body: JSON.stringify({
-        messages: content,
+        message: content,
         //Should be retreived by oauth
-        user_id: '1',
+        user_id: "1",
       } as unknown as StreamRequest),
     });
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      throw new Error(error.message || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        error.message || `HTTP error! status: ${response.status}`
+      );
     }
 
     const reader = response.body?.getReader();
     if (!reader) {
-      throw new Error('No response body reader available');
+      throw new Error("No response body reader available");
     }
 
     return reader;
@@ -102,29 +115,47 @@ export class ApiService {
   /**
    * Parse a stream chunk into a message or shopping action
    */
-  static parseStreamChunk(chunk: string): { type: 'message', content: string } | { type: 'action', data: ShoppingActionResponse } | null {
-    const lines = chunk.split('\n');
-    
+  static parseStreamChunk(
+    chunk: string
+  ):
+    | { type: "message"; content: string }
+    | { type: "action"; data: ShoppingActionResponse }
+    | null {
+    const lines = chunk.split("\n");
+
     for (const line of lines) {
-      if (line.startsWith('data: ')) {
+      if (line.startsWith("data: ")) {
         const data = line.slice(6);
-        if (data === '[DONE]') continue;
-        
+        if (data === "[DONE]") continue;
+
         try {
-          // Try to parse as JSON (shopping action)
+          // Try to parse as JSON
           const parsed = JSON.parse(data);
-          if (parsed.action) {
-            return { type: 'action', data: parsed };
+          
+          // Handle backend streaming format
+          if (parsed.type === "response" && parsed.content) {
+            return { type: "message", content: parsed.content };
           }
           
-          // Otherwise treat as regular message
-          return { 
-            type: 'message', 
-            content: parsed.choices?.[0]?.delta?.content || '' 
-          };
+          if (parsed.type === "thinking" && parsed.content) {
+            return { type: "message", content: parsed.content };
+          }
+          
+          // Handle shopping action format
+          if (parsed.action) {
+            return { type: "action", data: parsed };
+          }
+
+          // Handle OpenAI format (fallback)
+          if (parsed.choices?.[0]?.delta?.content) {
+            return {
+              type: "message",
+              content: parsed.choices[0].delta.content,
+            };
+          }
         } catch (e) {
           // If parsing fails, treat as plain text message
-          return { type: 'message', content: data };
+          return { type: "message", content: data };
         }
       }
     }

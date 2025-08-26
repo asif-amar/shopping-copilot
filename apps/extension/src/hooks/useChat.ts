@@ -118,19 +118,15 @@ export function useChat(): UseChatReturn {
       const decoder = new TextDecoder();
 
       let assistantResponse = '';
+      let botMessageAdded = false;
       
-      // Create initial bot message
+      // Create bot message template (will be added on first content)
       const botMessage: ChatMessage = {
         id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         text: '',
         isUser: false,
         timestamp: new Date(),
       };
-      
-      setState(prev => ({
-        ...prev,
-        messages: [...prev.messages, botMessage],
-      }));
 
       while (true) {
         const { done, value } = await reader.read();
@@ -143,15 +139,25 @@ export function useChat(): UseChatReturn {
           if (parsedResult.type === 'message' && parsedResult.content) {
             assistantResponse += parsedResult.content;
             
-            // Update bot message in real-time
-            setState(prev => ({
-              ...prev,
-              messages: prev.messages.map(msg => 
-                msg.id === botMessage.id 
-                  ? { ...msg, text: assistantResponse }
-                  : msg
-              ),
-            }));
+            // Add bot message and hide loading indicator on first token
+            if (!botMessageAdded) {
+              botMessageAdded = true;
+              setState(prev => ({
+                ...prev,
+                isLoading: false,
+                messages: [...prev.messages, { ...botMessage, text: assistantResponse }],
+              }));
+            } else {
+              // Update existing bot message
+              setState(prev => ({
+                ...prev,
+                messages: prev.messages.map(msg => 
+                  msg.id === botMessage.id 
+                    ? { ...msg, text: assistantResponse }
+                    : msg
+                ),
+              }));
+            }
           } else if (parsedResult.type === 'action') {
             // Handle shopping action response
             const actionData = parsedResult.data;
@@ -162,21 +168,34 @@ export function useChat(): UseChatReturn {
             
             assistantResponse = actionText;
             
-            setState(prev => ({
-              ...prev,
-              messages: prev.messages.map(msg => 
-                msg.id === botMessage.id 
-                  ? { ...msg, text: assistantResponse }
-                  : msg
-              ),
-            }));
+            // Add bot message and hide loading indicator on action response
+            if (!botMessageAdded) {
+              botMessageAdded = true;
+              setState(prev => ({
+                ...prev,
+                isLoading: false,
+                messages: [...prev.messages, { ...botMessage, text: assistantResponse }],
+              }));
+            } else {
+              // Update existing bot message
+              setState(prev => ({
+                ...prev,
+                messages: prev.messages.map(msg => 
+                  msg.id === botMessage.id 
+                    ? { ...msg, text: assistantResponse }
+                    : msg
+                ),
+              }));
+            }
           }
         }
       }
 
-      // Save final bot message to storage
-      const finalBotMessage = { ...botMessage, text: assistantResponse };
-      await saveMessage(finalBotMessage);
+      // Save final bot message to storage if we added one
+      if (botMessageAdded) {
+        const finalBotMessage = { ...botMessage, text: assistantResponse };
+        await saveMessage(finalBotMessage);
+      }
 
     } catch (error) {
       console.error('Failed to get response from backend:', error);
@@ -190,6 +209,7 @@ export function useChat(): UseChatReturn {
       
       setState(prev => ({
         ...prev,
+        isLoading: false,
         messages: [...prev.messages, errorMessage],
       }));
     } finally {

@@ -7,7 +7,8 @@ from agno.models.google import Gemini
 from dotenv import load_dotenv
 from agno.storage.postgres import PostgresStorage
 from typing import Dict
-
+from fastapi.responses import StreamingResponse
+import json
 # Import shopping tools and constants
 from ..tools.shopping_tools import ShoppingTools
 from ..tools.shopping.constants import get_supported_sites
@@ -89,44 +90,44 @@ async def chat_with_agent(request: ChatRequest, http_request: Request):
         
         # Create the agent without credentials
         agent = create_basic_agent(request_headers)
-        
+
         # Get response from agent
-        response = await agent.arun(request.message, user_id="2", session_id="your_session_id")
+        # response = await agent.arun(request.message, user_id="2", session_id="your_session_id")
         
-        logger.info(f"Agent response generated for user: {request.user_id}")
+        # logger.info(f"Agent response generated for user: {request.user_id}")
         
-        return ChatResponse(
-            response=response.content,
-            status="success"
-        )
+        # return ChatResponse(
+        #     response=response.content,
+        #     status="success"
+        # )
 
         # Streaming example for later (NOT FOR NOW):
-        # async def generate_stream():
-        #     # Stream response with intermediate steps
-        #     response_stream = await agent.arun(
-        #         request.message, 
-        #         user_id=request.user_id, 
-        #         session_id="your_session_id",
-        #         stream=True,
-        #         stream_intermediate_steps=True
-        #     )
+        async def generate_stream():
+            # Stream response with intermediate steps
+            response_stream = await agent.arun(
+                request.message, 
+                user_id=request.user_id, 
+                session_id="your_session_id",
+                stream=True,
+                stream_intermediate_steps=True
+            )
             
-        #     async for event in response_stream:
-        #         # Stream thinking process events
-        #         if event.event == "ToolCallStarted":
-        #             print(f"\nEvent tool: {event.tool}\n")
-        #             yield f"data: {json.dumps({'type': 'thinking', 'content': f'🔧 Searching {event.tool.tool_name}...'})}\n\n"
-        #         elif event.event == "ToolCallCompleted":
-        #             print(f"\nTool call completed: {event.tool.tool_name}\n")
-        #             yield f"data: {json.dumps({'type': 'thinking', 'content': f'✅ Found results from {event.tool.tool_name}'})}\n\n"
-        #         elif event.event == "ReasoningStep":
-        #             print(f"\nReasoning step: {event.content}\n")
-        #             yield f"data: {json.dumps({'type': 'thinking', 'content': f'💭 {event.content}'})}\n\n"
-        #         elif event.event == "RunResponseContent":
-        #             print(f"\nRun response content: {event.content}\n")
-        #             yield f"data: {json.dumps({'type': 'response', 'content': event.content})}\n\n"
+            async for event in response_stream:
+                # Stream thinking process events
+                if event.event == "ToolCallStarted":
+                    print(f"\nEvent tool: {event.tool}\n")
+                    yield f"data: {json.dumps({'type': 'thinking', 'content': f'🔧 Searching {event.tool.tool_name}...'})}\n\n"
+                elif event.event == "ToolCallCompleted":
+                    print(f"\nTool call completed: {event.tool.tool_name}\n")
+                    yield f"data: {json.dumps({'type': 'thinking', 'content': f'✅ Found results from {event.tool.tool_name}'})}\n\n"
+                elif event.event == "ReasoningStep":
+                    print(f"\nReasoning step: {event.content}\n")
+                    yield f"data: {json.dumps({'type': 'thinking', 'content': f'💭 {event.content}'})}\n\n"
+                elif event.event == "RunResponseContent":
+                    print(f"\nRun response content: {event.content}\n")
+                    yield f"data: {json.dumps({'type': 'response', 'content': event.content})}\n\n"
         
-        # return StreamingResponse(generate_stream(), media_type="text/event-stream")
+        return StreamingResponse(generate_stream(), media_type="text/event-stream")
 
         
     except ValueError as ve:

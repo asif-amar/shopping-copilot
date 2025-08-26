@@ -12,7 +12,7 @@ export const SidePanel: React.FC = () => {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        background: '#f8f9fa',
+        background: '#ffffff',
         fontFamily:
           '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
