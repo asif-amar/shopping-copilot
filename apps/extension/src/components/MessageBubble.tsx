@@ -4,6 +4,8 @@ import { Copy, ThumbsUp, ThumbsDown, Check } from "lucide-react";
 import { ChatMessage } from "@/types/chat";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ToolCall } from "./ToolCall";
+import { parseToolCallFromText } from "@/utils/toolCallParser";
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -13,6 +15,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
+
+  // Parse tool call from message text (single stable tool call)
+  const { toolCall, cleanText } = parseToolCallFromText(message.text);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -25,7 +30,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(message.text);
+      // Copy clean text without tool call markup
+      const textToCopy = cleanText.trim() || message.text;
+      await navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       console.log("Text copied to clipboard");
 
@@ -93,21 +100,31 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         marginBottom: "16px",
       }}
     >
-      <div
-        style={{
-          maxWidth: "85%",
-          fontSize: "14px",
-          lineHeight: "1.6",
-          color: "#374151",
-          direction: isHebrew(message.text) ? "rtl" : "ltr",
-          textAlign: isHebrew(message.text) ? "right" : "left",
-          whiteSpace: "pre-wrap",
-        }}
-      >
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-          {message.text}
-        </ReactMarkdown>
-      </div>
+      {/* Tool Call Section - Single Stable Component */}
+      {toolCall && (
+        <div style={{ maxWidth: "85%", marginBottom: cleanText.trim() ? "12px" : "0" }}>
+          <ToolCall toolCall={toolCall} />
+        </div>
+      )}
+
+      {/* Message Content */}
+      {cleanText.trim() && (
+        <div
+          style={{
+            maxWidth: "85%",
+            fontSize: "14px",
+            lineHeight: "1.6",
+            color: "#374151",
+            direction: isHebrew(cleanText) ? "rtl" : "ltr",
+            textAlign: isHebrew(cleanText) ? "right" : "left",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {cleanText}
+          </ReactMarkdown>
+        </div>
+      )}
 
       <motion.div
         initial={{ opacity: 0 }}

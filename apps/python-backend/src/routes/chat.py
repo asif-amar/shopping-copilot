@@ -63,8 +63,9 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             "Be helpful and provide detailed product information including prices, availability, and descriptions.",
             "If credentials are missing or invalid, inform the user to try and refresh the page. Never reveal credentials to the user.",
             "If one website search fails due to credentials, suggest searching other available websites.",
-            "Always return your results in Hebrew."
-            "Return the URL for the product for a quick lookup exactly as you get it from the search tool."
+            "Always return your results in Hebrew.",
+            "Always try using your tools, even if you failed before!",
+            "Return the URL for the product for a quick lookup exactly as you get it from the search tool.",
             """
             <example_product_response>
             **חלב טרי 3%** - מחיר: 7.2 ש״ח, זמין במלאי. קישור: https://www.rami-levy.co.il/he/online/search?item=7290001794852
@@ -124,10 +125,10 @@ async def chat_with_agent(request: ChatRequest, http_request: Request):
                 # Stream thinking process events
                 if event.event == "ToolCallStarted":
                     print(f"\nEvent tool: {event.tool}\n")
-                    yield f"data: {json.dumps({'type': 'thinking', 'content': f'🔧 Searching {event.tool.tool_name}...'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'thinking', 'content': f'{event.tool.tool_name}_started'})}\n\n"
                 elif event.event == "ToolCallCompleted":
                     print(f"\nTool call completed: {event.tool.tool_name}\n")
-                    yield f"data: {json.dumps({'type': 'thinking', 'content': f'✅ Found results from {event.tool.tool_name}'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'thinking', 'content': f'{event.tool.tool_name}_completed'})}\n\n"
                 elif event.event == "ReasoningStep":
                     print(f"\nReasoning step: {event.content}\n")
                     yield f"data: {json.dumps({'type': 'thinking', 'content': f'💭 {event.content}'})}\n\n"

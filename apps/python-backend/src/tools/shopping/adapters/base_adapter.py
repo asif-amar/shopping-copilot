@@ -113,7 +113,6 @@ class BaseShoppingAdapter(ABC):
             review_count=max(int(product_data.get('review_count', 0)), 0) if product_data.get('review_count') is not None else None,
             category=str(product_data.get('category', '')).replace('<', '').replace('>', '')[:100] if product_data.get('category') else None,
             brand=str(product_data.get('brand', '')).replace('<', '').replace('>', '')[:100] if product_data.get('brand') else None,
-            # barcode=str(product_data.get('barcode', '')).replace('<', '').replace('>', '')[:100] if product_data.get('barcode') else None,
             url=self._sanitize_url(product_data.get('url'))
         )
     

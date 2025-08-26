@@ -258,6 +258,10 @@ p {
   100% { transform: rotate(360deg); }
 }
 
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
 /* Utility classes */
 .text-center { text-align: center; }
 .text-left { text-align: left; }
