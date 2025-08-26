@@ -37,6 +37,8 @@ class CredentialManager:
             Tuple of (credentials, error_message)
         """
         config = get_adapter_config(site)
+        print("CONFIG: ", config)
+
         if not config:
             return None, f"Unsupported site: {site}"
         
@@ -112,10 +114,13 @@ class CredentialManager:
         Returns:
             Tuple of (credentials, error_message)
         """
+        logger.info("[get_credential_from_headers]: Extracting credentials from headers for site: {}".format(site))
         credentials, _ = CredentialManager.extract_credentials_from_headers(site, headers)
         if credentials:
-            logger.info(f"Successfully extracted {site} credentials from headers")
+            logger.info("[get_credential_from_headers]: Successfully extracted {} credentials from headers".format(site))
             return credentials, None
+        else:
+            logger.info("[get_credential_from_headers]: Failed to extract {} credentials from headers".format(site))
         
         # Failed to get credentials from headers
         config = get_adapter_config(site)

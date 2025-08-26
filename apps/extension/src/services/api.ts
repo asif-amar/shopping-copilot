@@ -2,6 +2,8 @@ import {
   StreamRequest,
   SITE_CREDENTIAL_HEADERS,
   mapCredentialsToHeaders,
+  RamiLevyHeaders,
+  ShufersalHeaders,
 } from "@shopping-copilot/shared";
 import { BACKEND_URL } from "@/utils/constants";
 import { getSiteAdapterFromHostname } from "./websiteContext";
@@ -64,9 +66,50 @@ export class ApiService {
       const credentials =
         await CredentialExtractor.extractCredentialsForSite(siteAdapter);
 
+      console.log("credentialscredentials", credentials);
+
       if (credentials) {
+        // Debug the mapping process
+        console.log("🔍 Debug mapping:", {
+          siteAdapter,
+          credentials,
+          credentialKeys: Object.keys(credentials),
+        });
+
+        // Convert credentials to the format expected by mapCredentialsToHeaders
+        // The shared package expects lowercase keys but our credentials have uppercase keys
+        let normalizedCredentials: any = {};
+
+        if (siteAdapter === "rami-levy") {
+          // Map uppercase credential keys to lowercase header keys
+          const ramiCredentials = credentials as RamiLevyHeaders;
+          normalizedCredentials = {
+            authorization: ramiCredentials.AUTHORIZATION.replace(
+              /^Bearer\s+/i,
+              ""
+            ),
+            cookie: ramiCredentials.COOKIE,
+            ecomtoken: ramiCredentials.ECOM_TOKEN,
+            userId: ramiCredentials.USER_ID || "1",
+          };
+        } else if (siteAdapter === "shufersal") {
+          // Map for Shufersal if needed
+          const shufersalCredentials = credentials as ShufersalHeaders;
+          normalizedCredentials = {
+            "x-csrf-token": shufersalCredentials.CSRF_TOKEN,
+            cookie: shufersalCredentials.COOKIE,
+          };
+        }
+
+        console.log("🔧 Normalized credentials:", normalizedCredentials);
+
         // Use the scalable mapping function
-        const mappedHeaders = mapCredentialsToHeaders(siteAdapter, credentials);
+        const mappedHeaders = mapCredentialsToHeaders(
+          siteAdapter,
+          normalizedCredentials
+        );
+        console.log("mappedHeaders", mappedHeaders);
+
         Object.assign(headers, mappedHeaders);
       }
     } catch (error) {
@@ -131,16 +174,16 @@ export class ApiService {
         try {
           // Try to parse as JSON
           const parsed = JSON.parse(data);
-          
+
           // Handle backend streaming format
           if (parsed.type === "response" && parsed.content) {
             return { type: "message", content: parsed.content };
           }
-          
+
           if (parsed.type === "thinking" && parsed.content) {
             return { type: "message", content: parsed.content };
           }
-          
+
           // Handle shopping action format
           if (parsed.action) {
             return { type: "action", data: parsed };

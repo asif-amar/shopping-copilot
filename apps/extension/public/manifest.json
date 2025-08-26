@@ -9,7 +9,9 @@
     "activeTab",
     "tabs",
     "sidePanel",
-    "scripting"
+    "scripting",
+    "webRequest",
+    "cookies"
   ],
   "host_permissions": [
     "http://localhost:8787/*",

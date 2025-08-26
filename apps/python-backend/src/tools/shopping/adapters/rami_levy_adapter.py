@@ -197,7 +197,7 @@ class RamiLevyAdapter(BaseShoppingAdapter):
                     'availability': len(item.get('available_in', [])) > 0,
                     'category': item.get('department', {}).get('name'),
                     'brand': item.get('gs', {}).get('BrandName'),
-                    'url': f"https://www.rami-levy.co.il/he/online/market/products/{item.get('id', '')}"
+                    'url': f"https://www.rami-levy.co.il/he/online/search?item={item.get('barcode', '')}"
                 }
                 
                 products.append(self.sanitize_product(product_data))

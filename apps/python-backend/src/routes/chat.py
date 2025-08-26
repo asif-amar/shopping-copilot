@@ -46,6 +46,7 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
     )
 
     tools = ShoppingTools(request_headers)
+    website_name = request_headers.get("x-site-name")
 
     agent = Agent(
         name="Shopping Copilot",
@@ -56,12 +57,19 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
         instructions=[
             "You are a shopping assistant that can help users search for products and manage their shopping carts on Israeli e-commerce websites.",
             f"You can search for products on the following websites: {', '.join([site.value for site in get_supported_sites()])}.",
+            f"You are currently operating on the {website_name} website. All requests should be related to this website, unless specified otherwise.",
             "Always search in Hebrew for Israeli websites (e.g., milk -> חלב).",
             "When helping with shopping, use the available tools to search products, add items to cart, and manage cart contents.",
             "Be helpful and provide detailed product information including prices, availability, and descriptions.",
-            "If credentials are missing or invalid, inform the user about the required credentials for each website.",
-            "If one website search fails due to credentials, try searching other available websites.",
+            "If credentials are missing or invalid, inform the user to try and refresh the page. Never reveal credentials to the user.",
+            "If one website search fails due to credentials, suggest searching other available websites.",
             "Always return your results in Hebrew."
+            "Return the URL for the product for a quick lookup exactly as you get it from the search tool."
+            """
+            <example_product_response>
+            **חלב טרי 3%** - מחיר: 7.2 ש״ח, זמין במלאי. קישור: https://www.rami-levy.co.il/he/online/search?item=7290001794852
+            </example_product_response>
+            """
         ],
         markdown=True,
         storage=storage,

@@ -82,8 +82,11 @@ class ShoppingTools(Toolkit):
                 website=site, 
                 headers=self._request_headers
             )
+            logger.info(f"\nCredentials: {credentials}\n")
+            print(f"\nCredentials: {credentials}\n")
             if not credentials:
                 return f"**Error**\n\n{credentials_error}"
+
             
             # Get adapter
             adapter = ShoppingAdapterFactory.get_adapter(site)
@@ -125,6 +128,7 @@ class ShoppingTools(Toolkit):
                     f"**{i}. {product.title}**",
                     f"- **Price:** {product.currency} {product.price}",
                     f"- **Availability:** {'In Stock' if product.availability else 'Out of Stock'}",
+                    f"- **URL:** {product.url}",
                 ]
                 
                 if product.rating:

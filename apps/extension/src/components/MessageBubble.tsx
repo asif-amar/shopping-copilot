@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Copy, ThumbsUp, ThumbsDown, Check } from 'lucide-react';
-import { ChatMessage } from '@/types/chat';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Copy, ThumbsUp, ThumbsDown, Check } from "lucide-react";
+import { ChatMessage } from "@/types/chat";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -13,7 +15,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const [disliked, setDisliked] = useState(false);
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   const isHebrew = (text: string) => {
@@ -25,27 +27,27 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     try {
       await navigator.clipboard.writeText(message.text);
       setCopied(true);
-      console.log('Text copied to clipboard');
-      
+      console.log("Text copied to clipboard");
+
       // Reset after 2 seconds
       setTimeout(() => {
         setCopied(false);
       }, 2000);
     } catch (err) {
-      console.error('Failed to copy text:', err);
+      console.error("Failed to copy text:", err);
     }
   };
 
   const handleLike = () => {
     setLiked(!liked);
     if (disliked) setDisliked(false); // Clear dislike if set
-    console.log('Message liked:', message.id);
+    console.log("Message liked:", message.id);
   };
 
   const handleDislike = () => {
     setDisliked(!disliked);
     if (liked) setLiked(false); // Clear like if set
-    console.log('Message disliked:', message.id);
+    console.log("Message disliked:", message.id);
   };
 
   if (message.isUser) {
@@ -55,22 +57,22 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
         style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginBottom: '16px',
+          display: "flex",
+          justifyContent: "flex-end",
+          marginBottom: "16px",
         }}
       >
         <div
           style={{
-            maxWidth: '70%',
-            background: '#2563eb',
-            color: 'white',
-            padding: '12px 16px',
-            borderRadius: '18px',
-            fontSize: '14px',
-            lineHeight: '1.4',
-            direction: isHebrew(message.text) ? 'rtl' : 'ltr',
-            textAlign: isHebrew(message.text) ? 'right' : 'left',
+            maxWidth: "70%",
+            background: "#2563eb",
+            color: "white",
+            padding: "12px 16px",
+            borderRadius: "18px",
+            fontSize: "14px",
+            lineHeight: "1.4",
+            direction: isHebrew(message.text) ? "rtl" : "ltr",
+            textAlign: isHebrew(message.text) ? "right" : "left",
           }}
         >
           {message.text}
@@ -85,35 +87,37 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        marginBottom: '16px',
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        marginBottom: "16px",
       }}
     >
       <div
         style={{
-          maxWidth: '85%',
-          fontSize: '14px',
-          lineHeight: '1.6',
-          color: '#374151',
-          direction: isHebrew(message.text) ? 'rtl' : 'ltr',
-          textAlign: isHebrew(message.text) ? 'right' : 'left',
-          whiteSpace: 'pre-wrap',
+          maxWidth: "85%",
+          fontSize: "14px",
+          lineHeight: "1.6",
+          color: "#374151",
+          direction: isHebrew(message.text) ? "rtl" : "ltr",
+          textAlign: isHebrew(message.text) ? "right" : "left",
+          whiteSpace: "pre-wrap",
         }}
       >
-        {message.text}
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {message.text}
+        </ReactMarkdown>
       </div>
-      
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3, duration: 0.2 }}
         style={{
-          display: 'flex',
-          gap: '8px',
-          marginTop: '8px',
-          alignItems: 'center',
+          display: "flex",
+          gap: "8px",
+          marginTop: "8px",
+          alignItems: "center",
         }}
       >
         <motion.button
@@ -121,22 +125,22 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           style={{
-            background: copied ? '#dcfce7' : 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '6px',
-            borderRadius: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s',
-            color: copied ? '#16a34a' : '#6b7280',
+            background: copied ? "#dcfce7" : "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "6px",
+            borderRadius: "6px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.2s",
+            color: copied ? "#16a34a" : "#6b7280",
           }}
           onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-            if (!copied) e.currentTarget.style.backgroundColor = '#f3f4f6';
+            if (!copied) e.currentTarget.style.backgroundColor = "#f3f4f6";
           }}
           onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-            if (!copied) e.currentTarget.style.backgroundColor = 'transparent';
+            if (!copied) e.currentTarget.style.backgroundColor = "transparent";
           }}
           title={copied ? "Copied!" : "Copy message"}
         >
@@ -148,80 +152,81 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             {copied ? <Check size={16} /> : <Copy size={16} />}
           </motion.div>
         </motion.button>
-        
+
         <motion.button
           onClick={handleLike}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           style={{
-            background: liked ? '#eff6ff' : 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '6px',
-            borderRadius: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s',
-            color: liked ? '#3b82f6' : '#6b7280',
+            background: liked ? "#eff6ff" : "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "6px",
+            borderRadius: "6px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.2s",
+            color: liked ? "#3b82f6" : "#6b7280",
           }}
           onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-            if (!liked) e.currentTarget.style.backgroundColor = '#f3f4f6';
+            if (!liked) e.currentTarget.style.backgroundColor = "#f3f4f6";
           }}
           onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-            if (!liked) e.currentTarget.style.backgroundColor = 'transparent';
+            if (!liked) e.currentTarget.style.backgroundColor = "transparent";
           }}
           title="Like message"
         >
           <motion.div
-            animate={{ 
+            animate={{
               scale: liked ? [1, 1.2, 1] : 1,
             }}
             transition={{ duration: 0.3 }}
           >
-            <ThumbsUp size={16} fill={liked ? '#93c5fd' : 'none'} />
+            <ThumbsUp size={16} fill={liked ? "#93c5fd" : "none"} />
           </motion.div>
         </motion.button>
-        
+
         <motion.button
           onClick={handleDislike}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           style={{
-            background: disliked ? '#fef7f7' : 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '6px',
-            borderRadius: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s',
-            color: disliked ? '#ef4444' : '#6b7280',
+            background: disliked ? "#fef7f7" : "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "6px",
+            borderRadius: "6px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.2s",
+            color: disliked ? "#ef4444" : "#6b7280",
           }}
           onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-            if (!disliked) e.currentTarget.style.backgroundColor = '#f3f4f6';
+            if (!disliked) e.currentTarget.style.backgroundColor = "#f3f4f6";
           }}
           onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-            if (!disliked) e.currentTarget.style.backgroundColor = 'transparent';
+            if (!disliked)
+              e.currentTarget.style.backgroundColor = "transparent";
           }}
           title="Dislike message"
         >
           <motion.div
-            animate={{ 
+            animate={{
               scale: disliked ? [1, 1.2, 1] : 1,
             }}
             transition={{ duration: 0.3 }}
           >
-            <ThumbsDown size={16} fill={disliked ? '#fca5a5' : 'none'} />
+            <ThumbsDown size={16} fill={disliked ? "#fca5a5" : "none"} />
           </motion.div>
         </motion.button>
-        
+
         <span
           style={{
-            fontSize: '12px',
-            color: '#9ca3af',
-            marginLeft: '8px',
+            fontSize: "12px",
+            color: "#9ca3af",
+            marginLeft: "8px",
           }}
         >
           {formatTime(message.timestamp)}
