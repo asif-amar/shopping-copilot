@@ -1,6 +1,26 @@
+export interface MessagePart {
+  type: 'text' | 'tool-call';
+  id: string;
+}
+
+export interface TextPart extends MessagePart {
+  type: 'text';
+  content: string;
+}
+
+export interface ToolCallPart extends MessagePart {
+  type: 'tool-call';
+  toolName: string;
+  displayName: string;
+  state: 'started' | 'completed' | 'error';
+  errorText?: string;
+}
+
+export type MessagePartType = TextPart | ToolCallPart;
+
 export interface ChatMessage {
   id: string;
-  text: string;
+  parts: MessagePartType[];
   isUser: boolean;
   timestamp: Date;
 }

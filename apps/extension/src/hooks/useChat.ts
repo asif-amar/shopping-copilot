@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChatMessage, ChatState } from "@/types/chat";
+import { ChatMessage, ChatState, MessagePartType, TextPart, ToolCallPart } from "@/types/chat";
 import { ApiService } from "@/services/api";
 import { useLanguage } from "@/hooks/useLanguage";
+import { getToolDisplayName } from "@/utils/toolCallParser";
 
 interface UseChatReturn {
   messages: ChatMessage[];
@@ -33,7 +34,11 @@ export function useChat(): UseChatReturn {
           const conversationMessages = response.conversation.messages.map(
             (msg: any) => ({
               id: msg.id,
-              text: msg.content,
+              parts: [{
+                type: 'text' as const,
+                id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+                content: msg.content
+              }],
               isUser: msg.role === "user",
               timestamp: new Date(msg.timestamp),
             })
@@ -87,7 +92,11 @@ export function useChat(): UseChatReturn {
 
       const userMessage: ChatMessage = {
         id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-        text: content.trim(),
+        parts: [{
+          type: 'text',
+          id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+          content: content.trim()
+        }],
         isUser: true,
         timestamp: new Date(),
       };
@@ -110,14 +119,15 @@ export function useChat(): UseChatReturn {
         );
         const decoder = new TextDecoder();
 
-        let assistantResponse = "";
+        let messageParts: MessagePartType[] = [];
         let botMessageAdded = false;
         let currentConversationId = conversationId;
+        let currentTextPart: TextPart | null = null;
 
         // Create bot message template (will be added on first content)
         const botMessage: ChatMessage = {
           id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-          text: "",
+          parts: [],
           isUser: false,
           timestamp: new Date(),
         };
@@ -138,8 +148,76 @@ export function useChat(): UseChatReturn {
             } else if (parsedResult.type === "thinking") {
               // Show thinking indicator
               console.log("Thinking:", parsedResult.content);
+              
+              // Check if thinking content contains tool calls
+              const thinkingContent = parsedResult.content;
+              if (thinkingContent && (thinkingContent.includes('_started') || thinkingContent.includes('_completed'))) {
+                // Parse tool name and state from thinking content
+                const isCompleted = thinkingContent.includes('_completed');
+                const isStarted = thinkingContent.includes('_started');
+                
+                if (isStarted || isCompleted) {
+                  const toolName = thinkingContent.replace(/_(?:started|completed)$/, '');
+                  const state = isCompleted ? 'completed' : 'started';
+                  
+                  // Find existing tool call part or create new one
+                  let toolCallPart = messageParts.find(part => 
+                    part.type === 'tool-call' && (part as ToolCallPart).toolName === toolName
+                  ) as ToolCallPart | undefined;
+                  
+                  if (toolCallPart) {
+                    // Update existing tool call state
+                    toolCallPart.state = state as 'started' | 'completed';
+                  } else {
+                    // Create new tool call part
+                    toolCallPart = {
+                      type: 'tool-call',
+                      id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+                      toolName,
+                      displayName: getToolDisplayName(toolName),
+                      state: state as 'started' | 'completed'
+                    };
+                    messageParts.push(toolCallPart);
+                  }
+                  
+                  // Add bot message and hide loading indicator if not added yet
+                  if (!botMessageAdded) {
+                    botMessageAdded = true;
+                    setState((prev) => ({
+                      ...prev,
+                      isLoading: false,
+                      messages: [
+                        ...prev.messages,
+                        { ...botMessage, parts: [...messageParts] },
+                      ],
+                    }));
+                  } else {
+                    // Update existing bot message
+                    setState((prev) => ({
+                      ...prev,
+                      messages: prev.messages.map((msg) =>
+                        msg.id === botMessage.id
+                          ? { ...msg, parts: [...messageParts] }
+                          : msg
+                      ),
+                    }));
+                  }
+                }
+              }
             } else if (parsedResult.type === "message" && parsedResult.content) {
-              assistantResponse += parsedResult.content;
+              // Handle text content as parts
+              if (!currentTextPart) {
+                // Create new text part
+                currentTextPart = {
+                  type: 'text',
+                  id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+                  content: parsedResult.content
+                };
+                messageParts.push(currentTextPart);
+              } else {
+                // Append to existing text part
+                currentTextPart.content += parsedResult.content;
+              }
 
               // Add bot message and hide loading indicator on first token
               if (!botMessageAdded) {
@@ -149,7 +227,7 @@ export function useChat(): UseChatReturn {
                   isLoading: false,
                   messages: [
                     ...prev.messages,
-                    { ...botMessage, text: assistantResponse },
+                    { ...botMessage, parts: [...messageParts] },
                   ],
                 }));
               } else {
@@ -158,7 +236,7 @@ export function useChat(): UseChatReturn {
                   ...prev,
                   messages: prev.messages.map((msg) =>
                     msg.id === botMessage.id
-                      ? { ...msg, text: assistantResponse }
+                      ? { ...msg, parts: [...messageParts] }
                       : msg
                   ),
                 }));
@@ -172,7 +250,13 @@ export function useChat(): UseChatReturn {
                   ? `✅ Success: ${JSON.stringify(actionData.data, null, 2)}`
                   : `❌ Error: ${actionData.error || "Unknown error"}`);
 
-              assistantResponse = actionText;
+              // Replace all parts with action text part
+              messageParts = [{
+                type: 'text',
+                id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+                content: actionText
+              }];
+              currentTextPart = null;
 
               // Add bot message and hide loading indicator on action response
               if (!botMessageAdded) {
@@ -182,7 +266,7 @@ export function useChat(): UseChatReturn {
                   isLoading: false,
                   messages: [
                     ...prev.messages,
-                    { ...botMessage, text: assistantResponse },
+                    { ...botMessage, parts: [...messageParts] },
                   ],
                 }));
               } else {
@@ -191,7 +275,7 @@ export function useChat(): UseChatReturn {
                   ...prev,
                   messages: prev.messages.map((msg) =>
                     msg.id === botMessage.id
-                      ? { ...msg, text: assistantResponse }
+                      ? { ...msg, parts: [...messageParts] }
                       : msg
                   ),
                 }));
@@ -209,7 +293,11 @@ export function useChat(): UseChatReturn {
 
         const errorMessage: ChatMessage = {
           id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-          text: t('error_occurred'),
+          parts: [{
+            type: 'text',
+            id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+            content: t('error_occurred')
+          }],
           isUser: false,
           timestamp: new Date(),
         };

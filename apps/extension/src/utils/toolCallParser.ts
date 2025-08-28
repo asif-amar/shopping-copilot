@@ -3,103 +3,139 @@
  * Detects and manages tool calls from assistant messages with stable state
  */
 
-import { ToolCallState } from '@/components/ToolCall';
+import { ToolCallState } from "@/components/ToolCall";
 
 /**
  * Parse and extract stable tool call state from message text
  * Now handles the new format: search_products_started, search_products_completed
  * Prioritizes completed status over started status when both are present
  */
-export function parseToolCallFromText(text: string): { toolCall: ToolCallState | null; cleanText: string } {
-  console.log('🔍 Raw input text:', JSON.stringify(text));
-  
+export function parseToolCallFromText(text: string): {
+  toolCall: ToolCallState | null;
+  cleanText: string;
+} {
+  console.log("🔍 Raw input text:", JSON.stringify(text));
+  console.log("🔍 Text length:", text.length);
+  console.log(
+    "🔍 Text preview:",
+    text.substring(0, 100) + (text.length > 100 ? "..." : "")
+  );
+
   let cleanText = text;
 
   // Handle the concatenated case: "search_products_startedsearch_products_completed"
   // First, let's find any "_started" or "_completed" and work backwards to find the tool name
-  
+
   let toolName = null;
-  let status = 'running';
-  
+  let status = "running";
+
   // Look for completed first (higher priority)
   const completedMatch = text.match(/([a-zA-Z_]+)_completed/);
   if (completedMatch) {
     toolName = completedMatch[1];
-    status = 'completed';
-    console.log('🔍 Found completed match:', completedMatch);
+    status = "completed";
+    console.log("🔍 Found completed match:", completedMatch);
   } else {
     // Look for started
     const startedMatch = text.match(/([a-zA-Z_]+)_started/);
     if (startedMatch) {
       toolName = startedMatch[1];
-      status = 'running';
-      console.log('🔍 Found started match:', startedMatch);
+      status = "running";
+      console.log("🔍 Found started match:", startedMatch);
     }
   }
-  
-  // If we found a tool name but it looks wrong (contains "started" or "completed"), 
+
+  // Also check for more modern MCP-style tool calls like:
+  // "Calling tool: search_products"
+  // "Using tool search_products"
+  // "🔧 search_products"
+  if (!toolName) {
+    const mcpPatterns = [
+      /(?:Calling tool|Using tool|Tool call):\s*([a-zA-Z_]+)/i,
+      /🔧\s*([a-zA-Z_]+)/,
+      /\[TOOL:\s*([a-zA-Z_]+)\]/i,
+      /executing\s+([a-zA-Z_]+)/i,
+    ];
+
+    for (const pattern of mcpPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        toolName = match[1];
+        status = "running";
+        console.log("🔍 Found MCP-style tool call:", match);
+        break;
+      }
+    }
+  }
+
+  // If we found a tool name but it looks wrong (contains "started" or "completed"),
   // extract just the actual tool name
-  if (toolName && (toolName.includes('started') || toolName.includes('completed'))) {
-    console.log('🔧 Tool name contains started/completed, fixing:', toolName);
+  if (
+    toolName &&
+    (toolName.includes("started") || toolName.includes("completed"))
+  ) {
+    console.log("🔧 Tool name contains started/completed, fixing:", toolName);
     // Extract the part before "_started"
-    const cleanMatch = toolName.match(/^([a-zA-Z_]+?)(?:_started|_completed|started|completed)/);
+    const cleanMatch = toolName.match(
+      /^([a-zA-Z_]+?)(?:_started|_completed|started|completed)/
+    );
     if (cleanMatch) {
       toolName = cleanMatch[1];
-      console.log('🔧 Cleaned tool name:', toolName);
+      console.log("🔧 Cleaned tool name:", toolName);
     }
   }
-  
+
   const matches = toolName ? [[`${toolName}_${status}`, toolName, status]] : [];
-  
-  console.log('🔍 All matches found:', matches);
+
+  console.log("🔍 All matches found:", matches);
 
   if (matches.length === 0) {
-    // Pattern: Thinking process - "💭 ..." 
+    // Pattern: Thinking process - "💭 ..."
     const thinkingPattern = /💭\s*(.+)/g;
     const thinkingMatch = thinkingPattern.exec(text);
 
     if (thinkingMatch) {
       // Remove thinking pattern from clean text but don't show a tool call card
-      cleanText = text.replace(/💭\s*[^\n]*\n?/g, '').trim();
-      
+      cleanText = text.replace(/💭\s*[^\n]*\n?/g, "").trim();
+
       return {
         toolCall: null,
-        cleanText
+        cleanText,
       };
     }
-    
+
     // No tool call found
     return {
       toolCall: null,
-      cleanText: text.trim()
+      cleanText: text.trim(),
     };
   }
 
   // We already have the best match from above logic
   const finalToolName = matches[0][1];
   const finalStatus = matches[0][2];
-  
-  console.log('🎯 Selected tool:', finalToolName, 'status:', finalStatus);
-  
+
+  console.log("🎯 Selected tool:", finalToolName, "status:", finalStatus);
+
   // Remove ALL tool call patterns from text, regardless of which one we're displaying
   // Use a more aggressive approach to remove concatenated patterns
   cleanText = text
-    .replace(/[a-zA-Z_]+_started/g, '')
-    .replace(/[a-zA-Z_]+_completed/g, '');
-  
+    .replace(/[a-zA-Z_]+_started/g, "")
+    .replace(/[a-zA-Z_]+_completed/g, "");
+
   // Clean up extra whitespace and normalize
-  cleanText = cleanText.replace(/\s+/g, ' ').trim();
-  
-  console.log('🧹 Clean text result:', JSON.stringify(cleanText));
-  console.log('🏷️ Tool display name:', getToolDisplayName(finalToolName));
-  
+  cleanText = cleanText.replace(/\s+/g, " ").trim();
+
+  console.log("🧹 Clean text result:", JSON.stringify(cleanText));
+  console.log("🏷️ Tool display name:", getToolDisplayName(finalToolName));
+
   return {
     toolCall: {
       toolName: finalToolName,
       displayName: getToolDisplayName(finalToolName),
-      status: finalStatus as 'running' | 'completed'
+      status: finalStatus as "running" | "completed",
     },
-    cleanText
+    cleanText,
   };
 }
 
@@ -108,20 +144,27 @@ export function parseToolCallFromText(text: string): { toolCall: ToolCallState |
  */
 export function getToolDisplayName(toolName: string): string {
   const toolNames: Record<string, string> = {
-    'search_products': 'חיפוש מוצרים',
-    'add_to_cart': 'הוספה לעגלה', 
-    'get_cart': 'צפייה בעגלה',
-    'remove_from_cart': 'הסרה מהעגלה',
-    'get_product_details': 'פרטי מוצר',
-    'search_deals': 'חיפוש מבצעים',
-    'compare_prices': 'השוואת מחירים',
-    'check_availability': 'בדיקת זמינות',
-    'get_product_info': 'מידע על מוצר',
-    'view_cart': 'צפייה בעגלה',
-    'clear_cart': 'ניקוי עגלה'
+    search_products: "חיפוש מוצרים",
+    add_to_cart: "הוספה לעגלה",
+    get_cart: "צפייה בעגלה",
+    remove_from_cart: "הסרה מהעגלה",
+    get_product_details: "פרטי מוצר",
+    search_deals: "חיפוש מבצעים",
+    compare_prices: "השוואת מחירים",
+    check_availability: "בדיקת זמינות",
+    get_product_info: "מידע על מוצר",
+    view_cart: "צפייה בעגלה",
+    clear_cart: "ניקוי עגלה",
+    duckduckgo_search: "חיפוש ברשת",
+    google_search: "חיפוש בגוגל",
+    web_search: "חיפוש אינטרנט",
+    search: "חיפוש",
+    read_article: "קריאת מאמר",
+    scrape_url: "סריקת עמוד",
+    fetch_content: "טעינת תוכן",
   };
 
-  return toolNames[toolName] || toolName.replace(/_/g, ' ');
+  return toolNames[toolName] || toolName.replace(/_/g, " ");
 }
 
 /**
@@ -129,15 +172,15 @@ export function getToolDisplayName(toolName: string): string {
  */
 export function getToolIcon(toolName: string): string {
   const toolIcons: Record<string, string> = {
-    'search_products': '🔍',
-    'add_to_cart': '🛒',
-    'get_cart': '🛍️',
-    'remove_from_cart': '🗑️',
-    'get_product_details': '📋',
-    'search_deals': '💰',
-    'compare_prices': '⚖️',
-    'check_availability': '✅'
+    search_products: "🔍",
+    add_to_cart: "🛒",
+    get_cart: "🛍️",
+    remove_from_cart: "🗑️",
+    get_product_details: "📋",
+    search_deals: "💰",
+    compare_prices: "⚖️",
+    check_availability: "✅",
   };
 
-  return toolIcons[toolName] || '🔧';
+  return toolIcons[toolName] || "🔧";
 }

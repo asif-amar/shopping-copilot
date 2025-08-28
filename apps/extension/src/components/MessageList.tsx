@@ -27,9 +27,11 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isLoading, o
       style={{
         flex: 1,
         overflow: 'auto',
-        padding: '20px',
+        padding: messages.length === 0 && !isLoading ? '0' : '20px',
         display: 'flex',
         flexDirection: 'column',
+        justifyContent: messages.length === 0 && !isLoading ? 'center' : 'flex-start',
+        alignItems: messages.length === 0 && !isLoading ? 'center' : 'stretch',
       }}
     >
       <AnimatePresence>

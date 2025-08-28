@@ -43,8 +43,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
         justifyContent: 'center',
         padding: '40px 24px',
         textAlign: 'center',
-        minHeight: '400px',
         direction: isRTL ? 'rtl' : 'ltr',
+        width: '100%',
+        maxWidth: '400px',
       }}
     >
       {/* Icon */}

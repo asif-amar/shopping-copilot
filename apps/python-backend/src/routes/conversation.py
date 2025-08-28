@@ -13,6 +13,9 @@ import uuid
 from datetime import datetime
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from agno.tools.newspaper4k import Newspaper4kTools
+from agno.tools.googlesearch import GoogleSearchTools
+# from ..tools.duckduckgo import DuckDuckGoTools
 
 from ..tools.shopping_tools import ShoppingTools
 from ..tools.shopping.constants import get_supported_sites
@@ -65,14 +68,16 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
         auto_upgrade_schema=True
     )
 
-    tools = ShoppingTools(request_headers)
+    shopping_tools = ShoppingTools(request_headers)
+    websearch_tools = GoogleSearchTools()
+    scraping_tools = Newspaper4kTools()
     website_name = request_headers.get("x-site-name")
 
     agent = Agent(
         name="Shopping Copilot",
         agent_id="shopping-copilot",
         model=model,
-        tools=[tools],
+        tools=[shopping_tools, websearch_tools, scraping_tools],
         instructions=[
             "You are a shopping assistant that can help users search for products and manage their shopping carts on Israeli e-commerce websites.",
             f"You can search for products on the following websites: {', '.join([site.value for site in get_supported_sites()])}.",
@@ -82,10 +87,14 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             "Be helpful and provide detailed product information including prices, availability, and descriptions.",
             "If credentials are missing or invalid, inform the user to try and refresh the page. Never reveal credentials to the user.",
             "If one website search fails due to credentials, suggest searching other available websites.",
-            "Always return your results in Hebrew.",
+            "Always return your results in Hebrew, unless the user asks you in English.",
             "Always try using your tools, even if you failed before!",
             "Return the URL for the product for a quick lookup exactly as you get it from the search tool.",
-            "If the user ask for, you can also create recipes and suggest ingredients from {website_name}.",
+            "If the user ask for, you can also search the web for recipes and suggest ingredients from {website_name}.",
+            "When searching for information, first use GoogleSearchTools to find relevant URLs",
+            "Then use the newspaper tools to read and extract the actual content from those URLs",
+            "Provide comprehensive information based on the scraped content, not just URLs",
+            "IMPORTANT: Never expose inside errors to the user!",
             """
             <example_product_response>
             **חלב טרי 3%** - מחיר: 7.2 ש״ח, זמין במלאי. קישור: https://www.rami-levy.co.il/he/online/search?item=7290001794852
@@ -122,6 +131,9 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         agent = create_basic_agent(request_headers)
         
         async def generate_stream():
+            # First, send conversation info to frontend
+            yield f"data: {json.dumps({'type': 'conversation_info', 'conversation_id': conversation_id, 'hostname': request.hostname})}\n\n"
+            
             # Stream response with intermediate steps
             response_stream = await agent.arun(
                 request.message, 
@@ -145,6 +157,9 @@ async def send_message(request: SendMessageRequest, http_request: Request):
                 elif event.event == "RunResponseContent":
                     print(f"\nRun response content: {event.content}\n")
                     yield f"data: {json.dumps({'type': 'response', 'content': event.content})}\n\n"
+            
+            # Send completion event
+            yield f"data: {json.dumps({'type': 'complete', 'conversation_id': conversation_id})}\n\n"
         
         return StreamingResponse(generate_stream(), media_type="text/event-stream")
         

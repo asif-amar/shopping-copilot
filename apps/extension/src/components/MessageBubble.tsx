@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Copy, ThumbsUp, ThumbsDown, Check } from "lucide-react";
-import { ChatMessage } from "@/types/chat";
+import { ChatMessage, TextPart, ToolCallPart } from "@/types/chat";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ToolCall } from "./ToolCall";
-import { parseToolCallFromText } from "@/utils/toolCallParser";
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -16,9 +15,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
 
-  // Parse tool call from message text (single stable tool call)
-  const { toolCall, cleanText } = parseToolCallFromText(message.text);
-
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
@@ -28,10 +24,18 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     return hebrewRegex.test(text);
   };
 
+  // Helper function to extract all text content from parts
+  const getTextContent = () => {
+    return message.parts
+      .filter(part => part.type === 'text')
+      .map(part => (part as TextPart).content)
+      .join(' ');
+  };
+
   const handleCopy = async () => {
     try {
-      // Copy clean text without tool call markup
-      const textToCopy = cleanText.trim() || message.text;
+      // Copy all text content from parts
+      const textToCopy = getTextContent();
       await navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       console.log("Text copied to clipboard");
@@ -78,11 +82,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             borderRadius: "18px",
             fontSize: "14px",
             lineHeight: "1.4",
-            direction: isHebrew(message.text) ? "rtl" : "ltr",
-            textAlign: isHebrew(message.text) ? "right" : "left",
+            direction: isHebrew(getTextContent()) ? "rtl" : "ltr",
+            textAlign: isHebrew(getTextContent()) ? "right" : "left",
           }}
         >
-          {message.text}
+          {getTextContent()}
         </div>
       </motion.div>
     );
@@ -100,34 +104,75 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         marginBottom: "16px",
       }}
     >
-      {/* Tool Call Section - Single Stable Component */}
-      {toolCall && (
-        <div
-          style={{
-            maxWidth: "85%",
-            marginBottom: cleanText.trim() ? "12px" : "0",
-          }}
-        >
-          <ToolCall toolCall={toolCall} />
-        </div>
-      )}
-
-      {/* Message Content */}
-      {cleanText.trim() && (
-        <div
-          style={{
-            maxWidth: "85%",
-            fontSize: "14px",
-            lineHeight: "1.6",
-            color: "#374151",
-            direction: isHebrew(cleanText) ? "rtl" : "ltr",
-            textAlign: isHebrew(cleanText) ? "right" : "left",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{cleanText}</ReactMarkdown>
-        </div>
-      )}
+      {/* Render message parts directly */}
+      {message.parts.map((part, index) => {
+        if (part.type === "text" && (part as TextPart).content?.trim()) {
+          const textPart = part as TextPart;
+          return (
+            <div
+              key={part.id}
+              style={{
+                maxWidth: "85%",
+                fontSize: "14px",
+                lineHeight: "1.6",
+                color: "#374151",
+                direction: isHebrew(textPart.content) ? "rtl" : "ltr",
+                textAlign: isHebrew(textPart.content) ? "right" : "left",
+                whiteSpace: "pre-wrap",
+                marginBottom: index < message.parts.length - 1 ? "8px" : "0",
+              }}
+            >
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  a: ({ href, children }) => (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (href) {
+                          chrome.tabs.update({ url: href });
+                        }
+                      }}
+                      style={{
+                        color: "#3b82f6",
+                        textDecoration: "underline",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {children}
+                    </a>
+                  ),
+                }}
+              >
+                {textPart.content}
+              </ReactMarkdown>
+            </div>
+          );
+        } else if (part.type === "tool-call") {
+          const toolCallPart = part as ToolCallPart;
+          return (
+            <div
+              key={part.id}
+              style={{
+                maxWidth: "85%",
+                marginBottom: index < message.parts.length - 1 ? "8px" : "0",
+              }}
+            >
+              <ToolCall
+                toolCall={{
+                  toolName: toolCallPart.toolName,
+                  displayName: toolCallPart.displayName,
+                  status: toolCallPart.state === 'started' ? 'running' : 'completed'
+                }}
+              />
+            </div>
+          );
+        }
+        return null;
+      })}
 
       <motion.div
         initial={{ opacity: 0 }}
