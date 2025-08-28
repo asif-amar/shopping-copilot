@@ -85,6 +85,7 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             "Always return your results in Hebrew.",
             "Always try using your tools, even if you failed before!",
             "Return the URL for the product for a quick lookup exactly as you get it from the search tool.",
+            "If the user ask for, you can also create recipes and suggest ingredients from {website_name}.",
             """
             <example_product_response>
             **חלב טרי 3%** - מחיר: 7.2 ש״ח, זמין במלאי. קישור: https://www.rami-levy.co.il/he/online/search?item=7290001794852

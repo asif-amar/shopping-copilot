@@ -29,7 +29,7 @@ const SidePanelContent: React.FC = () => {
         onNewConversation={startNewConversation}
       />
 
-      <MessageList messages={messages} isLoading={isLoading} />
+      <MessageList messages={messages} isLoading={isLoading} onSendMessage={sendMessage} />
 
       <ChatInput onSendMessage={sendMessage} isLoading={isLoading} />
     </div>

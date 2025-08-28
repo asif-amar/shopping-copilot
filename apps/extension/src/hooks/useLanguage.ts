@@ -32,6 +32,19 @@ const translations: Translations = {
 
     // Common
     loading: "טוען...",
+
+    // Empty State
+    empty_welcome: "היי, אני כאן כדי לעזור לך למצוא את המוצרים שאתה צריך",
+    empty_try_typing: 'נסה לכתוב: "תמצא לי חלב 3%" או "תראה לי פירות במבצע"',
+    empty_no_conversation:
+      "עדיין אין שיחה. התחל לכתוב כדי למצוא מוצרים במהירות",
+    empty_tagline: "אני כאן כדי לעשות את הקניות שלך חכמות יותר וקלות יותר ✨",
+
+    // Quick Actions
+    quick_basic_items: "🥛 מצא מוצרי יסוד",
+    quick_basic_items_desc: "חלב, לחם, ביצים",
+    quick_vegetables_sale: "🥦 תראה לי ירקות במבצע",
+    quick_recipe_suggestion: "🛒 הצע מתכון וקנה מרכיבים",
   },
   en: {
     // Header
@@ -51,6 +64,20 @@ const translations: Translations = {
 
     // Common
     loading: "Loading...",
+
+    // Empty State
+    empty_welcome: "Hi, I'm here to help you find the products you need",
+    empty_try_typing:
+      'Try typing: "Find me a 3% milk" or "Show me fruits on sale"',
+    empty_no_conversation:
+      "No conversation yet. Start typing to quickly find products",
+    empty_tagline: "I'm here to make your shopping smarter and easier ✨",
+
+    // Quick Actions
+    quick_basic_items: "🥛 Find basic items",
+    quick_basic_items_desc: "milk, bread, eggs",
+    quick_vegetables_sale: "🥦 Show me vegetables on sale",
+    quick_recipe_suggestion: "🛒 Suggest a recipe and buy ingredients",
   },
 };
 
