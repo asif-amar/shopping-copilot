@@ -1,98 +1,84 @@
 import { useState, useEffect, useCallback } from "react";
 import { ChatMessage, ChatState } from "@/types/chat";
 import { ApiService } from "@/services/api";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface UseChatReturn {
   messages: ChatMessage[];
   isLoading: boolean;
   currentHostname: string;
+  conversationId: string | null;
   sendMessage: (content: string) => Promise<void>;
-  clearConversation: () => Promise<void>;
+  startNewConversation: () => Promise<void>;
 }
 
 export function useChat(): UseChatReturn {
+  const { t } = useLanguage();
   const [state, setState] = useState<ChatState>({
     messages: [],
     isLoading: false,
     currentHostname: "",
   });
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
-  // Load conversation when component mounts or hostname changes
+  // Load conversation from backend API
   const loadConversation = useCallback(async (hostname: string) => {
+    // For now, we'll create a new conversation per hostname session
+    // In a more advanced implementation, we'd store the conversation ID per hostname
     try {
-      const response = await chrome.runtime.sendMessage({
-        type: "GET_CONVERSATION",
-        data: { hostname },
-      });
-
-      if (response.conversation) {
-        const conversationMessages = response.conversation.messages.map(
-          (msg: any) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp),
-          })
-        );
-        setState((prev) => ({ ...prev, messages: conversationMessages }));
-      } else {
-        setState((prev) => ({ ...prev, messages: [] }));
+      const storedConversationId = localStorage.getItem(`conversation_${hostname}`);
+      if (storedConversationId) {
+        const response = await ApiService.getConversation(storedConversationId);
+        if (response.conversation) {
+          const conversationMessages = response.conversation.messages.map(
+            (msg: any) => ({
+              id: msg.id,
+              text: msg.content,
+              isUser: msg.role === "user",
+              timestamp: new Date(msg.timestamp),
+            })
+          );
+          setState((prev) => ({ ...prev, messages: conversationMessages }));
+          setConversationId(storedConversationId);
+          return;
+        }
       }
+      // If no conversation found, start fresh
+      setState((prev) => ({ ...prev, messages: [] }));
+      setConversationId(null);
     } catch (error) {
       console.error("Failed to load conversation:", error);
       setState((prev) => ({ ...prev, messages: [] }));
+      setConversationId(null);
     }
   }, []);
 
   // Get current hostname and load conversation
   const initializeConversation = useCallback(async () => {
     try {
-      const response = await chrome.runtime.sendMessage({
-        type: "GET_CURRENT_HOSTNAME",
-      });
-
-      if (response.hostname) {
-        setState((prev) => ({ ...prev, currentHostname: response.hostname }));
-        await loadConversation(response.hostname);
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0]?.url) {
+        const url = new URL(tabs[0].url);
+        const hostname = url.hostname;
+        setState((prev) => ({ ...prev, currentHostname: hostname }));
+        await loadConversation(hostname);
       }
     } catch (error) {
       console.error("Failed to get current hostname:", error);
     }
   }, [loadConversation]);
 
-  // Listen for hostname changes from background script
+  // Initialize conversation on mount
   useEffect(() => {
-    const handleMessage = (message: any) => {
-      if (message.type === "HOSTNAME_CHANGED") {
-        const newHostname = message.data.hostname;
-        setState((prev) => ({ ...prev, currentHostname: newHostname }));
-        loadConversation(newHostname);
-      }
-    };
-
-    chrome.runtime.onMessage.addListener(handleMessage);
     initializeConversation();
+  }, [initializeConversation]);
 
-    return () => {
-      chrome.runtime.onMessage.removeListener(handleMessage);
-    };
-  }, [initializeConversation, loadConversation]);
-
-  const saveMessage = useCallback(
-    async (message: ChatMessage) => {
-      if (!state.currentHostname) return;
-
-      try {
-        await chrome.runtime.sendMessage({
-          type: "SAVE_MESSAGE",
-          data: {
-            hostname: state.currentHostname,
-            message,
-          },
-        });
-      } catch (error) {
-        console.error("Failed to save message:", error);
-      }
+  // Save conversation ID for this hostname
+  const saveConversationId = useCallback(
+    (hostname: string, convId: string) => {
+      localStorage.setItem(`conversation_${hostname}`, convId);
     },
-    [state.currentHostname]
+    []
   );
 
   const sendMessage = useCallback(
@@ -113,19 +99,20 @@ export function useChat(): UseChatReturn {
         isLoading: true,
       }));
 
-      // Save user message to storage
-      await saveMessage(userMessage);
+      // User message will be saved by the backend when we send it
 
       try {
-        // Pass hostname for website context
+        // Pass hostname and conversation ID for context
         const reader = await ApiService.sendMessage(
           content,
+          conversationId || undefined,
           state.currentHostname
         );
         const decoder = new TextDecoder();
 
         let assistantResponse = "";
         let botMessageAdded = false;
+        let currentConversationId = conversationId;
 
         // Create bot message template (will be added on first content)
         const botMessage: ChatMessage = {
@@ -143,7 +130,15 @@ export function useChat(): UseChatReturn {
           const parsedResult = ApiService.parseStreamChunk(chunk);
 
           if (parsedResult) {
-            if (parsedResult.type === "message" && parsedResult.content) {
+            if (parsedResult.type === "conversation_info") {
+              // Store the conversation ID for this session
+              currentConversationId = parsedResult.conversationId;
+              setConversationId(currentConversationId);
+              saveConversationId(state.currentHostname, currentConversationId);
+            } else if (parsedResult.type === "thinking") {
+              // Show thinking indicator
+              console.log("Thinking:", parsedResult.content);
+            } else if (parsedResult.type === "message" && parsedResult.content) {
               assistantResponse += parsedResult.content;
 
               // Add bot message and hide loading indicator on first token
@@ -201,22 +196,20 @@ export function useChat(): UseChatReturn {
                   ),
                 }));
               }
+            } else if (parsedResult.type === "complete") {
+              // Conversation completed
+              console.log("Conversation completed");
+            } else if (parsedResult.type === "error") {
+              throw new Error(parsedResult.message);
             }
           }
-        }
-
-        // Save final bot message to storage if we added one
-        if (botMessageAdded) {
-          const finalBotMessage = { ...botMessage, text: assistantResponse };
-          await saveMessage(finalBotMessage);
         }
       } catch (error) {
         console.error("Failed to get response from backend:", error);
 
         const errorMessage: ChatMessage = {
           id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-          // text: 'Sorry, I encountered an error while processing your request. Please try again.',
-          text: "מצטער, אני נתקל בבעיה. אנא נסה שוב מאוחר יותר.",
+          text: t('error_occurred'),
           isUser: false,
           timestamp: new Date(),
         };
@@ -230,23 +223,15 @@ export function useChat(): UseChatReturn {
         setState((prev) => ({ ...prev, isLoading: false }));
       }
     },
-    [state.currentHostname, state.isLoading, saveMessage]
+    [state.currentHostname, state.isLoading, conversationId, saveConversationId]
   );
 
-  const clearConversation = useCallback(async () => {
-    if (!confirm("Are you sure you want to clear this conversation?")) return;
-
+  const startNewConversation = useCallback(async () => {
     setState((prev) => ({ ...prev, messages: [] }));
+    setConversationId(null);
 
     if (state.currentHostname) {
-      try {
-        await chrome.runtime.sendMessage({
-          type: "CLEAR_CONVERSATION",
-          data: { hostname: state.currentHostname },
-        });
-      } catch (error) {
-        console.error("Failed to clear conversation:", error);
-      }
+      localStorage.removeItem(`conversation_${state.currentHostname}`);
     }
   }, [state.currentHostname]);
 
@@ -254,7 +239,8 @@ export function useChat(): UseChatReturn {
     messages: state.messages,
     isLoading: state.isLoading,
     currentHostname: state.currentHostname,
+    conversationId,
     sendMessage,
-    clearConversation,
+    startNewConversation,
   };
 }

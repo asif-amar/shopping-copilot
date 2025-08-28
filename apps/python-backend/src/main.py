@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routes.chat import router as chat_router
+from .routes.conversation import router as conversation_router
 
 load_dotenv()
 
@@ -28,7 +28,7 @@ app.add_middleware(
 async def health_check():
     return {"status": "healthy"}
 
-app.include_router(chat_router, prefix="/api")
+app.include_router(conversation_router, prefix="/api")
 
 if __name__ == "__main__":
     import uvicorn

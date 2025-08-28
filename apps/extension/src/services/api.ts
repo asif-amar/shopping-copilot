@@ -1,5 +1,4 @@
 import {
-  StreamRequest,
   SITE_CREDENTIAL_HEADERS,
   mapCredentialsToHeaders,
   RamiLevyHeaders,
@@ -120,24 +119,26 @@ export class ApiService {
   }
 
   /**
-   * Send a message to the streaming endpoint with website context
+   * Send a message to the conversation endpoint with website context
    */
   static async sendMessage(
     content: string,
+    conversationId?: string,
     hostname?: string
   ): Promise<ReadableStreamDefaultReader<Uint8Array>> {
     const headers = await this.getHeaders(hostname);
 
     console.log("headers", headers);
 
-    const response = await fetch(`${this.BASE_URL}/chat/agent`, {
+    const response = await fetch(`${this.BASE_URL}/conversation`, {
       method: "POST",
       headers,
       body: JSON.stringify({
         message: content,
-        //Should be retreived by oauth
+        conversation_id: conversationId,
         user_id: "1",
-      } as unknown as StreamRequest),
+        hostname: hostname,
+      }),
     });
 
     if (!response.ok) {
@@ -156,13 +157,43 @@ export class ApiService {
   }
 
   /**
-   * Parse a stream chunk into a message or shopping action
+   * Get a conversation by ID
+   */
+  static async getConversation(conversationId: string, userId: string = "1") {
+    const response = await fetch(`${this.BASE_URL}/conversation/${conversationId}?user_id=${userId}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  }
+
+  /**
+   * List all conversations for a user
+   */
+  static async listConversations(userId: string = "1", limit: number = 50) {
+    const response = await fetch(`${this.BASE_URL}/conversations?user_id=${userId}&limit=${limit}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  }
+
+  /**
+   * Parse a stream chunk into various response types
    */
   static parseStreamChunk(
     chunk: string
   ):
     | { type: "message"; content: string }
     | { type: "action"; data: ShoppingActionResponse }
+    | { type: "conversation_info"; conversationId: string; hostname: string }
+    | { type: "complete"; conversationId: string }
+    | { type: "thinking"; content: string }
+    | { type: "error"; message: string }
     | null {
     const lines = chunk.split("\n");
 
@@ -175,16 +206,32 @@ export class ApiService {
           // Try to parse as JSON
           const parsed = JSON.parse(data);
 
-          // Handle backend streaming format
+          // Handle new backend streaming format
+          if (parsed.type === "conversation_info") {
+            return { 
+              type: "conversation_info", 
+              conversationId: parsed.conversation_id,
+              hostname: parsed.hostname 
+            };
+          }
+
+          if (parsed.type === "complete") {
+            return { type: "complete", conversationId: parsed.conversation_id };
+          }
+
+          if (parsed.type === "thinking" && parsed.content) {
+            return { type: "thinking", content: parsed.content };
+          }
+
           if (parsed.type === "response" && parsed.content) {
             return { type: "message", content: parsed.content };
           }
 
-          if (parsed.type === "thinking" && parsed.content) {
-            return { type: "message", content: parsed.content };
+          if (parsed.type === "error") {
+            return { type: "error", message: parsed.message };
           }
 
-          // Handle shopping action format
+          // Handle shopping action format (legacy)
           if (parsed.action) {
             return { type: "action", data: parsed };
           }

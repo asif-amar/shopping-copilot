@@ -1,5 +1,4 @@
 // Background script for shopAI side panel extension
-import { ConversationManager } from "@/services/ConversationManager";
 
 let currentHostname: string | null = null;
 
@@ -292,12 +291,21 @@ chrome.action.onClicked.addListener((tab) => {
   }
 });
 
+// Utility function to extract hostname from URL
+function extractHostname(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname;
+  } catch {
+    return 'unknown';
+  }
+}
+
 // Listen for tab changes
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   const tab = await chrome.tabs.get(activeInfo.tabId);
   if (tab.url) {
-    const conversationManager = ConversationManager.getInstance();
-    const hostname = conversationManager.extractHostname(tab.url);
+    const hostname = extractHostname(tab.url);
 
     if (hostname !== currentHostname) {
       currentHostname = hostname;
@@ -318,8 +326,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 // Listen for tab URL changes
 chrome.tabs.onUpdated.addListener(async (_tabId, changeInfo, tab) => {
   if (changeInfo.url && tab.active) {
-    const conversationManager = ConversationManager.getInstance();
-    const hostname = conversationManager.extractHostname(changeInfo.url);
+    const hostname = extractHostname(changeInfo.url);
 
     if (hostname !== currentHostname) {
       currentHostname = hostname;
@@ -337,36 +344,30 @@ chrome.tabs.onUpdated.addListener(async (_tabId, changeInfo, tab) => {
   }
 });
 
-// Enhanced message handling
+// Get current hostname utility
+async function getCurrentHostname(): Promise<string> {
+  return new Promise((resolve) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]?.url) {
+        resolve(extractHostname(tabs[0].url));
+      } else {
+        resolve('unknown');
+      }
+    });
+  });
+}
+
+// Simplified message handling (conversation management moved to backend)
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   const handleMessage = async () => {
-    const conversationManager = ConversationManager.getInstance();
-
     switch (message.type) {
       case "PING":
         return { success: true, message: "pong" };
 
       case "GET_CURRENT_HOSTNAME":
-        const hostname = await conversationManager.getCurrentHostname();
+        const hostname = await getCurrentHostname();
         currentHostname = hostname;
         return { hostname };
-
-      case "GET_CONVERSATION":
-        const conversation = await conversationManager.getConversation(
-          message.data.hostname
-        );
-        return { conversation };
-
-      case "SAVE_MESSAGE":
-        await conversationManager.addMessage(
-          message.data.hostname,
-          message.data.message
-        );
-        return { success: true };
-
-      case "CLEAR_CONVERSATION":
-        await conversationManager.clearConversation(message.data.hostname);
-        return { success: true };
 
       default:
         return { error: "Unknown message type" };

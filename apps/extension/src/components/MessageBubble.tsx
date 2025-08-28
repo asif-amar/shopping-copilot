@@ -102,7 +102,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     >
       {/* Tool Call Section - Single Stable Component */}
       {toolCall && (
-        <div style={{ maxWidth: "85%", marginBottom: cleanText.trim() ? "12px" : "0" }}>
+        <div
+          style={{
+            maxWidth: "85%",
+            marginBottom: cleanText.trim() ? "12px" : "0",
+          }}
+        >
           <ToolCall toolCall={toolCall} />
         </div>
       )}
@@ -120,9 +125,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             whiteSpace: "pre-wrap",
           }}
         >
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {cleanText}
-          </ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{cleanText}</ReactMarkdown>
         </div>
       )}
 

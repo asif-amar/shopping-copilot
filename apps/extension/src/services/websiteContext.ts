@@ -1,23 +1,28 @@
-import { SiteAdapterName, SiteAdapterNameValues } from '@shopping-copilot/shared';
+import {
+  SiteAdapterName,
+  SiteAdapterNameValues,
+} from "@shopping-copilot/shared";
 
 /**
  * Maps website hostnames to their corresponding site adapters
  */
 export const HOSTNAME_TO_ADAPTER_MAP: Record<string, SiteAdapterNameValues> = {
   // Rami Levy
-  'www.rami-levy.co.il': SiteAdapterName.ramiLevy,
-  'rami-levy.co.il': SiteAdapterName.ramiLevy,
-  
+  "www.rami-levy.co.il": SiteAdapterName.ramiLevy,
+  "rami-levy.co.il": SiteAdapterName.ramiLevy,
+
   // Shufersal
-  'www.shufersal.co.il': SiteAdapterName.shufersal,
-  'shufersal.co.il': SiteAdapterName.shufersal,
-  'online.shufersal.co.il': SiteAdapterName.shufersal,
+  "www.shufersal.co.il": SiteAdapterName.shufersal,
+  "shufersal.co.il": SiteAdapterName.shufersal,
+  "online.shufersal.co.il": SiteAdapterName.shufersal,
 };
 
 /**
  * Get the appropriate site adapter for a given hostname
  */
-export function getSiteAdapterFromHostname(hostname: string): SiteAdapterNameValues | null {
+export function getSiteAdapterFromHostname(
+  hostname: string
+): SiteAdapterNameValues | null {
   return HOSTNAME_TO_ADAPTER_MAP[hostname] || null;
 }
 
@@ -31,12 +36,15 @@ export function isShoppingSite(hostname: string): boolean {
 /**
  * Get display name for a site adapter
  */
-export function getSiteDisplayName(adapter: SiteAdapterNameValues): string {
+export function getSiteDisplayName(
+  adapter: SiteAdapterNameValues,
+  language: string
+): string {
   switch (adapter) {
     case SiteAdapterName.ramiLevy:
-      return 'Rami Levy';
+      return language === "he" ? "רמי לוי" : "Rami Levy";
     case SiteAdapterName.shufersal:
-      return 'Shufersal';
+      return language === "he" ? "שופרסל" : "Shufersal";
     default:
       return adapter;
   }
