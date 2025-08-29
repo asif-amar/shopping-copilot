@@ -180,6 +180,21 @@ export function useChat(): UseChatReturn {
                     messageParts.push(toolCallPart);
                   }
                   
+                  // Refresh page when cart operations complete
+                  if (state === 'completed' && (toolName === 'add_to_cart' || toolName === 'remove_from_cart' || toolName === 'update_cart_quantity')) {
+                    console.log(`🔄 Cart operation ${toolName} completed, refreshing page...`);
+                    
+                    try {
+                      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                        if (tabs[0]?.id) {
+                          chrome.tabs.reload(tabs[0].id);
+                        }
+                      });
+                    } catch (error) {
+                      console.error('❌ Failed to refresh page after cart operation:', error);
+                    }
+                  }
+                  
                   // Add bot message and hide loading indicator if not added yet
                   if (!botMessageAdded) {
                     botMessageAdded = true;
