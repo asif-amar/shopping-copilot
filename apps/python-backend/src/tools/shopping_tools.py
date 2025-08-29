@@ -126,10 +126,18 @@ class ShoppingTools(Toolkit):
             for i, product in enumerate(products[:10], 1):  # Limit to 10 results
                 product_lines = [
                     f"**{i}. {product.title}**",
+                ]
+                
+                # Add image if available  
+                if product.image_url:
+                    product_lines.append(f"![{product.title}]({product.image_url})")
+                    product_lines.append("")
+                
+                product_lines.extend([
                     f"- **Price:** {product.currency} {product.price}",
                     f"- **Availability:** {'In Stock' if product.availability else 'Out of Stock'}",
                     f"- **URL:** {product.url}",
-                ]
+                ])
                 
                 if product.rating:
                     review_text = f" ({product.review_count} reviews)" if product.review_count else ""

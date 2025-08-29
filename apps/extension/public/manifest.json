@@ -44,6 +44,6 @@
     "128": "icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http://localhost:3001 http://localhost:8787 http://127.0.0.1:8000 https://generativelanguage.googleapis.com; frame-src 'none'; base-uri 'self';"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http://localhost:3001 http://localhost:8787 http://127.0.0.1:8000 https://generativelanguage.googleapis.com; img-src 'self' https://img.rami-levy.co.il https://www.rami-levy.co.il https://www.shufersal.co.il https://via.placeholder.com data:; frame-src 'none'; base-uri 'self';"
   }
 }

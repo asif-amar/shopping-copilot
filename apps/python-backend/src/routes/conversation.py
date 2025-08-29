@@ -92,9 +92,12 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             "Then use the newspaper tools to read and extract the actual content from those URLs",
             "Provide comprehensive information based on the scraped content, not just URLs",
             "IMPORTANT: Never expose inside errors to the user!",
+            "CRITICAL: When tool responses include images (markdown format like ![alt](url) or HTML img tags), ALWAYS preserve them exactly in your response. Do not summarize or rewrite responses that contain images - show them as-is.",
+            "When displaying product search results, always include the original formatted output from the search tool, including any images, links, and formatting.",
             """
             <example_product_response>
             **חלב טרי 3%** - מחיר: 7.2 ש״ח, זמין במלאי. קישור: https://www.rami-levy.co.il/he/online/search?item=7290001794852
+            ![Product](https://www.rami-levy.co.il/product/7290001794852/small.jpg)
             </example_product_response>
             """
         ],

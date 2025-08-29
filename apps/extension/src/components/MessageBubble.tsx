@@ -124,6 +124,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
+                rehypePlugins={[]}
+                skipHtml={false}
                 components={{
                   a: ({ href, children }) => (
                     <a
@@ -144,6 +146,24 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                     >
                       {children}
                     </a>
+                  ),
+                  img: ({ src, alt }) => (
+                    <img
+                      src={src}
+                      alt={alt || "Product image"}
+                      style={{
+                        maxWidth: "150px",
+                        maxHeight: "150px",
+                        borderRadius: "8px",
+                        marginTop: "8px",
+                        marginBottom: "8px",
+                        objectFit: "cover",
+                        border: "1px solid #e5e7eb",
+                      }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
                   ),
                 }}
               >

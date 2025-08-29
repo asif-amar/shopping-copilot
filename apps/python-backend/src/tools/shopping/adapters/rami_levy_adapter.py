@@ -4,7 +4,7 @@ Port of the TypeScript RamiLevyAdapter class
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 
 from .base_adapter import BaseShoppingAdapter
@@ -187,13 +187,23 @@ class RamiLevyAdapter(BaseShoppingAdapter):
             raw_products = response.get('data', [])
             
             for item in raw_products:
+                # Extract image URL
+                image_url = None
+                main_image = item.get('mainImage')
+                if main_image and isinstance(main_image, str) and main_image.strip():
+                    image_url = f"https://img.rami-levy.co.il{main_image}"
+                else:
+                    images_dict = item.get('images', {})
+                    if isinstance(images_dict, dict) and images_dict.get('small'):
+                        image_url = f"https://img.rami-levy.co.il{images_dict.get('small')}"
+                
                 product_data = {
                     'id': str(item.get('id', '')),
                     'title': item.get('name', ''),
                     'description': item.get('name', ''),  # Rami Levy doesn't have separate description
                     'price': item.get('price', {}).get('price', 0),
                     'currency': 'ILS',
-                    'image_url': item.get('images', {}).get('small'),
+                    'image_url': image_url,
                     'availability': len(item.get('available_in', [])) > 0,
                     'category': item.get('department', {}).get('name'),
                     'brand': item.get('gs', {}).get('BrandName'),
