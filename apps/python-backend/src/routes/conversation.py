@@ -11,11 +11,8 @@ from fastapi.responses import StreamingResponse
 import json
 import uuid
 from datetime import datetime
-import psycopg2
-from psycopg2.extras import RealDictCursor
 from agno.tools.newspaper4k import Newspaper4kTools
 from agno.tools.googlesearch import GoogleSearchTools
-# from ..tools.duckduckgo import DuckDuckGoTools
 
 from ..tools.shopping_tools import ShoppingTools
 from ..tools.shopping.constants import get_supported_sites
@@ -174,6 +171,10 @@ async def get_conversation(conversation_id: str, user_id: str = "default_user"):
         logger.info(f"Retrieving conversation: {conversation_id} for user: {user_id}")
 
         # Initialize PostgreSQL storage
+        db_url = os.getenv("DATABASE_URL")
+        if not db_url:
+            raise ValueError("DATABASE_URL environment variable is required")
+            
         storage = PostgresStorage(
             table_name="conversations", 
             db_url=db_url

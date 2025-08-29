@@ -1,5 +1,4 @@
 import logging
-import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,7 +17,14 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        # Chrome extension origins (runtime generated IDs) - this is what actually sends requests
+        "chrome-extension://*",
+        # Development servers 
+        "http://localhost:8787",  # MCP server
+        "http://localhost:3001",  # Frontend dev server  
+        "http://127.0.0.1:8000",  # This Python backend
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
