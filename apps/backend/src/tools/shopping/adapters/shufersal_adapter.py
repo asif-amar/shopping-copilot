@@ -152,6 +152,10 @@ class ShufersalAdapter(BaseShoppingAdapter):
             
             products = []
             for item in results:
+                # Debug: Log brand information
+                brand_name = item.get('brandName')
+                logger.info(f"Product: {item.get('name', '')}, Brand: {brand_name}")
+                
                 product_data = {
                     'id': str(item.get('code', '')),
                     'title': item.get('name', ''),
@@ -161,7 +165,7 @@ class ShufersalAdapter(BaseShoppingAdapter):
                     'image_url': self._get_image_url(item),
                     'availability': self._get_availability(item),
                     'category': item.get('secondLevelCategory'),
-                    'brand': item.get('brandName'),
+                    'brand': brand_name,
                     'url': f"https://www.shufersal.co.il{item.get('url', '')}" if item.get('url') else None,
                     'rating': item.get('averageRating'),
                     'review_count': item.get('numberOfReviews')

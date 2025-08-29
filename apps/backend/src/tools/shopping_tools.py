@@ -124,6 +124,9 @@ class ShoppingTools(Toolkit):
             ]
             
             for i, product in enumerate(products[:10], 1):  # Limit to 10 results
+                # Debug: Log each product being processed
+                logger.info(f"Processing product {i}: {product.title}, Brand: '{product.brand}'")
+                
                 product_lines = [
                     f"**{i}. {product.title}**",
                 ]
@@ -148,6 +151,12 @@ class ShoppingTools(Toolkit):
                 if product.category:
                     product_lines.append(f"- **Category:** {product.category}")
                 
+                if product.brand:
+                    logger.info(f"Adding brand to output: {product.brand}")
+                    product_lines.append(f"- **Brand:** {product.brand}")
+                else:
+                    logger.info(f"No brand found for product: {product.title}")
+                
                 product_lines.append(f"- **Product ID:** {product.id}")
                 
                 # Limit description length
@@ -159,7 +168,9 @@ class ShoppingTools(Toolkit):
                 response_lines.extend(product_lines)
                 response_lines.append("")  # Empty line between products
             
-            return "\n".join(response_lines)
+            final_response = "\n".join(response_lines)
+            logger.info(f"Final response being sent (first 500 chars): {final_response[:500]}...")
+            return final_response
             
         except Exception as e:
             logger.error(f"Search error: {e}")

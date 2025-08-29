@@ -96,7 +96,7 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             "When displaying product search results, always include the original formatted output from the search tool, including any images, links, and formatting.",
             """
             <example_product_response>
-            **חלב טרי 3%** - מחיר: 7.2 ש״ח, זמין במלאי. קישור: https://www.rami-levy.co.il/he/online/search?item=7290001794852
+            **חלב טרי 3%** - מחיר: 7.2 ש״ח, זמין במלאי, מותג: תנובה. קישור: https://www.rami-levy.co.il/he/online/search?item=7290001794852
             ![Product](https://www.rami-levy.co.il/product/7290001794852/small.jpg)
             </example_product_response>
             """

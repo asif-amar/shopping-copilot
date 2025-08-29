@@ -197,6 +197,11 @@ class RamiLevyAdapter(BaseShoppingAdapter):
                     if isinstance(images_dict, dict) and images_dict.get('small'):
                         image_url = f"https://img.rami-levy.co.il{images_dict.get('small')}"
                 
+                # Debug: Log brand information
+                brand_raw = item.get('gs', {})
+                brand_name = brand_raw.get('BrandName') if brand_raw else None
+                logger.info(f"Product: {item.get('name', '')}, Brand raw: {brand_raw}, Brand name: {brand_name}")
+                
                 product_data = {
                     'id': str(item.get('id', '')),
                     'title': item.get('name', ''),
@@ -206,7 +211,7 @@ class RamiLevyAdapter(BaseShoppingAdapter):
                     'image_url': image_url,
                     'availability': len(item.get('available_in', [])) > 0,
                     'category': item.get('department', {}).get('name'),
-                    'brand': item.get('gs', {}).get('BrandName'),
+                    'brand': brand_name,
                     'url': f"https://www.rami-levy.co.il/he/online/search?item={item.get('barcode', '')}"
                 }
                 
