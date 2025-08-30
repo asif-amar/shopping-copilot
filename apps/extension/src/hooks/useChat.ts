@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChatMessage, ChatState, MessagePartType, TextPart, ToolCallPart } from "@/types/chat";
+import { ChatMessage, ChatState, MessagePartType, TextPart, ToolCallPart, ProductsPart, Product } from "@/types/chat";
 import { ApiService } from "@/services/api";
 import { useLanguage } from "@/hooks/useLanguage";
 import { getToolDisplayName } from "@/utils/toolCallParser";
@@ -140,6 +140,7 @@ export function useChat(): UseChatReturn {
           const parsedResult = ApiService.parseStreamChunk(chunk);
 
           if (parsedResult) {
+            console.log("🔍 Parsed result:", parsedResult.type, parsedResult);
             if (parsedResult.type === "conversation_info") {
               // Store the conversation ID for this session
               currentConversationId = parsedResult.conversationId;
@@ -286,6 +287,126 @@ export function useChat(): UseChatReturn {
                 }));
               } else {
                 // Update existing bot message
+                setState((prev) => ({
+                  ...prev,
+                  messages: prev.messages.map((msg) =>
+                    msg.id === botMessage.id
+                      ? { ...msg, parts: [...messageParts] }
+                      : msg
+                  ),
+                }));
+              }
+            } else if (parsedResult.type === "product_start") {
+              // Start of product section - create products part
+              console.log("🚀 Product section started - creating products part");
+              
+              // End current text part to maintain chronological order
+              currentTextPart = null;
+              
+              const productsPart: ProductsPart = {
+                type: 'products',
+                id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+                products: [],
+                isLoading: true
+              };
+              messageParts.push(productsPart);
+              
+              // Add or update bot message
+              if (!botMessageAdded) {
+                botMessageAdded = true;
+                setState((prev) => ({
+                  ...prev,
+                  isLoading: false,
+                  messages: [
+                    ...prev.messages,
+                    { ...botMessage, parts: [...messageParts] },
+                  ],
+                }));
+              } else {
+                setState((prev) => ({
+                  ...prev,
+                  messages: prev.messages.map((msg) =>
+                    msg.id === botMessage.id
+                      ? { ...msg, parts: [...messageParts] }
+                      : msg
+                  ),
+                }));
+              }
+            } else if (parsedResult.type === "product") {
+              // Individual product received
+              const product: Product = parsedResult.product;
+              console.log("📦 Received product:", product.name, "- Total message parts:", messageParts.length);
+              
+              // Find existing products part and add product
+              const productsPart = messageParts.find(part => part.type === 'products') as ProductsPart | undefined;
+              if (productsPart) {
+                console.log("✅ Found existing products part, adding product. Current count:", productsPart.products.length);
+                productsPart.products.push(product);
+                console.log("✅ Product added, new count:", productsPart.products.length);
+                
+                // Update UI with new product - create fresh copies to trigger re-render
+                setState((prev) => ({
+                  ...prev,
+                  messages: prev.messages.map((msg) =>
+                    msg.id === botMessage.id
+                      ? { ...msg, parts: messageParts.map(part => 
+                          part.type === 'products' 
+                            ? { ...part, products: [...(part as ProductsPart).products] }
+                            : part
+                        ) }
+                      : msg
+                  ),
+                }));
+              } else {
+                console.log("❌ No products part found! Creating one now...");
+                
+                // End current text part to maintain chronological order
+                currentTextPart = null;
+                
+                // Create products part if it doesn't exist
+                const newProductsPart: ProductsPart = {
+                  type: 'products',
+                  id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+                  products: [product],
+                  isLoading: false
+                };
+                messageParts.push(newProductsPart);
+                
+                // Update UI
+                if (!botMessageAdded) {
+                  botMessageAdded = true;
+                  setState((prev) => ({
+                    ...prev,
+                    isLoading: false,
+                    messages: [
+                      ...prev.messages,
+                      { ...botMessage, parts: [...messageParts] },
+                    ],
+                  }));
+                } else {
+                  setState((prev) => ({
+                    ...prev,
+                    messages: prev.messages.map((msg) =>
+                      msg.id === botMessage.id
+                        ? { ...msg, parts: [...messageParts] }
+                        : msg
+                    ),
+                  }));
+                }
+              }
+            } else if (parsedResult.type === "product_end") {
+              // End of product section
+              console.log("🏁 Product section ended");
+              
+              // End current text part to ensure chronological order for text after products
+              currentTextPart = null;
+              
+              // Mark products part as no longer loading
+              const productsPart = messageParts.find(part => part.type === 'products') as ProductsPart | undefined;
+              if (productsPart) {
+                productsPart.isLoading = false;
+                
+                // Update UI
                 setState((prev) => ({
                   ...prev,
                   messages: prev.messages.map((msg) =>

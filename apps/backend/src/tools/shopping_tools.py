@@ -3,6 +3,7 @@ Agno shopping tools as a unified Toolkit
 Port of the MCP server shopping tools functionality
 """
 
+import json
 import logging
 from typing import Optional, Dict
 
@@ -107,68 +108,66 @@ class ShoppingTools(Toolkit):
                 error_msg = ShoppingSecurity.format_secure_error(result.error or "Unknown error")
                 return f"**Error**\n\nSearch failed: {error_msg}"
             
-            # Format response
+            # Format response as JSON array for the agent to use
             search_result = result.data
             products = search_result.products
             total_count = search_result.total_count
             
             if not products:
-                return f"**Product Search Results**\n\n**Website:** {website.upper()}\n**Query:** \"{query}\"\n**Found:** 0 products\n\nNo products found."
+                return f"מצאתי 0 מוצרים עבור \"{query}\" באתר {website.upper()}.\n\n<product_search_results>\n[]\n</product_search_results>"
             
-            response_lines = [
+            # Create the response with Hebrew text followed by individual products for streaming
+            # response_parts = []
+            # response_parts.append(f"מצאתי {total_count} מוצרים עבור \"{query}\" באתר {website.upper()}:")
+            response_parts = [
                 f"**Product Search Results**",
                 f"**Website:** {website.upper()}",
                 f"**Query:** \"{query}\"",
                 f"**Found:** {total_count} products",
                 ""
             ]
+            response_parts.append("\n\n<product_search_results>")
             
-            for i, product in enumerate(products[:10], 1):  # Limit to 10 results
+            # Stream products individually - each as a separate JSON object
+            for i, product in enumerate(products[:10]):  # Limit to 10 results
                 # Debug: Log each product being processed
-                logger.info(f"Processing product {i}: {product.title}, Brand: '{product.brand}'")
+                logger.info(f"Processing product {i+1}: {product.title}, Brand: '{product.brand}'")
                 
-                product_lines = [
-                    f"**{i}. {product.title}**",
-                ]
+                product_obj = {
+                    "name": product.title,
+                    "price": f"{product.currency} {product.price}",
+                    "availability": "זמין במלאי" if product.availability else "אזל מהמלאי",
+                    "url": product.url,
+                    "image": product.image_url if product.image_url else ""
+                }
                 
-                # Add image if available  
-                if product.image_url:
-                    product_lines.append(f"![{product.title}]({product.image_url})")
-                    product_lines.append("")
-                
-                product_lines.extend([
-                    f"- **Price:** {product.currency} {product.price}",
-                    f"- **Availability:** {'In Stock' if product.availability else 'Out of Stock'}",
-                    f"- **URL:** {product.url}",
-                ])
-                
-                if product.rating:
-                    review_text = f" ({product.review_count} reviews)" if product.review_count else ""
-                    product_lines.append(f"- **Rating:** {product.rating}/5{review_text}")
-                else:
-                    product_lines.append("- **Rating:** No rating")
+                # Add additional fields if available
+                if product.brand:
+                    product_obj["brand"] = product.brand
                 
                 if product.category:
-                    product_lines.append(f"- **Category:** {product.category}")
+                    product_obj["category"] = product.category
+                    
+                if product.rating:
+                    review_text = f" ({product.review_count} ביקורות)" if product.review_count else ""
+                    product_obj["rating"] = f"{product.rating}/5{review_text}"
                 
-                if product.brand:
-                    logger.info(f"Adding brand to output: {product.brand}")
-                    product_lines.append(f"- **Brand:** {product.brand}")
-                else:
-                    logger.info(f"No brand found for product: {product.title}")
+                if product.description:
+                    # Limit description length
+                    description = product.description[:150]
+                    if len(product.description) > 150:
+                        description += "..."
+                    product_obj["description"] = description
                 
-                product_lines.append(f"- **Product ID:** {product.id}")
+                product_obj["product_id"] = product.id
                 
-                # Limit description length
-                description = product.description[:150]
-                if len(product.description) > 150:
-                    description += "..."
-                product_lines.append(f"- **Description:** {description}")
-                
-                response_lines.extend(product_lines)
-                response_lines.append("")  # Empty line between products
+                # Output individual product JSON
+                product_json = json.dumps(product_obj, ensure_ascii=False, indent=2)
+                response_parts.append(f"\n<product>{product_json}</product>")
             
-            final_response = "\n".join(response_lines)
+            response_parts.append("\n</product_search_results>")
+            
+            final_response = "".join(response_parts)
             logger.info(f"Final response being sent (first 500 chars): {final_response[:500]}...")
             return final_response
             

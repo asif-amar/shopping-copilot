@@ -5,3 +5,5 @@ export { TypingIndicator } from './TypingIndicator';
 export { ChatInput } from './ChatInput';
 export { ToolCall } from './ToolCall';
 export { EmptyState } from './EmptyState';
+export { ProductCard } from './ProductCard';
+export { ProductGrid } from './ProductGrid';

@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Copy, ThumbsUp, ThumbsDown, Check } from "lucide-react";
-import { ChatMessage, TextPart, ToolCallPart } from "@/types/chat";
+import { ChatMessage, TextPart, ToolCallPart, ProductsPart } from "@/types/chat";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ToolCall } from "./ToolCall";
+import { ProductGrid } from "./ProductGrid";
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -187,6 +188,24 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                   displayName: toolCallPart.displayName,
                   status: toolCallPart.state === 'started' ? 'running' : 'completed'
                 }}
+              />
+            </div>
+          );
+        } else if (part.type === "products") {
+          const productsPart = part as ProductsPart;
+          console.log("🎨 Rendering ProductGrid with", productsPart.products.length, "products:", productsPart.products);
+          return (
+            <div
+              key={part.id}
+              style={{
+                width: "100%",
+                maxWidth: "none",
+                marginBottom: index < message.parts.length - 1 ? "16px" : "0",
+              }}
+            >
+              <ProductGrid 
+                products={productsPart.products} 
+                isLoading={productsPart.isLoading || false}
               />
             </div>
           );

@@ -193,6 +193,9 @@ export class ApiService {
     | { type: "conversation_info"; conversationId: string; hostname: string }
     | { type: "complete"; conversationId: string }
     | { type: "thinking"; content: string }
+    | { type: "product_start" }
+    | { type: "product"; product: any }
+    | { type: "product_end" }
     | { type: "error"; message: string }
     | null {
     const lines = chunk.split("\n");
@@ -225,6 +228,18 @@ export class ApiService {
 
           if (parsed.type === "response" && parsed.content) {
             return { type: "message", content: parsed.content };
+          }
+
+          if (parsed.type === "product_start") {
+            return { type: "product_start" };
+          }
+
+          if (parsed.type === "product" && parsed.product) {
+            return { type: "product", product: parsed.product };
+          }
+
+          if (parsed.type === "product_end") {
+            return { type: "product_end" };
           }
 
           if (parsed.type === "error") {

@@ -1,7 +1,7 @@
 import logging
 import os
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from agno.agent import Agent
 from agno.models.google import Gemini
 from dotenv import load_dotenv
@@ -16,6 +16,7 @@ from agno.tools.googlesearch import GoogleSearchTools
 
 from ..tools.shopping_tools import ShoppingTools
 from ..tools.shopping.constants import get_supported_sites
+from ..services.product_stream_parser import ProductStreamParser
 
 load_dotenv()
 
@@ -94,11 +95,31 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             "IMPORTANT: Never expose inside errors to the user!",
             "CRITICAL: When tool responses include images (markdown format like ![alt](url) or HTML img tags), ALWAYS preserve them exactly in your response. Do not summarize or rewrite responses that contain images - show them as-is.",
             "When displaying product search results, always include the original formatted output from the search tool, including any images, links, and formatting.",
+            # """
+            # <example_product_response>
+            # **חלב טרי 3%** - מחיר: 7.2 ש״ח, זמין במלאי, מותג: תנובה. קישור: https://www.rami-levy.co.il/he/online/search?item=7290001794852
+            # ![Product](https://www.rami-levy.co.il/product/7290001794852/small.jpg)
+            # </example_product_response>
+            # """,
             """
-            <example_product_response>
-            **חלב טרי 3%** - מחיר: 7.2 ש״ח, זמין במלאי, מותג: תנובה. קישור: https://www.rami-levy.co.il/he/online/search?item=7290001794852
-            ![Product](https://www.rami-levy.co.il/product/7290001794852/small.jpg)
-            </example_product_response>
+            IMPORTANT: When using the search_products tool, the tool returns properly formatted product results for streaming.
+            You must include the EXACT tool response in your answer without modification - do not reformat, summarize, or recreate the product data.
+            
+            The search_products tool returns results in this format:
+            - Hebrew introductory text
+            - <product_search_results><product>{...}</product><product>{...}</product>...</product_search_results>
+            - Each product is wrapped in individual <product> tags for real-time streaming
+            
+            Your job is to:
+            1. Include the complete tool response exactly as returned
+            2. Add any additional helpful context or suggestions after the product results
+            3. NEVER modify, reformat, or summarize the product data from the tool
+            4. The frontend will parse and stream each <product> tag individually in real-time
+            
+            EXAMPLE:
+            User: "חפש חלב"
+            Tool Response: "מצאתי 3 מוצרים עבור \"חלב\":\n<product_search_results><product>{...}</product><product>{...}</product></product_search_results>"
+            Your Response: "מצאתי 3 מוצרים עבור \"חלב\":\n<product_search_results><product>{...}</product><product>{...}</product></product_search_results>\n\nהאם תרצה שאוסיף משהו לעגלת הקניות?"
             """
         ],
         markdown=True,
@@ -131,6 +152,9 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         agent = create_basic_agent(request_headers)
         
         async def generate_stream():
+            # Initialize product parser for this conversation
+            product_parser = ProductStreamParser()
+            
             # First, send conversation info to frontend
             yield f"data: {json.dumps({'type': 'conversation_info', 'conversation_id': conversation_id, 'hostname': request.hostname})}\n\n"
             
@@ -156,7 +180,35 @@ async def send_message(request: SendMessageRequest, http_request: Request):
                     yield f"data: {json.dumps({'type': 'thinking', 'content': f'💭 {event.content}'})}\n\n"
                 elif event.event == "RunResponseContent":
                     print(f"\nRun response content: {event.content}\n")
-                    yield f"data: {json.dumps({'type': 'response', 'content': event.content})}\n\n"
+                    
+                    # Debug: Check if content contains expected product tags
+                    if "<product_search_results>" in event.content:
+                        print("🔍 Found product_search_results opening tag!")
+                    if "</product_search_results>" in event.content:
+                        print("🔍 Found product_search_results closing tag!")
+                    
+                    # Parse content for products
+                    parse_results = product_parser.parse_chunk(event.content)
+                    
+                    # Stream each parsed result
+                    for result in parse_results:
+                        if result['type'] == 'text':
+                            yield f"data: {json.dumps({'type': 'response', 'content': result['content']})}\n\n"
+                        elif result['type'] == 'product_start':
+                            print("🚀 Product section started")
+                            yield f"data: {json.dumps({'type': 'product_start'})}\n\n"
+                        elif result['type'] == 'product':
+                            print(f"📦 Streaming product: {result['product'].get('name', 'Unknown')}")
+                            yield f"data: {json.dumps({'type': 'product', 'product': result['product']})}\n\n"
+                        elif result['type'] == 'product_end':
+                            print("🏁 Product section ended")
+                            yield f"data: {json.dumps({'type': 'product_end'})}\n\n"
+            
+            # Flush any remaining content from parser
+            remaining_results = product_parser.flush()
+            for result in remaining_results:
+                if result['type'] == 'text':
+                    yield f"data: {json.dumps({'type': 'response', 'content': result['content']})}\n\n"
             
             # Send completion event
             yield f"data: {json.dumps({'type': 'complete', 'conversation_id': conversation_id})}\n\n"

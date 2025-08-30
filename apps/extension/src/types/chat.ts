@@ -1,5 +1,18 @@
+export interface Product {
+  name: string;
+  price: string;
+  availability: string;
+  url: string;
+  image: string;
+  brand?: string;
+  category?: string;
+  rating?: string;
+  description?: string;
+  product_id: string;
+}
+
 export interface MessagePart {
-  type: 'text' | 'tool-call';
+  type: 'text' | 'tool-call' | 'products';
   id: string;
 }
 
@@ -16,7 +29,13 @@ export interface ToolCallPart extends MessagePart {
   errorText?: string;
 }
 
-export type MessagePartType = TextPart | ToolCallPart;
+export interface ProductsPart extends MessagePart {
+  type: 'products';
+  products: Product[];
+  isLoading?: boolean;
+}
+
+export type MessagePartType = TextPart | ToolCallPart | ProductsPart;
 
 export interface ChatMessage {
   id: string;
