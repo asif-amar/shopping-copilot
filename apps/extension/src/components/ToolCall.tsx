@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Loader2, Check, AlertCircle } from "lucide-react";
 
@@ -14,8 +14,31 @@ interface ToolCallProps {
 }
 
 export const ToolCall: React.FC<ToolCallProps> = ({ toolCall }) => {
+  const [startTime] = useState(() => Date.now());
+  const [displayStatus, setDisplayStatus] = useState<"running" | "completed" | "error">("running");
+
+  useEffect(() => {
+    if (toolCall.status === "completed" || toolCall.status === "error") {
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, 500 - elapsedTime); // Minimum 500ms
+
+      if (remainingTime > 0) {
+        // Keep showing loading for the remaining time
+        const timeout = setTimeout(() => {
+          setDisplayStatus(toolCall.status);
+        }, remainingTime);
+
+        return () => clearTimeout(timeout);
+      } else {
+        // Enough time has passed, show the actual status immediately
+        setDisplayStatus(toolCall.status);
+      }
+    } else {
+      setDisplayStatus(toolCall.status);
+    }
+  }, [toolCall.status, startTime]);
   const getStatusIcon = () => {
-    switch (toolCall.status) {
+    switch (displayStatus) {
       case "running":
         return (
           <div style={{ 

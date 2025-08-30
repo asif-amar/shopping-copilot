@@ -213,6 +213,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         return null;
       })}
 
+      {message.isComplete && (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -336,6 +337,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           {formatTime(message.timestamp)}
         </span>
       </motion.div>
+      )}
     </motion.div>
   );
 };

@@ -86,56 +86,16 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, isLoading = 
     <div
       style={{
         width: "100%",
-        padding: "16px"
+        maxWidth: "85%",
+        padding: "0"
       }}
     >
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          marginBottom: "16px",
-          paddingBottom: "12px",
-          borderBottom: "1px solid #f1f3f4"
-        }}
-      >
-        <div
-          style={{
-            width: "32px",
-            height: "32px",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            borderRadius: "8px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center"
-          }}
-        >
-          <Package size={16} color="white" />
-        </div>
-        <div>
-          <h3
-            style={{
-              margin: 0,
-              fontSize: "16px",
-              fontWeight: "600",
-              color: "#1f2937",
-              direction: "rtl"
-            }}
-          >
-            נמצאו {products.length} מוצרים
-          </h3>
-        </div>
-      </motion.div>
-
       {/* Product Grid */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-          gap: "16px",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(180px, 45%), 1fr))",
+          gap: "10px",
           width: "100%"
         }}
       >
@@ -159,23 +119,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, isLoading = 
         </AnimatePresence>
       </div>
 
-      {/* Show more indicator if there are many products */}
-      {products.length > 6 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          style={{
-            textAlign: "center",
-            marginTop: "16px",
-            padding: "12px",
-            color: "#6b7280",
-            fontSize: "12px"
-          }}
-        >
-          מציג {Math.min(products.length, 10)} מתוך {products.length} מוצרים
-        </motion.div>
-      )}
     </div>
   );
 };

@@ -42,6 +42,7 @@ export interface ChatMessage {
   parts: MessagePartType[];
   isUser: boolean;
   timestamp: Date;
+  isComplete?: boolean;
 }
 
 export interface ChatState {

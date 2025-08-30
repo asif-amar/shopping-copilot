@@ -337,8 +337,9 @@ export function useChat(): UseChatReturn {
               const product: Product = parsedResult.product;
               console.log("📦 Received product:", product.name, "- Total message parts:", messageParts.length);
               
-              // Find existing products part and add product
-              const productsPart = messageParts.find(part => part.type === 'products') as ProductsPart | undefined;
+              // Find the MOST RECENT products part (for chronological order)
+              const productsParts = messageParts.filter(part => part.type === 'products') as ProductsPart[];
+              const productsPart = productsParts[productsParts.length - 1]; // Get the last products part
               if (productsPart) {
                 console.log("✅ Found existing products part, adding product. Current count:", productsPart.products.length);
                 productsPart.products.push(product);
@@ -401,8 +402,9 @@ export function useChat(): UseChatReturn {
               // End current text part to ensure chronological order for text after products
               currentTextPart = null;
               
-              // Mark products part as no longer loading
-              const productsPart = messageParts.find(part => part.type === 'products') as ProductsPart | undefined;
+              // Mark the MOST RECENT products part as no longer loading
+              const productsParts = messageParts.filter(part => part.type === 'products') as ProductsPart[];
+              const productsPart = productsParts[productsParts.length - 1]; // Get the last products part
               if (productsPart) {
                 productsPart.isLoading = false;
                 
@@ -419,10 +421,34 @@ export function useChat(): UseChatReturn {
             } else if (parsedResult.type === "complete") {
               // Conversation completed
               console.log("Conversation completed");
+              
+              // Mark message as complete
+              if (botMessageAdded) {
+                setState((prev) => ({
+                  ...prev,
+                  messages: prev.messages.map((msg) =>
+                    msg.id === botMessage.id
+                      ? { ...msg, isComplete: true }
+                      : msg
+                  ),
+                }));
+              }
             } else if (parsedResult.type === "error") {
               throw new Error(parsedResult.message);
             }
           }
+        }
+        
+        // Mark message as complete when stream ends (fallback if no explicit "complete" event)
+        if (botMessageAdded) {
+          setState((prev) => ({
+            ...prev,
+            messages: prev.messages.map((msg) =>
+              msg.id === botMessage.id && !msg.isComplete
+                ? { ...msg, isComplete: true }
+                : msg
+            ),
+          }));
         }
       } catch (error) {
         console.error("Failed to get response from backend:", error);

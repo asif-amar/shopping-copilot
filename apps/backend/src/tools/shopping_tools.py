@@ -120,11 +120,11 @@ class ShoppingTools(Toolkit):
             # response_parts = []
             # response_parts.append(f"מצאתי {total_count} מוצרים עבור \"{query}\" באתר {website.upper()}:")
             response_parts = [
-                f"**Product Search Results**",
-                f"**Website:** {website.upper()}",
-                f"**Query:** \"{query}\"",
-                f"**Found:** {total_count} products",
-                ""
+                # f"**Product Search Results**",
+                # f"**Website:** {website.upper()}",
+                # f"**Query:** \"{query}\"",
+                # f"**Found:** {total_count} products",
+                # ""
             ]
             response_parts.append("\n\n<product_search_results>")
             
@@ -133,9 +133,13 @@ class ShoppingTools(Toolkit):
                 # Debug: Log each product being processed
                 logger.info(f"Processing product {i+1}: {product.title}, Brand: '{product.brand}'")
                 
+                # Format price with ש״ח symbol
+                currency_symbol = "ש״ח" if product.currency.upper() in ["ILS", "NIS"] else product.currency
+                formatted_price = f"{product.price} {currency_symbol}"
+                
                 product_obj = {
                     "name": product.title,
-                    "price": f"{product.currency} {product.price}",
+                    "price": formatted_price,
                     "availability": "זמין במלאי" if product.availability else "אזל מהמלאי",
                     "url": product.url,
                     "image": product.image_url if product.image_url else ""

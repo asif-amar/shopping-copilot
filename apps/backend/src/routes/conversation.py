@@ -95,38 +95,38 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             "IMPORTANT: Never expose inside errors to the user!",
             "CRITICAL: When tool responses include images (markdown format like ![alt](url) or HTML img tags), ALWAYS preserve them exactly in your response. Do not summarize or rewrite responses that contain images - show them as-is.",
             "When displaying product search results, always include the original formatted output from the search tool, including any images, links, and formatting.",
-            # """
-            # <example_product_response>
-            # **חלב טרי 3%** - מחיר: 7.2 ש״ח, זמין במלאי, מותג: תנובה. קישור: https://www.rami-levy.co.il/he/online/search?item=7290001794852
-            # ![Product](https://www.rami-levy.co.il/product/7290001794852/small.jpg)
-            # </example_product_response>
-            # """,
             """
+            When using the search_products tool, search first in singular (example: ״מסטיקים״ -> ״מסטיק״), and if not found search in plural.
             IMPORTANT: When using the search_products tool, the tool returns properly formatted product results for streaming.
-            You must include the EXACT tool response in your answer without modification - do not reformat, summarize, or recreate the product data.
+            You must include the EXACT tool response in your answer without modification - do not reformat, summarize, or recreate the product data, EXCEPT for the number of products.
+            The only thing you are allwoed to do - is to remove some products as you see fit. For example, if the user ask for milk, bread, and cheese, and you get 10 results from each search - list only 1-3 items each, to not overwelm the user.
+            I give you the right to show the user what you think is the best for the user and user-experience.
+            In default show the user up to 4 products, unless clearly specified otherwise.
+            If you decide to cut some products out, you can say to the user if the user wants to see more products.
             
             The search_products tool returns results in this format:
-            - Hebrew introductory text
             - <product_search_results><product>{...}</product><product>{...}</product>...</product_search_results>
             - Each product is wrapped in individual <product> tags for real-time streaming
             
             Your job is to:
-            1. Include the complete tool response exactly as returned
-            2. Add any additional helpful context or suggestions after the product results
+            1. Include the complete tool response exactly as returned.
+            2. Add any additional helpful context or suggestions before and after the product results
             3. NEVER modify, reformat, or summarize the product data from the tool
             4. The frontend will parse and stream each <product> tag individually in real-time
+            5. You must add a final message after the product results, base it on the user query, the product results, and the conversation.
             
             EXAMPLE:
             User: "חפש חלב"
-            Tool Response: "מצאתי 3 מוצרים עבור \"חלב\":\n<product_search_results><product>{...}</product><product>{...}</product></product_search_results>"
-            Your Response: "מצאתי 3 מוצרים עבור \"חלב\":\n<product_search_results><product>{...}</product><product>{...}</product></product_search_results>\n\nהאם תרצה שאוסיף משהו לעגלת הקניות?"
-            """
+            Tool Response: "<product_search_results><product>{...}</product><product>{...}</product></product_search_results>"
+            Your Response: "הנה תוצאות החיפוש עבור חלב באתר רמי לוי:\n<product_search_results><product>{...}</product><product>{...}</product></product_search_results>\n\nהאם תרצה שאוסיף משהו לעגלת הקניות?"
+            """,
+            "If the user asks for several products, search/show only a few of them, and ask for any specifications if not given."
         ],
         markdown=True,
         storage=storage,
         add_datetime_to_instructions=True,
         add_history_to_messages=True,
-        num_history_runs=3, # TODO: Find the magic number for us...
+        num_history_runs=5, # TODO: Find the magic number for us...
         show_tool_calls=True,
     )
     return agent
