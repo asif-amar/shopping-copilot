@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run type-check:*)",
+      "Bash(npx tsc:*)",
+      "Bash(pkill:*)",
+      "Bash(rm:*)",
+      "Bash(find:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(grep:*)",
+      "Bash(npm run build:*)",
+      "Bash(python3:*)",
+      "Bash(source:*)",
+      "Bash(pip install:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
