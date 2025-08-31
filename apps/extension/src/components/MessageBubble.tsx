@@ -1,10 +1,17 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Copy, ThumbsUp, ThumbsDown, Check } from "lucide-react";
-import { ChatMessage, TextPart, ToolCallPart } from "@/types/chat";
+import {
+  ChatMessage,
+  TextPart,
+  ToolCallPart,
+  ProductsPart,
+} from "@/types/chat";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ToolCall } from "./ToolCall";
+import { ProductGrid } from "./ProductGrid";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -14,8 +21,16 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
+  const { language } = useLanguage();
 
   const formatTime = (date: Date) => {
+    if (language === "he") {
+      return date.toLocaleTimeString("he-IL", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+    }
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
@@ -27,9 +42,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   // Helper function to extract all text content from parts
   const getTextContent = () => {
     return message.parts
-      .filter(part => part.type === 'text')
-      .map(part => (part as TextPart).content)
-      .join(' ');
+      .filter((part) => part.type === "text")
+      .map((part) => (part as TextPart).content)
+      .join(" ");
   };
 
   const handleCopy = async () => {
@@ -100,7 +115,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
       style={{
         display: "flex",
         flexDirection: "column",
-        alignItems: "flex-start",
+        alignItems: language === "he" ? "flex-end" : "flex-start",
+        width: "85%",
         marginBottom: "16px",
       }}
     >
@@ -112,7 +128,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             <div
               key={part.id}
               style={{
-                maxWidth: "85%",
+                // maxWidth: "85%",
                 fontSize: "14px",
                 lineHeight: "1.6",
                 color: "#374151",
@@ -161,7 +177,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                         border: "1px solid #e5e7eb",
                       }}
                       onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
+                        (e.target as HTMLImageElement).style.display = "none";
                       }}
                     />
                   ),
@@ -177,7 +193,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             <div
               key={part.id}
               style={{
-                maxWidth: "85%",
+                // maxWidth: "85%",
                 marginBottom: index < message.parts.length - 1 ? "8px" : "0",
               }}
             >
@@ -185,8 +201,32 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                 toolCall={{
                   toolName: toolCallPart.toolName,
                   displayName: toolCallPart.displayName,
-                  status: toolCallPart.state === 'started' ? 'running' : 'completed'
+                  status:
+                    toolCallPart.state === "started" ? "running" : "completed",
                 }}
+              />
+            </div>
+          );
+        } else if (part.type === "products") {
+          const productsPart = part as ProductsPart;
+          console.log(
+            "🎨 Rendering ProductGrid with",
+            productsPart.products.length,
+            "products:",
+            productsPart.products
+          );
+          return (
+            <div
+              key={part.id}
+              style={{
+                width: "100%",
+                maxWidth: "none",
+                marginBottom: index < message.parts.length - 1 ? "16px" : "0",
+              }}
+            >
+              <ProductGrid
+                products={productsPart.products}
+                isLoading={productsPart.isLoading || false}
               />
             </div>
           );
@@ -194,129 +234,133 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         return null;
       })}
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.2 }}
-        style={{
-          display: "flex",
-          gap: "8px",
-          marginTop: "8px",
-          alignItems: "center",
-        }}
-      >
-        <motion.button
-          onClick={handleCopy}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+      {message.isComplete && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.2 }}
           style={{
-            background: copied ? "#dcfce7" : "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "6px",
-            borderRadius: "6px",
             display: "flex",
+            gap: "8px",
+            marginTop: "8px",
             alignItems: "center",
-            justifyContent: "center",
-            transition: "all 0.2s",
-            color: copied ? "#16a34a" : "#6b7280",
+            flexDirection: language === "he" ? "row-reverse" : "row",
           }}
-          onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-            if (!copied) e.currentTarget.style.backgroundColor = "#f3f4f6";
-          }}
-          onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-            if (!copied) e.currentTarget.style.backgroundColor = "transparent";
-          }}
-          title={copied ? "Copied!" : "Copy message"}
         >
-          <motion.div
-            initial={false}
-            animate={{ scale: copied ? [1, 1.2, 1] : 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            {copied ? <Check size={16} /> : <Copy size={16} />}
-          </motion.div>
-        </motion.button>
-
-        <motion.button
-          onClick={handleLike}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          style={{
-            background: liked ? "#eff6ff" : "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "6px",
-            borderRadius: "6px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "all 0.2s",
-            color: liked ? "#3b82f6" : "#6b7280",
-          }}
-          onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-            if (!liked) e.currentTarget.style.backgroundColor = "#f3f4f6";
-          }}
-          onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-            if (!liked) e.currentTarget.style.backgroundColor = "transparent";
-          }}
-          title="Like message"
-        >
-          <motion.div
-            animate={{
-              scale: liked ? [1, 1.2, 1] : 1,
+          <motion.button
+            onClick={handleCopy}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              background: copied ? "#dcfce7" : "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "6px",
+              borderRadius: "6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s",
+              color: copied ? "#16a34a" : "#6b7280",
             }}
-            transition={{ duration: 0.3 }}
-          >
-            <ThumbsUp size={16} fill={liked ? "#93c5fd" : "none"} />
-          </motion.div>
-        </motion.button>
-
-        <motion.button
-          onClick={handleDislike}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          style={{
-            background: disliked ? "#fef7f7" : "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "6px",
-            borderRadius: "6px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "all 0.2s",
-            color: disliked ? "#ef4444" : "#6b7280",
-          }}
-          onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-            if (!disliked) e.currentTarget.style.backgroundColor = "#f3f4f6";
-          }}
-          onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-            if (!disliked)
-              e.currentTarget.style.backgroundColor = "transparent";
-          }}
-          title="Dislike message"
-        >
-          <motion.div
-            animate={{
-              scale: disliked ? [1, 1.2, 1] : 1,
+            onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
+              if (!copied) e.currentTarget.style.backgroundColor = "#f3f4f6";
             }}
-            transition={{ duration: 0.3 }}
+            onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
+              if (!copied)
+                e.currentTarget.style.backgroundColor = "transparent";
+            }}
+            title={copied ? "Copied!" : "Copy message"}
           >
-            <ThumbsDown size={16} fill={disliked ? "#fca5a5" : "none"} />
-          </motion.div>
-        </motion.button>
+            <motion.div
+              initial={false}
+              animate={{ scale: copied ? [1, 1.2, 1] : 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+            </motion.div>
+          </motion.button>
 
-        <span
-          style={{
-            fontSize: "12px",
-            color: "#9ca3af",
-            marginLeft: "8px",
-          }}
-        >
-          {formatTime(message.timestamp)}
-        </span>
-      </motion.div>
+          <motion.button
+            onClick={handleLike}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              background: liked ? "#eff6ff" : "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "6px",
+              borderRadius: "6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s",
+              color: liked ? "#3b82f6" : "#6b7280",
+            }}
+            onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
+              if (!liked) e.currentTarget.style.backgroundColor = "#f3f4f6";
+            }}
+            onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
+              if (!liked) e.currentTarget.style.backgroundColor = "transparent";
+            }}
+            title="Like message"
+          >
+            <motion.div
+              animate={{
+                scale: liked ? [1, 1.2, 1] : 1,
+              }}
+              transition={{ duration: 0.3 }}
+            >
+              <ThumbsUp size={16} fill={liked ? "#93c5fd" : "none"} />
+            </motion.div>
+          </motion.button>
+
+          <motion.button
+            onClick={handleDislike}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              background: disliked ? "#fef7f7" : "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "6px",
+              borderRadius: "6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s",
+              color: disliked ? "#ef4444" : "#6b7280",
+            }}
+            onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
+              if (!disliked) e.currentTarget.style.backgroundColor = "#f3f4f6";
+            }}
+            onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
+              if (!disliked)
+                e.currentTarget.style.backgroundColor = "transparent";
+            }}
+            title="Dislike message"
+          >
+            <motion.div
+              animate={{
+                scale: disliked ? [1, 1.2, 1] : 1,
+              }}
+              transition={{ duration: 0.3 }}
+            >
+              <ThumbsDown size={16} fill={disliked ? "#fca5a5" : "none"} />
+            </motion.div>
+          </motion.button>
+
+          <span
+            style={{
+              fontSize: "12px",
+              color: "#9ca3af",
+              marginLeft: "8px",
+            }}
+          >
+            {formatTime(message.timestamp)}
+          </span>
+        </motion.div>
+      )}
     </motion.div>
   );
 };

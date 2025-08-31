@@ -200,7 +200,6 @@ class RamiLevyAdapter(BaseShoppingAdapter):
                 # Debug: Log brand information
                 brand_raw = item.get('gs', {})
                 brand_name = brand_raw.get('BrandName') if brand_raw else None
-                logger.info(f"Product: {item.get('name', '')}, Brand raw: {brand_raw}, Brand name: {brand_name}")
                 
                 product_data = {
                     'id': str(item.get('id', '')),

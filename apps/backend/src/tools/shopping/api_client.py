@@ -54,7 +54,7 @@ class ApiClient:
         if headers:
             request_headers.update(headers)
         
-        logger.debug(f"GET request to {url} with params: {params}")
+        # logger.debug(f"GET request to {url} with params: {params}")
         
         try:
             async with self.session.get(url, params=params, headers=request_headers) as response:
@@ -94,7 +94,7 @@ class ApiClient:
         if headers:
             request_headers.update(headers)
         
-        logger.debug(f"POST request to {url}")
+        # logger.debug(f"POST request to {url}")
         
         try:
             kwargs = {"headers": request_headers}

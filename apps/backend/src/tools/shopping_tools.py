@@ -4,11 +4,11 @@ Port of the MCP server shopping tools functionality
 """
 
 import logging
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 from agno.tools import Toolkit
 from .shopping.constants import SiteAdapterName
-from .shopping.types import ProductSearchOptions, PriceRange
+from .shopping.types import ProductSearchOptions, PriceRange, ProductResponse
 from .shopping.factory import ShoppingAdapterFactory
 from .shopping.security import ShoppingSecurity
 
@@ -45,26 +45,37 @@ class ShoppingTools(Toolkit):
         category: Optional[str] = None,
         price_min: Optional[float] = None,
         price_max: Optional[float] = None
-    ) -> str:
-        """Search for products on shopping websites"""
+    ) -> List[ProductResponse]:
+        """
+        Search for products on shopping websites
+        
+        Args:
+            website (str): The shopping website to search on
+            query (str): The search query
+            category (Optional[str], optional): The product category. Defaults to None.
+            price_min (Optional[float], optional): The minimum price. Defaults to None.
+            price_max (Optional[float], optional): The maximum price. Defaults to None.
+        
+        Returns:
+            List[ProductResponse]: A list of products matching the search criteria
+        """
         try:
             logger.info(f"Searching '{query}' on {website}")
-            logger.info(f"Request headers: {self._request_headers}")
             
             # Validate website
             try:
                 site = SiteAdapterName(website)
             except ValueError:
-                return f"**Error**\n\nUnsupported website: {website}. Supported websites: rami-levy, shufersal"
+                raise ValueError(f"Unsupported website: {website}. Supported websites: rami-levy, shufersal")
             
             # Security validation
             query_validation = ShoppingSecurity.validate_search_query(query)
             if not query_validation.is_valid:
-                return f"**Error**\n\n{query_validation.error}"
+                raise ValueError(f"Invalid query: {query_validation.error}")
             
             category_validation = ShoppingSecurity.validate_category(category)
             if not category_validation.is_valid:
-                return f"**Error**\n\n{category_validation.error}"
+                raise ValueError(f"Invalid category: {category_validation.error}")
             
             # Validate price range
             price_range = None
@@ -72,20 +83,19 @@ class ShoppingTools(Toolkit):
                 price_range = PriceRange(min=price_min, max=price_max)
                 price_range_validation = ShoppingSecurity.validate_price_range(price_range)
                 if not price_range_validation.is_valid:
-                    return f"**Error**\n\n{price_range_validation.error}"
+                    raise ValueError(f"Invalid price range: {price_range_validation.error}")
             
             # Get credentials from headers
             if not self._request_headers:
-                return f"**Error**\n\nNo request headers available. Please provide authentication headers."
+                raise ValueError("No request headers available. Please provide authentication headers.")
             
             credentials, credentials_error = ShoppingAdapterFactory.get_credentials_for_website(
                 website=site, 
                 headers=self._request_headers
             )
-            logger.info(f"\nCredentials: {credentials}\n")
-            print(f"\nCredentials: {credentials}\n")
+
             if not credentials:
-                return f"**Error**\n\n{credentials_error}"
+                raise ValueError(f"Authentication error: {credentials_error}")
 
             
             # Get adapter
@@ -100,82 +110,52 @@ class ShoppingTools(Toolkit):
             
             # Execute search
             result = await adapter.search_products(options, credentials)
-
-            logger.info(f"Search result: {result}")
             
             if not result.success:
                 error_msg = ShoppingSecurity.format_secure_error(result.error or "Unknown error")
-                return f"**Error**\n\nSearch failed: {error_msg}"
+                raise RuntimeError(f"Search failed: {error_msg}")
             
-            # Format response
+            # Format response as structured array for the agent to use
             search_result = result.data
             products = search_result.products
-            total_count = search_result.total_count
             
             if not products:
-                return f"**Product Search Results**\n\n**Website:** {website.upper()}\n**Query:** \"{query}\"\n**Found:** 0 products\n\nNo products found."
+                return []  # Return empty array instead of formatted string
             
-            response_lines = [
-                f"**Product Search Results**",
-                f"**Website:** {website.upper()}",
-                f"**Query:** \"{query}\"",
-                f"**Found:** {total_count} products",
-                ""
-            ]
+            # Create structured product responses
+            structured_products = []
             
-            for i, product in enumerate(products[:10], 1):  # Limit to 10 results
+            # Process products individually and create ProductResponse objects
+            for i, product in enumerate(products[:10]):  # Limit to 10 results
                 # Debug: Log each product being processed
-                logger.info(f"Processing product {i}: {product.title}, Brand: '{product.brand}'")
+                logger.info(f"Processing product {i+1}: {product.title}, Brand: '{product.brand}'")
                 
-                product_lines = [
-                    f"**{i}. {product.title}**",
-                ]
+                # Format price with ש״ח symbol
+                currency_symbol = "ש״ח" if product.currency.upper() in ["ILS", "NIS"] else product.currency
+                formatted_price = f"{product.price} {currency_symbol}"
                 
-                # Add image if available  
-                if product.image_url:
-                    product_lines.append(f"![{product.title}]({product.image_url})")
-                    product_lines.append("")
+                # Create ProductResponse object
+                product_response = ProductResponse(
+                    name=product.title or "לא זמין",
+                    price=formatted_price or "לא זמין",
+                    availability="זמין במלאי" if product.availability else "אזל מהמלאי",
+                    url=product.url or "",
+                    image=product.image_url or "",
+                    brand=product.brand or "",
+                    category=product.category or "",
+                    rating=f"{product.rating}/5 ({product.review_count} ביקורות)" if product.rating and product.review_count else f"{product.rating}/5" if product.rating else "לא זמין",
+                    description=product.description[:150] + "..." if product.description and len(product.description) > 150 else product.description,
+                    product_id=product.id or ""
+                )
                 
-                product_lines.extend([
-                    f"- **Price:** {product.currency} {product.price}",
-                    f"- **Availability:** {'In Stock' if product.availability else 'Out of Stock'}",
-                    f"- **URL:** {product.url}",
-                ])
-                
-                if product.rating:
-                    review_text = f" ({product.review_count} reviews)" if product.review_count else ""
-                    product_lines.append(f"- **Rating:** {product.rating}/5{review_text}")
-                else:
-                    product_lines.append("- **Rating:** No rating")
-                
-                if product.category:
-                    product_lines.append(f"- **Category:** {product.category}")
-                
-                if product.brand:
-                    logger.info(f"Adding brand to output: {product.brand}")
-                    product_lines.append(f"- **Brand:** {product.brand}")
-                else:
-                    logger.info(f"No brand found for product: {product.title}")
-                
-                product_lines.append(f"- **Product ID:** {product.id}")
-                
-                # Limit description length
-                description = product.description[:150]
-                if len(product.description) > 150:
-                    description += "..."
-                product_lines.append(f"- **Description:** {description}")
-                
-                response_lines.extend(product_lines)
-                response_lines.append("")  # Empty line between products
+                structured_products.append(product_response)
             
-            final_response = "\n".join(response_lines)
-            logger.info(f"Final response being sent (first 500 chars): {final_response[:500]}...")
-            return final_response
+            logger.info(f"Returning {len(structured_products)} structured products")
+            return structured_products
             
         except Exception as e:
             logger.error(f"Search error: {e}")
-            error_msg = ShoppingSecurity.format_secure_error(str(e))
-            return f"**Error**\n\nFailed to search products: {error_msg}"
+            raise e  # Let Agno handle the error for proper streaming
 
     async def add_to_cart(
         self,

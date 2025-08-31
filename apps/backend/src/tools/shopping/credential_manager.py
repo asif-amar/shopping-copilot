@@ -37,7 +37,6 @@ class CredentialManager:
             Tuple of (credentials, error_message)
         """
         config = get_adapter_config(site)
-        print("CONFIG: ", config)
 
         if not config:
             return None, f"Unsupported site: {site}"

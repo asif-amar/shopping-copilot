@@ -5,6 +5,7 @@ Port of TypeScript interfaces from the MCP server
 
 from dataclasses import dataclass
 from typing import Optional, List, Literal, Any
+from pydantic import BaseModel
 
 
 @dataclass
@@ -108,3 +109,24 @@ class ShufersalCredentials:
 
 # Type aliases for credential types
 CredentialsType = RamiLevyCredentials | ShufersalCredentials
+
+
+# Pydantic models for structured responses (for Agno streaming)
+class ProductResponse(BaseModel):
+    """Pydantic model for structured product response"""
+    name: str
+    price: str
+    availability: str
+    url: str
+    image: Optional[str] = ""
+    brand: Optional[str] = None
+    category: Optional[str] = None
+    rating: Optional[str] = None
+    description: Optional[str] = None
+    product_id: str
+
+    class Config:
+        json_encoders = {
+            # Ensure Hebrew text is properly handled
+            str: lambda v: v
+        }

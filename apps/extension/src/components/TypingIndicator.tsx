@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useLanguage } from "@/hooks/useLanguage";
 
 export const TypingIndicator: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   return (
     <>
@@ -14,8 +14,9 @@ export const TypingIndicator: React.FC = () => {
         style={{
           display: "flex",
           flexDirection: "column",
-          alignItems: "flex-start",
+          alignItems: language === "he" ? "flex-end" : "flex-start",
           marginBottom: "16px",
+          width: "85%",
         }}
       >
         <div

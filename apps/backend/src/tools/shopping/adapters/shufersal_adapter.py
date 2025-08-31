@@ -154,7 +154,6 @@ class ShufersalAdapter(BaseShoppingAdapter):
             for item in results:
                 # Debug: Log brand information
                 brand_name = item.get('brandName')
-                logger.info(f"Product: {item.get('name', '')}, Brand: {brand_name}")
                 
                 product_data = {
                     'id': str(item.get('code', '')),

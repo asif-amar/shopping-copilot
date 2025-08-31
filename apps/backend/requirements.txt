@@ -3,8 +3,16 @@ uvicorn[standard]==0.32.1
 python-dotenv==1.0.0
 agno>=1.7.12
 google-genai
+google-search-results
+google-serp-api
+duckduckgo-search
 psycopg[binary]
+psycopg2-binary
 sqlalchemy
 aiohttp>=3.9.0
+duckduckgo-search
+ddgs
 newspaper4k
 lxml_html_clean
+googlesearch-python
+pycountry
