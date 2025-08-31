@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChatMessage, ChatState, MessagePartType, TextPart, ToolCallPart, ProductsPart, Product } from "@/types/chat";
+import { ChatMessage, MessagePartType, TextPart, ToolCallPart, ProductsPart, Product } from "@/types/chat";
 import { ApiService } from "@/services/api";
 import { useLanguage } from "@/hooks/useLanguage";
 import { getToolDisplayName } from "@/utils/toolCallParser";
@@ -13,482 +13,422 @@ interface UseChatReturn {
   startNewConversation: () => Promise<void>;
 }
 
-export function useChat(): UseChatReturn {
-  const { t } = useLanguage();
-  const [state, setState] = useState<ChatState>({
-    messages: [],
-    isLoading: false,
-    currentHostname: "",
-  });
-  const [conversationId, setConversationId] = useState<string | null>(null);
+/**
+ * Stream content parser that handles the raw agent responses
+ * and converts them into structured message parts while preserving order
+ */
+class StreamContentParser {
+  private textBuffer: string = "";
+  private currentParts: MessagePartType[] = [];
+  
+  /**
+   * Process a chunk of content and return updated message parts
+   */
+  processChunk(content: string): MessagePartType[] {
+    this.textBuffer += content;
+    console.log('🔍 Processing chunk:', content);
+    console.log('📦 Current buffer:', this.textBuffer);
+    return this._parseBuffer();
+  }
 
-  // Load conversation from backend API
-  const loadConversation = useCallback(async (hostname: string) => {
-    // For now, we'll create a new conversation per hostname session
-    // In a more advanced implementation, we'd store the conversation ID per hostname
-    try {
-      const storedConversationId = localStorage.getItem(`conversation_${hostname}`);
-      if (storedConversationId) {
-        const response = await ApiService.getConversation(storedConversationId);
-        if (response.conversation) {
-          const conversationMessages = response.conversation.messages.map(
-            (msg: any) => ({
-              id: msg.id,
-              parts: [{
-                type: 'text' as const,
-                id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-                content: msg.content
-              }],
-              isUser: msg.role === "user",
-              timestamp: new Date(msg.timestamp),
-            })
-          );
-          setState((prev) => ({ ...prev, messages: conversationMessages }));
-          setConversationId(storedConversationId);
-          return;
+  /**
+   * Get the final parts after processing all content
+   */
+  getfinalParts(): MessagePartType[] {
+    console.log('🏁 Finalizing with buffer:', this.textBuffer);
+    // Flush any remaining text
+    if (this.textBuffer.trim()) {
+      this._addTextPart(this.textBuffer);
+      this.textBuffer = "";
+    }
+    return this.currentParts;
+  }
+
+  private _parseBuffer(): MessagePartType[] {
+    let hasChanges = true;
+    let iterations = 0;
+    const maxIterations = 50; // Prevent infinite loops
+    
+    while (hasChanges && iterations < maxIterations) {
+      hasChanges = false;
+      iterations++;
+      
+      console.log(`🔄 Parse iteration ${iterations}, buffer length: ${this.textBuffer.length}`);
+      
+      // Look for complete special tags like <product_search_results>...</product_search_results>
+      const specialTagMatch = this.textBuffer.match(/<(product_search_results)>(.*?)<\/\1>/s);
+      
+      if (specialTagMatch) {
+        console.log('✅ Found complete special tag:', specialTagMatch[1]);
+        const [fullMatch, tagName, tagContent] = specialTagMatch;
+        const beforeTag = this.textBuffer.substring(0, this.textBuffer.indexOf(fullMatch));
+        const afterTag = this.textBuffer.substring(this.textBuffer.indexOf(fullMatch) + fullMatch.length);
+        
+        // Add text before the tag if any
+        if (beforeTag.trim()) {
+          console.log('📝 Adding text before tag:', beforeTag.substring(0, 50) + '...');
+          this._addTextPart(beforeTag);
+        }
+        
+        // Handle the special tag content
+        console.log('🏷️ Processing special tag:', tagName);
+        this._handleSpecialTag(tagName, tagContent);
+        
+        // Continue with remaining content
+        this.textBuffer = afterTag;
+        hasChanges = true;
+        continue;
+      }
+      
+      // Check for incomplete tags - keep them in buffer
+      const openTagIndex = this.textBuffer.lastIndexOf('<product_search_results>');
+      const closeTagIndex = this.textBuffer.indexOf('</product_search_results>');
+      
+      if (openTagIndex !== -1 && closeTagIndex === -1) {
+        // We have an opening tag but no closing tag - keep everything from the opening tag
+        console.log('⏸️ Found incomplete tag, keeping in buffer from position:', openTagIndex);
+        const beforeIncomplete = this.textBuffer.substring(0, openTagIndex);
+        if (beforeIncomplete.trim()) {
+          this._addTextPart(beforeIncomplete);
+        }
+        this.textBuffer = this.textBuffer.substring(openTagIndex);
+        break; // Wait for more content
+      }
+      
+      // Check if we might have a partial opening tag at the end
+      const potentialTagStart = this.textBuffer.match(/<product_search_results?$/);
+      if (potentialTagStart) {
+        console.log('⏸️ Found potential partial tag start, keeping in buffer');
+        const beforePotential = this.textBuffer.substring(0, potentialTagStart.index);
+        if (beforePotential.trim()) {
+          this._addTextPart(beforePotential);
+        }
+        this.textBuffer = this.textBuffer.substring(potentialTagStart.index!);
+        break; // Wait for more content
+      }
+      
+      // No special tags found, process as regular text
+      if (this.textBuffer.trim()) {
+        console.log('📝 Adding remaining text:', this.textBuffer.substring(0, 50) + '...');
+        this._addTextPart(this.textBuffer);
+        this.textBuffer = "";
+      }
+      break;
+    }
+    
+    return this.currentParts;
+  }
+
+  private _addTextPart(content: string): void {
+    const trimmedContent = content.trim();
+    if (!trimmedContent) return;
+    
+    // Check if the last part is a text part and merge if so
+    const lastPart = this.currentParts[this.currentParts.length - 1];
+    if (lastPart && lastPart.type === 'text') {
+      (lastPart as TextPart).content += trimmedContent;
+    } else {
+      // Create new text part
+      const textPart: TextPart = {
+        type: 'text',
+        id: `text_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        content: trimmedContent
+      };
+      this.currentParts.push(textPart);
+    }
+  }
+
+  private _handleSpecialTag(tagName: string, tagContent: string): void {
+    console.log('🏷️ Handling special tag:', tagName, 'with content length:', tagContent.length);
+    
+    if (tagName === 'product_search_results') {
+      const products: Product[] = [];
+      
+      // Extract individual products from the tag content
+      const productMatches = tagContent.matchAll(/<product>(.*?)<\/product>/gs);
+      
+      console.log('🔍 Looking for products in content:', tagContent.substring(0, 200) + '...');
+      
+      for (const match of productMatches) {
+        try {
+          console.log('📦 Parsing product JSON:', match[1].substring(0, 100) + '...');
+          const product: Product = JSON.parse(match[1]);
+          products.push(product);
+          console.log('✅ Successfully parsed product:', product.name);
+        } catch (error) {
+          console.error('❌ Failed to parse product JSON:', error);
+          console.error('❌ Problem JSON:', match[1]);
         }
       }
-      // If no conversation found, start fresh
-      setState((prev) => ({ ...prev, messages: [] }));
-      setConversationId(null);
-    } catch (error) {
-      console.error("Failed to load conversation:", error);
-      setState((prev) => ({ ...prev, messages: [] }));
-      setConversationId(null);
-    }
-  }, []);
-
-  // Get current hostname and load conversation
-  const initializeConversation = useCallback(async () => {
-    try {
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tabs[0]?.url) {
-        const url = new URL(tabs[0].url);
-        const hostname = url.hostname;
-        setState((prev) => ({ ...prev, currentHostname: hostname }));
-        await loadConversation(hostname);
-      }
-    } catch (error) {
-      console.error("Failed to get current hostname:", error);
-    }
-  }, [loadConversation]);
-
-  // Initialize conversation on mount
-  useEffect(() => {
-    initializeConversation();
-  }, [initializeConversation]);
-
-  // Save conversation ID for this hostname
-  const saveConversationId = useCallback(
-    (hostname: string, convId: string) => {
-      localStorage.setItem(`conversation_${hostname}`, convId);
-    },
-    []
-  );
-
-  const sendMessage = useCallback(
-    async (content: string) => {
-      if (!content.trim() || state.isLoading || !state.currentHostname) return;
-
-      const userMessage: ChatMessage = {
-        id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-        parts: [{
-          type: 'text',
-          id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-          content: content.trim()
-        }],
-        isUser: true,
-        timestamp: new Date(),
-      };
-
-      // Add message to UI immediately
-      setState((prev) => ({
-        ...prev,
-        messages: [...prev.messages, userMessage],
-        isLoading: true,
-      }));
-
-      // User message will be saved by the backend when we send it
-
-      try {
-        // Pass hostname and conversation ID for context
-        const reader = await ApiService.sendMessage(
-          content,
-          conversationId || undefined,
-          state.currentHostname
-        );
-        const decoder = new TextDecoder();
-
-        let messageParts: MessagePartType[] = [];
-        let botMessageAdded = false;
-        let currentConversationId = conversationId;
-        let currentTextPart: TextPart | null = null;
-
-        // Create bot message template (will be added on first content)
-        const botMessage: ChatMessage = {
-          id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-          parts: [],
-          isUser: false,
-          timestamp: new Date(),
+      
+      console.log(`🎯 Found ${products.length} products total`);
+      
+      if (products.length > 0) {
+        const productsPart: ProductsPart = {
+          type: 'products',
+          id: `products_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+          products,
+          isLoading: false
         };
+        this.currentParts.push(productsPart);
+        console.log('✅ Added products part with', products.length, 'products');
+      } else {
+        console.log('⚠️ No products found in tag content');
+      }
+    }
+    // Future special tags can be handled here
+    // else if (tagName === 'recipe_results') { ... }
+  }
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+  /**
+   * Add or update a tool call part
+   */
+  addToolCall(toolName: string, state: 'started' | 'completed' | 'error'): void {
+    // Find existing tool call or create new one
+    const existingToolCall = this.currentParts.find(
+      part => part.type === 'tool-call' && (part as ToolCallPart).toolName === toolName
+    ) as ToolCallPart | undefined;
 
-          const chunk = decoder.decode(value, { stream: true });
-          const parsedResult = ApiService.parseStreamChunk(chunk);
+    if (existingToolCall) {
+      existingToolCall.state = state;
+    } else {
+      const toolCallPart: ToolCallPart = {
+        type: 'tool-call',
+        id: `tool_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        toolName,
+        displayName: getToolDisplayName(toolName),
+        state
+      };
+      this.currentParts.push(toolCallPart);
+    }
+  }
+}
 
-          if (parsedResult) {
-            console.log("🔍 Parsed result:", parsedResult.type, parsedResult);
-            if (parsedResult.type === "conversation_info") {
-              // Store the conversation ID for this session
-              currentConversationId = parsedResult.conversationId;
-              setConversationId(currentConversationId);
-              saveConversationId(state.currentHostname, currentConversationId);
-            } else if (parsedResult.type === "thinking") {
-              // Show thinking indicator
-              console.log("Thinking:", parsedResult.content);
-              
-              // Check if thinking content contains tool calls
-              const thinkingContent = parsedResult.content;
-              if (thinkingContent && (thinkingContent.includes('_started') || thinkingContent.includes('_completed'))) {
-                // Parse tool name and state from thinking content
-                const isCompleted = thinkingContent.includes('_completed');
-                const isStarted = thinkingContent.includes('_started');
-                
-                if (isStarted || isCompleted) {
-                  const toolName = thinkingContent.replace(/_(?:started|completed)$/, '');
-                  const state = isCompleted ? 'completed' : 'started';
-                  
-                  // Find existing tool call part or create new one
-                  let toolCallPart = messageParts.find(part => 
-                    part.type === 'tool-call' && (part as ToolCallPart).toolName === toolName
-                  ) as ToolCallPart | undefined;
-                  
-                  if (toolCallPart) {
-                    // Update existing tool call state
-                    toolCallPart.state = state as 'started' | 'completed';
-                  } else {
-                    // Create new tool call part
-                    toolCallPart = {
-                      type: 'tool-call',
-                      id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-                      toolName,
-                      displayName: getToolDisplayName(toolName),
-                      state: state as 'started' | 'completed'
-                    };
-                    messageParts.push(toolCallPart);
-                  }
-                  
-                  // Refresh page when cart operations complete
-                  if (state === 'completed' && (toolName === 'add_to_cart' || toolName === 'remove_from_cart' || toolName === 'update_cart_quantity')) {
-                    console.log(`🔄 Cart operation ${toolName} completed, refreshing page...`);
-                    
-                    try {
-                      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                        if (tabs[0]?.id) {
-                          chrome.tabs.reload(tabs[0].id);
-                        }
-                      });
-                    } catch (error) {
-                      console.error('❌ Failed to refresh page after cart operation:', error);
-                    }
-                  }
-                  
-                  // Add bot message and hide loading indicator if not added yet
-                  if (!botMessageAdded) {
-                    botMessageAdded = true;
-                    setState((prev) => ({
-                      ...prev,
-                      isLoading: false,
-                      messages: [
-                        ...prev.messages,
-                        { ...botMessage, parts: [...messageParts] },
-                      ],
-                    }));
-                  } else {
-                    // Update existing bot message
-                    setState((prev) => ({
-                      ...prev,
-                      messages: prev.messages.map((msg) =>
-                        msg.id === botMessage.id
-                          ? { ...msg, parts: [...messageParts] }
-                          : msg
-                      ),
-                    }));
-                  }
-                }
-              }
-            } else if (parsedResult.type === "message" && parsedResult.content) {
-              // Handle text content as parts
-              if (!currentTextPart) {
-                // Create new text part
-                currentTextPart = {
-                  type: 'text',
-                  id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-                  content: parsedResult.content
-                };
-                messageParts.push(currentTextPart);
-              } else {
-                // Append to existing text part
-                currentTextPart.content += parsedResult.content;
-              }
+export function useChat(): UseChatReturn {
+  const { t } = useLanguage();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentHostname, setCurrentHostname] = useState("");
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
-              // Add bot message and hide loading indicator on first token
-              if (!botMessageAdded) {
-                botMessageAdded = true;
-                setState((prev) => ({
-                  ...prev,
-                  isLoading: false,
-                  messages: [
-                    ...prev.messages,
-                    { ...botMessage, parts: [...messageParts] },
-                  ],
+  // Initialize and get current hostname
+  useEffect(() => {
+    const initializeHostname = async () => {
+      try {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tabs[0]?.url) {
+          const url = new URL(tabs[0].url);
+          const hostname = url.hostname;
+          setCurrentHostname(hostname);
+          
+          // Try to load existing conversation
+          const storedConversationId = localStorage.getItem(`conversation_${hostname}`);
+          if (storedConversationId) {
+            try {
+              const response = await ApiService.getConversation(storedConversationId);
+              if (response.conversation?.messages) {
+                const loadedMessages: ChatMessage[] = response.conversation.messages.map((msg: any) => ({
+                  id: msg.id || `loaded_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+                  parts: [{
+                    type: 'text' as const,
+                    id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+                    content: msg.content
+                  }],
+                  isUser: msg.role === "user",
+                  timestamp: new Date(msg.timestamp || Date.now()),
+                  isComplete: true
                 }));
-              } else {
-                // Update existing bot message
-                setState((prev) => ({
-                  ...prev,
-                  messages: prev.messages.map((msg) =>
-                    msg.id === botMessage.id
-                      ? { ...msg, parts: [...messageParts] }
-                      : msg
-                  ),
-                }));
+                setMessages(loadedMessages);
+                setConversationId(storedConversationId);
               }
-            } else if (parsedResult.type === "action") {
-              // Handle shopping action response
-              const actionData = parsedResult.data;
-              const actionText =
-                `🛍️ Shopping Action: ${actionData.actionDescription}\n\n` +
-                (actionData.success
-                  ? `✅ Success: ${JSON.stringify(actionData.data, null, 2)}`
-                  : `❌ Error: ${actionData.error || "Unknown error"}`);
-
-              // Replace all parts with action text part
-              messageParts = [{
-                type: 'text',
-                id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-                content: actionText
-              }];
-              currentTextPart = null;
-
-              // Add bot message and hide loading indicator on action response
-              if (!botMessageAdded) {
-                botMessageAdded = true;
-                setState((prev) => ({
-                  ...prev,
-                  isLoading: false,
-                  messages: [
-                    ...prev.messages,
-                    { ...botMessage, parts: [...messageParts] },
-                  ],
-                }));
-              } else {
-                // Update existing bot message
-                setState((prev) => ({
-                  ...prev,
-                  messages: prev.messages.map((msg) =>
-                    msg.id === botMessage.id
-                      ? { ...msg, parts: [...messageParts] }
-                      : msg
-                  ),
-                }));
-              }
-            } else if (parsedResult.type === "product_start") {
-              // Start of product section - create products part
-              console.log("🚀 Product section started - creating products part");
-              
-              // End current text part to maintain chronological order
-              currentTextPart = null;
-              
-              const productsPart: ProductsPart = {
-                type: 'products',
-                id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-                products: [],
-                isLoading: true
-              };
-              messageParts.push(productsPart);
-              
-              // Add or update bot message
-              if (!botMessageAdded) {
-                botMessageAdded = true;
-                setState((prev) => ({
-                  ...prev,
-                  isLoading: false,
-                  messages: [
-                    ...prev.messages,
-                    { ...botMessage, parts: [...messageParts] },
-                  ],
-                }));
-              } else {
-                setState((prev) => ({
-                  ...prev,
-                  messages: prev.messages.map((msg) =>
-                    msg.id === botMessage.id
-                      ? { ...msg, parts: [...messageParts] }
-                      : msg
-                  ),
-                }));
-              }
-            } else if (parsedResult.type === "product") {
-              // Individual product received
-              const product: Product = parsedResult.product;
-              console.log("📦 Received product:", product.name, "- Total message parts:", messageParts.length);
-              
-              // Find the MOST RECENT products part (for chronological order)
-              const productsParts = messageParts.filter(part => part.type === 'products') as ProductsPart[];
-              const productsPart = productsParts[productsParts.length - 1]; // Get the last products part
-              if (productsPart) {
-                console.log("✅ Found existing products part, adding product. Current count:", productsPart.products.length);
-                productsPart.products.push(product);
-                console.log("✅ Product added, new count:", productsPart.products.length);
-                
-                // Update UI with new product - create fresh copies to trigger re-render
-                setState((prev) => ({
-                  ...prev,
-                  messages: prev.messages.map((msg) =>
-                    msg.id === botMessage.id
-                      ? { ...msg, parts: messageParts.map(part => 
-                          part.type === 'products' 
-                            ? { ...part, products: [...(part as ProductsPart).products] }
-                            : part
-                        ) }
-                      : msg
-                  ),
-                }));
-              } else {
-                console.log("❌ No products part found! Creating one now...");
-                
-                // End current text part to maintain chronological order
-                currentTextPart = null;
-                
-                // Create products part if it doesn't exist
-                const newProductsPart: ProductsPart = {
-                  type: 'products',
-                  id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-                  products: [product],
-                  isLoading: false
-                };
-                messageParts.push(newProductsPart);
-                
-                // Update UI
-                if (!botMessageAdded) {
-                  botMessageAdded = true;
-                  setState((prev) => ({
-                    ...prev,
-                    isLoading: false,
-                    messages: [
-                      ...prev.messages,
-                      { ...botMessage, parts: [...messageParts] },
-                    ],
-                  }));
-                } else {
-                  setState((prev) => ({
-                    ...prev,
-                    messages: prev.messages.map((msg) =>
-                      msg.id === botMessage.id
-                        ? { ...msg, parts: [...messageParts] }
-                        : msg
-                    ),
-                  }));
-                }
-              }
-            } else if (parsedResult.type === "product_end") {
-              // End of product section
-              console.log("🏁 Product section ended");
-              
-              // End current text part to ensure chronological order for text after products
-              currentTextPart = null;
-              
-              // Mark the MOST RECENT products part as no longer loading
-              const productsParts = messageParts.filter(part => part.type === 'products') as ProductsPart[];
-              const productsPart = productsParts[productsParts.length - 1]; // Get the last products part
-              if (productsPart) {
-                productsPart.isLoading = false;
-                
-                // Update UI
-                setState((prev) => ({
-                  ...prev,
-                  messages: prev.messages.map((msg) =>
-                    msg.id === botMessage.id
-                      ? { ...msg, parts: [...messageParts] }
-                      : msg
-                  ),
-                }));
-              }
-            } else if (parsedResult.type === "complete") {
-              // Conversation completed
-              console.log("Conversation completed");
-              
-              // Mark message as complete
-              if (botMessageAdded) {
-                setState((prev) => ({
-                  ...prev,
-                  messages: prev.messages.map((msg) =>
-                    msg.id === botMessage.id
-                      ? { ...msg, isComplete: true }
-                      : msg
-                  ),
-                }));
-              }
-            } else if (parsedResult.type === "error") {
-              throw new Error(parsedResult.message);
+            } catch (error) {
+              console.error("Failed to load conversation:", error);
             }
           }
         }
-        
-        // Mark message as complete when stream ends (fallback if no explicit "complete" event)
-        if (botMessageAdded) {
-          setState((prev) => ({
-            ...prev,
-            messages: prev.messages.map((msg) =>
-              msg.id === botMessage.id && !msg.isComplete
-                ? { ...msg, isComplete: true }
-                : msg
-            ),
-          }));
-        }
       } catch (error) {
-        console.error("Failed to get response from backend:", error);
-
-        const errorMessage: ChatMessage = {
-          id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-          parts: [{
-            type: 'text',
-            id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-            content: t('error_occurred')
-          }],
-          isUser: false,
-          timestamp: new Date(),
-        };
-
-        setState((prev) => ({
-          ...prev,
-          isLoading: false,
-          messages: [...prev.messages, errorMessage],
-        }));
-      } finally {
-        setState((prev) => ({ ...prev, isLoading: false }));
+        console.error("Failed to initialize hostname:", error);
       }
-    },
-    [state.currentHostname, state.isLoading, conversationId, saveConversationId]
-  );
+    };
+
+    initializeHostname();
+  }, []);
+
+  const sendMessage = useCallback(async (content: string) => {
+    if (!content.trim() || isLoading || !currentHostname) return;
+
+    // Add user message immediately
+    const userMessage: ChatMessage = {
+      id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+      parts: [{
+        type: 'text',
+        id: `text_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        content: content.trim()
+      }],
+      isUser: true,
+      timestamp: new Date(),
+      isComplete: true
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      const reader = await ApiService.sendMessage(
+        content,
+        conversationId || undefined,
+        currentHostname
+      );
+      const decoder = new TextDecoder();
+
+      // Create bot message and parser
+      const botMessage: ChatMessage = {
+        id: `bot_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        parts: [],
+        isUser: false,
+        timestamp: new Date(),
+        isComplete: false
+      };
+
+      const parser = new StreamContentParser();
+      let currentConversationId = conversationId;
+
+      // Add bot message to state
+      setMessages(prev => [...prev, botMessage]);
+      setIsLoading(false);
+
+      // Process stream
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const parsedEvent = ApiService.parseStreamChunk(chunk);
+
+        if (!parsedEvent) continue;
+
+        console.log('📨 Stream event:', parsedEvent.type, parsedEvent);
+
+        switch (parsedEvent.type) {
+          case "conversation_info":
+            currentConversationId = parsedEvent.conversationId;
+            setConversationId(currentConversationId);
+            localStorage.setItem(`conversation_${currentHostname}`, currentConversationId);
+            break;
+
+          case "tool":
+            if (parsedEvent.content) {
+              const isCompleted = parsedEvent.content.includes('_completed');
+              const isStarted = parsedEvent.content.includes('_started');
+              
+              if (isStarted || isCompleted) {
+                const toolName = parsedEvent.content.replace(/_(?:started|completed)$/, '');
+                const state = isCompleted ? 'completed' : 'started';
+                
+                parser.addToolCall(toolName, state);
+                
+                // Update bot message with current parts
+                setMessages(prev => prev.map(msg => 
+                  msg.id === botMessage.id 
+                    ? { ...msg, parts: [...parser.processChunk("")] }
+                    : msg
+                ));
+
+                // Handle cart operations page refresh
+                if (state === 'completed' && ['add_to_cart', 'remove_from_cart', 'update_cart_quantity'].includes(toolName)) {
+                  try {
+                    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+                    if (tabs[0]?.id) {
+                      chrome.tabs.reload(tabs[0].id);
+                    }
+                  } catch (error) {
+                    console.error('Failed to refresh page after cart operation:', error);
+                  }
+                }
+              }
+            }
+            break;
+
+          case "thinking":
+            // Log thinking steps but don't display them
+            console.log('💭', parsedEvent.content);
+            break;
+
+          case "message":
+            if (parsedEvent.content) {
+              // Process content and update bot message
+              const updatedParts = parser.processChunk(parsedEvent.content);
+              setMessages(prev => prev.map(msg => 
+                msg.id === botMessage.id 
+                  ? { ...msg, parts: [...updatedParts] }
+                  : msg
+              ));
+            }
+            break;
+
+          case "complete":
+            // Finalize the message
+            const finalParts = parser.getfinalParts();
+            setMessages(prev => prev.map(msg => 
+              msg.id === botMessage.id 
+                ? { ...msg, parts: [...finalParts], isComplete: true }
+                : msg
+            ));
+            console.log('✅ Stream completed');
+            break;
+
+          case "error":
+            console.error('❌ Stream error:', parsedEvent.message);
+            setMessages(prev => prev.map(msg => 
+              msg.id === botMessage.id 
+                ? { 
+                    ...msg, 
+                    parts: [{
+                      type: 'text',
+                      id: `error_${Date.now()}`,
+                      content: `Error: ${parsedEvent.message}`
+                    }],
+                    isComplete: true 
+                  }
+                : msg
+            ));
+            break;
+        }
+      }
+
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      
+      const errorMessage: ChatMessage = {
+        id: `error_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        parts: [{
+          type: 'text',
+          id: `error_text_${Date.now()}`,
+          content: t('error_occurred') || 'An error occurred'
+        }],
+        isUser: false,
+        timestamp: new Date(),
+        isComplete: true
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isLoading, currentHostname, conversationId, t]);
 
   const startNewConversation = useCallback(async () => {
-    setState((prev) => ({ ...prev, messages: [] }));
+    setMessages([]);
     setConversationId(null);
-
-    if (state.currentHostname) {
-      localStorage.removeItem(`conversation_${state.currentHostname}`);
+    if (currentHostname) {
+      localStorage.removeItem(`conversation_${currentHostname}`);
     }
-  }, [state.currentHostname]);
+  }, [currentHostname]);
 
   return {
-    messages: state.messages,
-    isLoading: state.isLoading,
-    currentHostname: state.currentHostname,
+    messages,
+    isLoading,
+    currentHostname,
     conversationId,
     sendMessage,
     startNewConversation,

@@ -16,7 +16,6 @@ from agno.tools.googlesearch import GoogleSearchTools
 
 from ..tools.shopping_tools import ShoppingTools
 from ..tools.shopping.constants import get_supported_sites
-from ..services.product_stream_parser import ProductStreamParser
 
 load_dotenv()
 
@@ -165,9 +164,6 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         agent = create_basic_agent(request_headers)
         
         async def generate_stream():
-            # Initialize product parser for this conversation
-            product_parser = ProductStreamParser()
-            
             # First, send conversation info to frontend
             yield f"data: {json.dumps({'type': 'conversation_info', 'conversation_id': conversation_id, 'hostname': request.hostname})}\n\n"
             
@@ -181,47 +177,21 @@ async def send_message(request: SendMessageRequest, http_request: Request):
             )
             
             async for event in response_stream:
-                # Stream thinking process events
+                # Stream tool call events
                 if event.event == "ToolCallStarted":
                     print(f"\nEvent tool: {event.tool}\n")
-                    yield f"data: {json.dumps({'type': 'thinking', 'content': f'{event.tool.tool_name}_started'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'tool', 'content': f'{event.tool.tool_name}_started'})}\n\n"
                 elif event.event == "ToolCallCompleted":
                     print(f"\nTool call completed: {event.tool.tool_name}\n")
-                    yield f"data: {json.dumps({'type': 'thinking', 'content': f'{event.tool.tool_name}_completed'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'tool', 'content': f'{event.tool.tool_name}_completed'})}\n\n"
                 elif event.event == "ReasoningStep":
                     print(f"\nReasoning step: {event.content}\n")
                     yield f"data: {json.dumps({'type': 'thinking', 'content': f'💭 {event.content}'})}\n\n"
                 elif event.event == "RunResponseContent":
-                    print(f"\nRun response content: {event.content}\n")
-                    
-                    # Debug: Check if content contains expected product tags
-                    if "<product_search_results>" in event.content:
-                        print("🔍 Found product_search_results opening tag!")
-                    if "</product_search_results>" in event.content:
-                        print("🔍 Found product_search_results closing tag!")
-                    
-                    # Parse content for products
-                    parse_results = product_parser.parse_chunk(event.content)
-                    
-                    # Stream each parsed result
-                    for result in parse_results:
-                        if result['type'] == 'text':
-                            yield f"data: {json.dumps({'type': 'response', 'content': result['content']})}\n\n"
-                        elif result['type'] == 'product_start':
-                            print("🚀 Product section started")
-                            yield f"data: {json.dumps({'type': 'product_start'})}\n\n"
-                        elif result['type'] == 'product':
-                            print(f"📦 Streaming product: {result['product'].get('name', 'Unknown')}")
-                            yield f"data: {json.dumps({'type': 'product', 'product': result['product']})}\n\n"
-                        elif result['type'] == 'product_end':
-                            print("🏁 Product section ended")
-                            yield f"data: {json.dumps({'type': 'product_end'})}\n\n"
-            
-            # Flush any remaining content from parser
-            remaining_results = product_parser.flush()
-            for result in remaining_results:
-                if result['type'] == 'text':
-                    yield f"data: {json.dumps({'type': 'response', 'content': result['content']})}\n\n"
+                    # print(f"\nRun response content: {event.content}\n")
+                    print(event.content)
+                    # Stream content as-is without parsing
+                    yield f"data: {json.dumps({'type': 'response', 'content': event.content})}\n\n"
             
             # Send completion event
             yield f"data: {json.dumps({'type': 'complete', 'conversation_id': conversation_id})}\n\n"

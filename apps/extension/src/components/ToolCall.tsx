@@ -36,6 +36,7 @@ export const ToolCall: React.FC<ToolCallProps> = ({ toolCall }) => {
     } else {
       setDisplayStatus(toolCall.status);
     }
+    return undefined;
   }, [toolCall.status, startTime]);
   const getStatusIcon = () => {
     switch (displayStatus) {
@@ -58,6 +59,8 @@ export const ToolCall: React.FC<ToolCallProps> = ({ toolCall }) => {
         return <Check size={14} style={{ color: "#059669" }} />;
       case "error":
         return <AlertCircle size={14} style={{ color: "#dc2626" }} />;
+      default:
+        return <Loader2 size={14} style={{ color: "#6366f1", animation: "spin 1s linear infinite" }} />;
     }
   };
 

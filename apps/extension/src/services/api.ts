@@ -193,6 +193,7 @@ export class ApiService {
     | { type: "conversation_info"; conversationId: string; hostname: string }
     | { type: "complete"; conversationId: string }
     | { type: "thinking"; content: string }
+    | { type: "tool"; content: string }
     | { type: "product_start" }
     | { type: "product"; product: any }
     | { type: "product_end" }
@@ -224,6 +225,10 @@ export class ApiService {
 
           if (parsed.type === "thinking" && parsed.content) {
             return { type: "thinking", content: parsed.content };
+          }
+
+          if (parsed.type === "tool" && parsed.content) {
+            return { type: "tool", content: parsed.content };
           }
 
           if (parsed.type === "response" && parsed.content) {

@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductCard, Product } from "./ProductCard";
-import { Package, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 
 interface ProductGridProps {
