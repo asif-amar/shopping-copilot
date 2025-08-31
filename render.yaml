@@ -19,7 +19,7 @@ services:
     # Add your environment variables here
     # - key: DATABASE_URL
     #   sync: false  # Set this to true to sync from Render dashboard
-    # - key: GOOGLE_GENAI_API_KEY
+    # - key: GEMINI_API_KEY
     #   sync: false
-    # - key: CORS_ORIGINS
-    #   value: https://your-extension-domain.com
+      - key: CORS_ORIGINS
+        value: chrome-extension://*
