@@ -136,16 +136,16 @@ class ShoppingTools(Toolkit):
                 
                 # Create ProductResponse object
                 product_response = ProductResponse(
-                    name=product.title,
-                    price=formatted_price,
+                    name=product.title or "לא זמין",
+                    price=formatted_price or "לא זמין",
                     availability="זמין במלאי" if product.availability else "אזל מהמלאי",
                     url=product.url or "",
                     image=product.image_url or "",
-                    brand=product.brand,
-                    category=product.category,
-                    rating=f"{product.rating}/5 ({product.review_count} ביקורות)" if product.rating and product.review_count else f"{product.rating}/5" if product.rating else None,
+                    brand=product.brand or "",
+                    category=product.category or "",
+                    rating=f"{product.rating}/5 ({product.review_count} ביקורות)" if product.rating and product.review_count else f"{product.rating}/5" if product.rating else "לא זמין",
                     description=product.description[:150] + "..." if product.description and len(product.description) > 150 else product.description,
-                    product_id=product.id
+                    product_id=product.id or ""
                 )
                 
                 structured_products.append(product_response)
