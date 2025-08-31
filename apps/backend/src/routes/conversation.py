@@ -1,10 +1,8 @@
 import logging
-import os
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from agno.agent import Agent
 from agno.models.google import Gemini
-from dotenv import load_dotenv
 from agno.storage.postgres import PostgresStorage
 from typing import Dict, List, Optional, Any
 from fastapi.responses import StreamingResponse
@@ -14,10 +12,9 @@ from datetime import datetime
 from agno.tools.newspaper4k import Newspaper4kTools
 from agno.tools.googlesearch import GoogleSearchTools
 
+from ..config import config
 from ..tools.shopping_tools import ShoppingTools
 from ..tools.shopping.constants import get_supported_sites
-
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["conversation"])
@@ -51,17 +48,11 @@ class ConversationResponse(BaseModel):
 def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
     """Create a basic Agno agent with Gemini model"""
     
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
-    gemini_model = os.getenv("GEMINI_MODEL")
-    model = Gemini(id=gemini_model, api_key=gemini_api_key)
-    db_url = os.getenv("DATABASE_URL")
-    
-    if not db_url:
-        raise ValueError("DATABASE_URL environment variable is required")
+    model = Gemini(id=config.GEMINI_MODEL, api_key=config.GEMINI_API_KEY)
     
     storage = PostgresStorage(
         table_name="conversations",
-        db_url=db_url,
+        db_url=config.DATABASE_URL,
         auto_upgrade_schema=True
     )
 
@@ -209,13 +200,9 @@ async def get_conversation(conversation_id: str, user_id: str = "default_user"):
         logger.info(f"Retrieving conversation: {conversation_id} for user: {user_id}")
 
         # Initialize PostgreSQL storage
-        db_url = os.getenv("DATABASE_URL")
-        if not db_url:
-            raise ValueError("DATABASE_URL environment variable is required")
-            
         storage = PostgresStorage(
             table_name="conversations", 
-            db_url=db_url
+            db_url=config.DATABASE_URL
         )
         
         # Create a temporary agent with the storage to access the session
