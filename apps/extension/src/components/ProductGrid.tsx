@@ -2,15 +2,19 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductCard, Product } from "./ProductCard";
 import { Package, Search } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface ProductGridProps {
   products: Product[];
   isLoading?: boolean;
 }
 
-export const ProductGrid: React.FC<ProductGridProps> = ({ products, isLoading = false }) => {
-  console.log("🎯 ProductGrid rendered with:", products.length, "products, isLoading:", isLoading);
-  
+export const ProductGrid: React.FC<ProductGridProps> = ({
+  products,
+  isLoading = false,
+}) => {
+  const { language } = useLanguage();
+
   if (isLoading) {
     return (
       <div
@@ -20,7 +24,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, isLoading = 
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: "12px"
+          gap: "12px",
         }}
       >
         <motion.div
@@ -31,7 +35,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, isLoading = 
             height: "32px",
             border: "3px solid #f3f4f6",
             borderTop: "3px solid #667eea",
-            borderRadius: "50%"
+            borderRadius: "50%",
           }}
         />
         <p style={{ color: "#6b7280", fontSize: "14px", textAlign: "center" }}>
@@ -54,7 +58,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, isLoading = 
           alignItems: "center",
           gap: "16px",
           color: "#6b7280",
-          textAlign: "center"
+          textAlign: "center",
         }}
       >
         <div
@@ -65,13 +69,15 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, isLoading = 
             borderRadius: "50%",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center"
+            justifyContent: "center",
           }}
         >
           <Search size={28} color="#9ca3af" />
         </div>
         <div>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", fontWeight: "600" }}>
+          <h3
+            style={{ margin: "0 0 8px 0", fontSize: "16px", fontWeight: "600" }}
+          >
             לא נמצאו מוצרים
           </h3>
           <p style={{ margin: 0, fontSize: "14px", color: "#9ca3af" }}>
@@ -86,8 +92,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, isLoading = 
     <div
       style={{
         width: "100%",
-        maxWidth: "85%",
-        padding: "0"
+        // maxWidth: "85%",
+        padding: "0",
       }}
     >
       {/* Product Grid */}
@@ -96,7 +102,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, isLoading = 
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(min(180px, 45%), 1fr))",
           gap: "10px",
-          width: "100%"
+          width: "100%",
+          direction: language === "he" ? "rtl" : "ltr",
         }}
       >
         <AnimatePresence mode="popLayout">
@@ -110,7 +117,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, isLoading = 
               transition={{
                 layout: { duration: 0.3 },
                 opacity: { duration: 0.4, delay: index * 0.05 },
-                scale: { duration: 0.4, delay: index * 0.05 }
+                scale: { duration: 0.4, delay: index * 0.05 },
               }}
             >
               <ProductCard product={product} index={index} />
@@ -118,7 +125,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, isLoading = 
           ))}
         </AnimatePresence>
       </div>
-
     </div>
   );
 };
