@@ -46,12 +46,11 @@ class ApiClient:
         self.session: Optional[aiohttp.ClientSession] = None
         self._last_request_time = 0
         
-        # Proxy configuration
+        # Proxy configuration (ISP proxy)
         self.use_proxy = use_proxy if use_proxy is not None else os.getenv('USE_PROXY', 'false').lower() == 'true'
         self.proxy_url = os.getenv('PROXY_URL')
         self.proxy_user = os.getenv('PROXY_USER') 
         self.proxy_pass = os.getenv('PROXY_PASS')
-        self.proxy_ca_cert = os.getenv('PROXY_CA_CERT')  # Path to BrightData CA certificate
     
     async def __aenter__(self):
         """Async context manager entry"""
@@ -97,8 +96,7 @@ class ApiClient:
                 
                 # Use HTTP for proxy URL (aiohttp handles HTTPS internally)
                 proxy_url = f"http://{self.proxy_url}"
-                cert_status = "with certificate" if self.proxy_ca_cert and os.path.exists(self.proxy_ca_cert) else "default SSL"
-                logger.info(f"Configuring proxy: {proxy_url} (auth: {'yes' if proxy_auth else 'no'}, ssl: {cert_status})")
+                logger.info(f"Configuring ISP proxy: {proxy_url} (auth: {'yes' if proxy_auth else 'no'})")
                 
                 # Store proxy configuration for requests
                 self._proxy_url = proxy_url
@@ -123,24 +121,11 @@ class ApiClient:
         self._last_request_time = time.time()
     
     def _create_ssl_context(self):
-        """Create SSL context with BrightData certificate if using proxy"""
-        if self.use_proxy and self.proxy_ca_cert and os.path.exists(self.proxy_ca_cert):
-            try:
-                # Create SSL context and load BrightData certificate
-                ssl_context = ssl.create_default_context()
-                ssl_context.load_verify_locations(cafile=self.proxy_ca_cert)
-                # For proxy connections, we might need to be more lenient
-                ssl_context.check_hostname = False
-                ssl_context.verify_mode = ssl.CERT_NONE
-                logger.info(f"Using BrightData SSL certificate (verification disabled for proxy): {self.proxy_ca_cert}")
-                return ssl_context
-            except Exception as e:
-                logger.error(f"Failed to load SSL certificate {self.proxy_ca_cert}: {e}")
-                return False  # Disable SSL verification as fallback
-        elif self.use_proxy and self.proxy_url:
-            # If proxy is enabled but no cert is provided, disable SSL verification
-            logger.warning("Proxy enabled - disabling SSL verification for proxy compatibility")
-            return False
+        """Create SSL context - ISP proxy doesn't need special certificate"""
+        if self.use_proxy and self.proxy_url:
+            # ISP proxy works with default SSL context
+            logger.info("Using default SSL context for ISP proxy")
+            return ssl.create_default_context()
         else:
             # Default SSL context for direct connections
             return ssl.create_default_context()
