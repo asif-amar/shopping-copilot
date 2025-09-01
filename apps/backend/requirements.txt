@@ -10,6 +10,7 @@ psycopg[binary]
 psycopg2-binary
 sqlalchemy
 aiohttp>=3.9.0
+Brotli>=1.0.9
 duckduckgo-search
 ddgs
 newspaper4k
