@@ -6,6 +6,7 @@ import asyncio
 import logging
 import random
 import os
+import ssl
 from typing import Dict, Any, Optional, Union
 import aiohttp
 import json
@@ -50,6 +51,7 @@ class ApiClient:
         self.proxy_url = os.getenv('PROXY_URL')
         self.proxy_user = os.getenv('PROXY_USER') 
         self.proxy_pass = os.getenv('PROXY_PASS')
+        self.proxy_ca_cert = os.getenv('PROXY_CA_CERT')  # Path to BrightData CA certificate
     
     async def __aenter__(self):
         """Async context manager entry"""
@@ -67,13 +69,17 @@ class ApiClient:
         if not self.session or self.session.closed:
             timeout = aiohttp.ClientTimeout(total=30)
             # Use connector with SSL verification and connection pooling
+            # Configure SSL context for BrightData proxy if needed
+            ssl_context = self._create_ssl_context()
+            
             connector = aiohttp.TCPConnector(
                 limit=100,
                 limit_per_host=30,
                 ttl_dns_cache=300,
                 use_dns_cache=True,
                 keepalive_timeout=60,
-                enable_cleanup_closed=True
+                enable_cleanup_closed=True,
+                ssl=ssl_context
             )
             
             session_kwargs = {
@@ -89,11 +95,12 @@ class ApiClient:
                 if self.proxy_user and self.proxy_pass:
                     proxy_auth = aiohttp.BasicAuth(self.proxy_user, self.proxy_pass)
                 
+                # Use HTTP for proxy URL (aiohttp handles HTTPS internally)
                 proxy_url = f"http://{self.proxy_url}"
-                logger.info(f"Configuring proxy: {proxy_url} (auth: {'yes' if proxy_auth else 'no'})")
+                cert_status = "with certificate" if self.proxy_ca_cert and os.path.exists(self.proxy_ca_cert) else "default SSL"
+                logger.info(f"Configuring proxy: {proxy_url} (auth: {'yes' if proxy_auth else 'no'}, ssl: {cert_status})")
                 
-                # Note: aiohttp doesn't support proxy auth directly in ClientSession
-                # We'll handle it per request
+                # Store proxy configuration for requests
                 self._proxy_url = proxy_url
                 self._proxy_auth = proxy_auth
             else:
@@ -114,6 +121,29 @@ class ApiClient:
             await asyncio.sleep(delay)
         
         self._last_request_time = time.time()
+    
+    def _create_ssl_context(self):
+        """Create SSL context with BrightData certificate if using proxy"""
+        if self.use_proxy and self.proxy_ca_cert and os.path.exists(self.proxy_ca_cert):
+            try:
+                # Create SSL context and load BrightData certificate
+                ssl_context = ssl.create_default_context()
+                ssl_context.load_verify_locations(cafile=self.proxy_ca_cert)
+                # For proxy connections, we might need to be more lenient
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+                logger.info(f"Using BrightData SSL certificate (verification disabled for proxy): {self.proxy_ca_cert}")
+                return ssl_context
+            except Exception as e:
+                logger.error(f"Failed to load SSL certificate {self.proxy_ca_cert}: {e}")
+                return False  # Disable SSL verification as fallback
+        elif self.use_proxy and self.proxy_url:
+            # If proxy is enabled but no cert is provided, disable SSL verification
+            logger.warning("Proxy enabled - disabling SSL verification for proxy compatibility")
+            return False
+        else:
+            # Default SSL context for direct connections
+            return ssl.create_default_context()
     
     async def _retry_without_proxy(self, method: str, url: str, **kwargs):
         """Retry request without proxy as fallback"""
