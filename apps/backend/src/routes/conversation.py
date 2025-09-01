@@ -96,7 +96,7 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
 
             ### Response Handling:
             The search_products tool returns array of products.
-            Your response will include some/all of the products, wrapped in `<product_search_results><product>{json}</product><product>{json}</product>...</product_search_results>`
+            Your response will include some/all of the products, each wrapped in individual `<product>{json}</product>` tags
 
             **CRITICAL RULES:**
             1. **PRODUCT CURATION**: You may remove products to improve user experience (default: show 3-4 products max unless specified)
@@ -106,7 +106,7 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
 
             ### Response Structure: 
             1. **Introduction**: Brief contextual message before results
-            2. **TOOL OUTPUT**: The complete array of products, wrapped in <product_search_results> tag
+            2. **TOOL OUTPUT**: The complete array of products, each wrapped in individual <product> tags
             3. **Follow-up**: Helpful suggestions or questions after results
 
             ### Examples:
@@ -114,7 +114,7 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             **Single Product Search:**
             User: "חפש חלב"
             Tool: [{"name":"חלב טרי 3%","price":"5.90","url":"..."}]
-            Response: "מצאתי חלב באתר:\n<product_search_results><product>{"name":"חלב טרי 3%","price":"5.90","url":"..."}</product></product_search_results>\nהאם תרצה שאוסיף לעגלה?"
+            Response: "מצאתי חלב באתר:\n<product>{"name":"חלב טרי 3%","price":"5.90","url":"..."}</product>\nהאם תרצה שאוסיף לעגלה?"
 
             **Multiple Products (curated):**
             User: "חפש חלב, לחם וגבינה"
