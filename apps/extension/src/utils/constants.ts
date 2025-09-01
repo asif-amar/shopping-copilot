@@ -1,5 +1,5 @@
 export const APP_NAME = "shopAI Chat";
-export const BACKEND_URL = "https://shopping-copilot.onrender.com";
+export const BACKEND_URL = "https://shopping-copilot-1.onrender.com/api";
 export const MESSAGE_TYPES = {
   GET_CONVERSATION: "GET_CONVERSATION",
   SAVE_MESSAGE: "SAVE_MESSAGE",
