@@ -8,6 +8,7 @@ import {
 } from "@/services/websiteContext";
 import { useLanguage } from "@/hooks/useLanguage";
 import { ApiService } from "@/services/api";
+import { AuthModal } from "./AuthModal";
 
 interface HeaderProps {
   currentHostname: string;
@@ -26,6 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isSupported = isShoppingSite(currentHostname);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   useEffect(() => {
     checkAuthStatus();
@@ -41,14 +43,16 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const handleSignIn = async () => {
-    try {
-      await ApiService.signInWithGoogle();
-      console.log("User signed in successfully!");
-      await checkAuthStatus(); // Refresh auth status
-    } catch (error) {
-      console.error("Sign-in failed:", error);
+  const handleUserIconClick = () => {
+    if (isAuthenticated) {
+      handleSignOut();
+    } else {
+      setIsAuthModalOpen(true);
     }
+  };
+
+  const handleAuthSuccess = async () => {
+    await checkAuthStatus(); // Refresh auth status
   };
 
   const handleSignOut = async () => {
@@ -190,7 +194,7 @@ export const Header: React.FC<HeaderProps> = ({
             </motion.button>
           ) : (
             <motion.button
-              onClick={handleSignIn}
+              onClick={handleUserIconClick}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               style={{
@@ -288,6 +292,12 @@ export const Header: React.FC<HeaderProps> = ({
           </motion.button>
         </div>
       </div>
+      
+      <AuthModal 
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
     </motion.div>
   );
 };

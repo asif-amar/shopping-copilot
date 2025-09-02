@@ -10,6 +10,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import OperationalError, DisconnectionError
 
 from ..config import config
 from ..database import get_db_dependency
@@ -63,8 +64,15 @@ async def auth_with_google(
         logger.warning("No email found in Google token response")
         raise HTTPException(status_code=400, detail="No email found in token")
     
-    # Get or create user in database
-    db_user = UserService.get_or_create_user(db, user_email, user_info)
+    # Get or create user in database with retry logic
+    try:
+        db_user = UserService.get_or_create_user(db, user_email, user_info)
+    except (OperationalError, DisconnectionError) as e:
+        logger.error(f"Database connection error during user creation: {e}")
+        raise HTTPException(
+            status_code=503, 
+            detail="Database service temporarily unavailable. Please try again."
+        )
     
     # Get request info for session tracking
     request_info = get_request_info(request)

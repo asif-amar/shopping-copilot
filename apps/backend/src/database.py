@@ -13,8 +13,22 @@ from .config import config
 
 logger = logging.getLogger(__name__)
 
-# Create database engine
-engine = create_engine(config.DATABASE_URL)
+# Create database engine with connection pooling and retry logic
+engine = create_engine(
+    config.DATABASE_URL,
+    # Connection pool settings for better connection management
+    pool_size=5,
+    max_overflow=10,
+    pool_recycle=1800,  # Recycle connections every 30 minutes
+    pool_pre_ping=True,  # Enable connection health checks
+    # Additional settings for Neon/serverless databases
+    connect_args={
+        "connect_timeout": 10,
+        "application_name": "shopping_copilot_backend",
+    },
+    # Echo SQL queries in development for debugging
+    echo=config.ENVIRONMENT == "development"
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -91,12 +105,22 @@ def get_db() -> Session:
 
 
 def get_db_dependency():
-    """FastAPI dependency for database session."""
+    """FastAPI dependency for database session with connection health check."""
+    from sqlalchemy import text
     db = SessionLocal()
     try:
+        # Test the connection before yielding
+        db.execute(text("SELECT 1"))
         yield db
+    except Exception as e:
+        logger.error(f"Database connection failed: {e}")
+        db.rollback()
+        raise
     finally:
-        db.close()
+        try:
+            db.close()
+        except Exception as e:
+            logger.warning(f"Error closing database session: {e}")
 
 
 def create_tables():

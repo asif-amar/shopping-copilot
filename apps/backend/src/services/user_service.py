@@ -1,22 +1,54 @@
 """User service for database operations."""
 
 import logging
+import time
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError, DisconnectionError
 
 from ..database import User, TokenBlacklist, UserSession
 
 logger = logging.getLogger(__name__)
 
 
+def retry_db_operation(max_retries=3, delay=1.0):
+    """Decorator to retry database operations on connection errors."""
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            last_exception = None
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except (OperationalError, DisconnectionError) as e:
+                    last_exception = e
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Database operation failed (attempt {attempt + 1}/{max_retries}): {e}")
+                        time.sleep(delay * (2 ** attempt))  # Exponential backoff
+                        # Try to rollback the session if it exists
+                        if len(args) > 1 and hasattr(args[1], 'rollback'):
+                            try:
+                                args[1].rollback()
+                            except Exception:
+                                pass
+                    else:
+                        logger.error(f"Database operation failed after {max_retries} attempts: {e}")
+                        raise last_exception
+                except Exception as e:
+                    # Don't retry for other types of exceptions
+                    raise e
+            return None
+        return wrapper
+    return decorator
+
+
 class UserService:
     """Service for user-related database operations."""
     
     @staticmethod
+    @retry_db_operation(max_retries=3, delay=0.5)
     def get_or_create_user(
         db: Session, 
         email: str, 
@@ -77,6 +109,7 @@ class UserService:
             raise
     
     @staticmethod
+    @retry_db_operation(max_retries=3, delay=0.5)
     def blacklist_token(
         db: Session,
         token_jti: str,
@@ -123,6 +156,7 @@ class UserService:
             raise
     
     @staticmethod
+    @retry_db_operation(max_retries=3, delay=0.5)
     def is_token_blacklisted(db: Session, token_jti: str) -> bool:
         """Check if token is blacklisted."""
         try:
@@ -138,6 +172,7 @@ class UserService:
             return False
     
     @staticmethod
+    @retry_db_operation(max_retries=3, delay=0.5)
     def create_user_session(
         db: Session,
         user_id: str,
