@@ -9,6 +9,7 @@ import {
 import { useLanguage } from "@/hooks/useLanguage";
 import { ApiService } from "@/services/api";
 import { AuthModal } from "./AuthModal";
+import { TooltipButton } from "./TooltipButton";
 
 interface HeaderProps {
   currentHostname: string;
@@ -66,12 +67,6 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  // useEffect(() => {
-  //   console.log("language changed to", language);
-  //   console.log("displayName", displayName);
-  //   console.log("currentHostname", currentHostname);
-  //   console.log("siteAdapter", siteAdapter);
-  // }, [language]);
 
   return (
     <motion.div
@@ -162,11 +157,10 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div style={{ display: "flex", gap: "8px" }}>
           {isAuthenticated ? (
-            <motion.button
+            <TooltipButton
+              tooltip={`${t("sign_out")}${userEmail ? ` (${userEmail})` : ""}`}
               onClick={handleSignOut}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              style={{
+              buttonStyle={{
                 background: "rgba(239, 68, 68, 0.1)",
                 border: "none",
                 color: "#dc2626",
@@ -183,21 +177,19 @@ export const Header: React.FC<HeaderProps> = ({
                 height: "36px",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.15)";
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(239, 68, 68, 0.15)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(239, 68, 68, 0.1)";
               }}
-              title={`Sign Out${userEmail ? ` (${userEmail})` : ""}`}
             >
               <LogOut size={16} />
-            </motion.button>
+            </TooltipButton>
           ) : (
-            <motion.button
+            <TooltipButton
+              tooltip={t("sign_in")}
               onClick={handleUserIconClick}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              style={{
+              buttonStyle={{
                 background: "rgba(34, 197, 94, 0.1)",
                 border: "none",
                 color: "#16a34a",
@@ -214,22 +206,20 @@ export const Header: React.FC<HeaderProps> = ({
                 height: "36px",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(34, 197, 94, 0.15)";
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(34, 197, 94, 0.15)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(34, 197, 94, 0.1)";
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(34, 197, 94, 0.1)";
               }}
-              title="Sign In"
             >
               <User size={16} />
-            </motion.button>
+            </TooltipButton>
           )}
 
-          <motion.button
+          <TooltipButton
+            tooltip={`${t("switch_to")} ${language === "he" ? "English" : "Hebrew"}`}
             onClick={toggleLanguage}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            style={{
+            buttonStyle={{
               background: "rgba(71, 85, 105, 0.08)",
               border: "none",
               color: "#475569",
@@ -246,50 +236,48 @@ export const Header: React.FC<HeaderProps> = ({
               height: "36px",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(71, 85, 105, 0.12)";
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(71, 85, 105, 0.12)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(71, 85, 105, 0.08)";
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(71, 85, 105, 0.08)";
             }}
-            title={`Switch to ${language === "he" ? "English" : "Hebrew"}`}
           >
             {language === "he" ? "EN" : "HE"}
-          </motion.button>
+          </TooltipButton>
 
-          <motion.button
+          <TooltipButton
+            tooltip={t("new_chat")}
             onClick={onNewConversation}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            style={{
+            buttonStyle={{
               background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
               border: "none",
               color: "white",
               borderRadius: "8px",
-              padding: "8px 12px",
+              padding: "8px",
               fontSize: "13px",
               fontWeight: "500",
               cursor: "pointer",
               transition: "all 0.2s ease",
               display: "flex",
               alignItems: "center",
-              gap: "6px",
+              justifyContent: "center",
+              width: "36px",
+              height: "36px",
               boxShadow: "0 2px 6px rgba(59, 130, 246, 0.25)",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-1px)";
-              e.currentTarget.style.boxShadow =
+              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow =
                 "0 4px 12px rgba(59, 130, 246, 0.35)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow =
+              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow =
                 "0 2px 6px rgba(59, 130, 246, 0.25)";
             }}
-            title={t("new_chat")}
           >
             <Plus size={14} />
-            {t("new_chat")}
-          </motion.button>
+          </TooltipButton>
         </div>
       </div>
       

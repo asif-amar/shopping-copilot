@@ -20,6 +20,9 @@ const translations: Translations = {
     shopping_assistant: "עוזר קניות חכם",
     new_chat: "צ'אט חדש",
     supported: "נתמך",
+    sign_in: "התחבר",
+    sign_out: "התנתק",
+    switch_to: "עבור ל",
 
     // Chat Input
     type_message: "איך אוכל לעזור לך היום?",
@@ -61,6 +64,9 @@ const translations: Translations = {
     shopping_assistant: "Shopping Assistant",
     new_chat: "New Chat",
     supported: "Supported",
+    sign_in: "Sign In",
+    sign_out: "Sign Out",
+    switch_to: "Switch to",
 
     // Chat Input
     type_message: "How can I help you today?",
