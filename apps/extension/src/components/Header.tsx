@@ -1,12 +1,14 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, ShoppingBag } from "lucide-react";
+import { Plus, ShoppingBag, User, LogOut } from "lucide-react";
 import {
   getSiteAdapterFromHostname,
   getSiteDisplayName,
   isShoppingSite,
 } from "@/services/websiteContext";
 import { useLanguage } from "@/hooks/useLanguage";
+import { ApiService } from "@/services/api";
+import { AuthModal } from "./AuthModal";
 
 interface HeaderProps {
   currentHostname: string;
@@ -23,6 +25,46 @@ export const Header: React.FC<HeaderProps> = ({
     ? getSiteDisplayName(siteAdapter, language)
     : currentHostname;
   const isSupported = isShoppingSite(currentHostname);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    const authenticated = await ApiService.isAuthenticated();
+    setIsAuthenticated(authenticated);
+    
+    if (authenticated) {
+      const userInfo = await ApiService.getCurrentUserInfo();
+      setUserEmail(userInfo?.email || null);
+    }
+  };
+
+  const handleUserIconClick = () => {
+    if (isAuthenticated) {
+      handleSignOut();
+    } else {
+      setIsAuthModalOpen(true);
+    }
+  };
+
+  const handleAuthSuccess = async () => {
+    await checkAuthStatus(); // Refresh auth status
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await ApiService.signOut();
+      console.log("User signed out successfully!");
+      setIsAuthenticated(false);
+      setUserEmail(null);
+    } catch (error) {
+      console.error("Sign-out failed:", error);
+    }
+  };
 
   // useEffect(() => {
   //   console.log("language changed to", language);
@@ -119,6 +161,70 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div style={{ display: "flex", gap: "8px" }}>
+          {isAuthenticated ? (
+            <motion.button
+              onClick={handleSignOut}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                background: "rgba(239, 68, 68, 0.1)",
+                border: "none",
+                color: "#dc2626",
+                borderRadius: "8px",
+                padding: "8px",
+                fontSize: "13px",
+                fontWeight: "500",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "36px",
+                height: "36px",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+              }}
+              title={`Sign Out${userEmail ? ` (${userEmail})` : ""}`}
+            >
+              <LogOut size={16} />
+            </motion.button>
+          ) : (
+            <motion.button
+              onClick={handleUserIconClick}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                background: "rgba(34, 197, 94, 0.1)",
+                border: "none",
+                color: "#16a34a",
+                borderRadius: "8px",
+                padding: "8px",
+                fontSize: "13px",
+                fontWeight: "500",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "36px",
+                height: "36px",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(34, 197, 94, 0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(34, 197, 94, 0.1)";
+              }}
+              title="Sign In"
+            >
+              <User size={16} />
+            </motion.button>
+          )}
+
           <motion.button
             onClick={toggleLanguage}
             whileHover={{ scale: 1.02 }}
@@ -186,6 +292,12 @@ export const Header: React.FC<HeaderProps> = ({
           </motion.button>
         </div>
       </div>
+      
+      <AuthModal 
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
     </motion.div>
   );
 };

@@ -18,6 +18,8 @@
     "build:backend": "npm run build --workspace=apps/backend",
     "build:extension": "npm run build --workspace=apps/extension",
     "build:mcp": "npm run deploy --workspace=apps/mcp-server",
+    "render:build": "pip install -r apps/backend/requirements.txt",
+    "render:start": "cd apps/backend && python -m uvicorn src.main:app --host 0.0.0.0 --port $PORT",
     "type-check": "npm run type-check --workspace=apps/backend && npm run typecheck --workspace=apps/extension && npm run type-check --workspace=apps/mcp-server",
     "lint": "npm run lint --workspace=apps/extension",
     "lint:fix": "npm run lint:fix --workspace=apps/extension",

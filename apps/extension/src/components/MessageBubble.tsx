@@ -23,6 +23,25 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const [disliked, setDisliked] = useState(false);
   const { language } = useLanguage();
 
+  // Check if message has any visible content
+  const hasVisibleContent = () => {
+    return message.parts.some(part => {
+      if (part.type === "text") {
+        return (part as TextPart).content?.trim();
+      } else if (part.type === "products") {
+        return (part as ProductsPart).products.length > 0;
+      } else if (part.type === "tool-call") {
+        return true; // Tool calls are always visible
+      }
+      return false;
+    });
+  };
+
+  // Don't render if no visible content
+  if (!hasVisibleContent()) {
+    return null;
+  }
+
   const formatTime = (date: Date) => {
     if (language === "he") {
       return date.toLocaleTimeString("he-IL", {
@@ -226,7 +245,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             >
               <ProductGrid
                 products={productsPart.products}
-                isLoading={productsPart.isLoading || false}
+                isLoading={false}
               />
             </div>
           );

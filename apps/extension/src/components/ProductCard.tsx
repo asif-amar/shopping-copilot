@@ -230,7 +230,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </motion.h3>
 
         {/* Rating */}
-        {rating && (
+        {/* {rating && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -257,7 +257,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               ({rating})
             </span>
           </motion.div>
-        )}
+        )} */}
 
         {/* Spacer to push price to bottom */}
         <div style={{ flex: 1 }}></div>

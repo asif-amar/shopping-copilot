@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: shopping-copilot
+    runtime: python3
+    plan: starter  # or 'free' for free tier
+    buildCommand: pip install -r apps/backend/requirements.txt
+    startCommand: ./apps/backend/start.sh
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        fromService:
+          type: web
+          name: shopping-copilot
+          property: port
+    # Add your environment variables here
+    # - key: DATABASE_URL
+    #   sync: false  # Set this to true to sync from Render dashboard
+    # - key: GEMINI_API_KEY
+    #   sync: false
+      - key: CORS_ORIGINS
+        value: chrome-extension://*

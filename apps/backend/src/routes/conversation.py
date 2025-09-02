@@ -1,10 +1,8 @@
 import logging
-import os
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel
 from agno.agent import Agent
 from agno.models.google import Gemini
-from dotenv import load_dotenv
 from agno.storage.postgres import PostgresStorage
 from typing import Dict, List, Optional, Any
 from fastapi.responses import StreamingResponse
@@ -14,10 +12,10 @@ from datetime import datetime
 from agno.tools.newspaper4k import Newspaper4kTools
 from agno.tools.googlesearch import GoogleSearchTools
 
+from ..config import config
 from ..tools.shopping_tools import ShoppingTools
 from ..tools.shopping.constants import get_supported_sites
-
-load_dotenv()
+from ..auth import get_current_active_user, UserResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["conversation"])
@@ -41,7 +39,6 @@ class ConversationModel(BaseModel):
 class SendMessageRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
-    user_id: str = "default_user"
     hostname: Optional[str] = None
 
 class ConversationResponse(BaseModel):
@@ -51,17 +48,11 @@ class ConversationResponse(BaseModel):
 def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
     """Create a basic Agno agent with Gemini model"""
     
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
-    gemini_model = os.getenv("GEMINI_MODEL")
-    model = Gemini(id=gemini_model, api_key=gemini_api_key)
-    db_url = os.getenv("DATABASE_URL")
-    
-    if not db_url:
-        raise ValueError("DATABASE_URL environment variable is required")
+    model = Gemini(id=config.GEMINI_MODEL, api_key=config.GEMINI_API_KEY)
     
     storage = PostgresStorage(
         table_name="conversations",
-        db_url=db_url,
+        db_url=config.DATABASE_URL,
         auto_upgrade_schema=True
     )
 
@@ -105,7 +96,7 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
 
             ### Response Handling:
             The search_products tool returns array of products.
-            Your response will include some/all of the products, wrapped in `<product_search_results><product>{json}</product><product>{json}</product>...</product_search_results>`
+            Your response will include some/all of the products, each wrapped in individual `<product>{json}</product>` tags
 
             **CRITICAL RULES:**
             1. **PRODUCT CURATION**: You may remove products to improve user experience (default: show 3-4 products max unless specified)
@@ -115,7 +106,7 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
 
             ### Response Structure: 
             1. **Introduction**: Brief contextual message before results
-            2. **TOOL OUTPUT**: The complete array of products, wrapped in <product_search_results> tag
+            2. **TOOL OUTPUT**: The complete array of products, each wrapped in individual <product> tags
             3. **Follow-up**: Helpful suggestions or questions after results
 
             ### Examples:
@@ -123,7 +114,7 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             **Single Product Search:**
             User: "חפש חלב"
             Tool: [{"name":"חלב טרי 3%","price":"5.90","url":"..."}]
-            Response: "מצאתי חלב באתר:\n<product_search_results><product>{"name":"חלב טרי 3%","price":"5.90","url":"..."}</product></product_search_results>\nהאם תרצה שאוסיף לעגלה?"
+            Response: "מצאתי חלב באתר:\n<product>{"name":"חלב טרי 3%","price":"5.90","url":"..."}</product>\nהאם תרצה שאוסיף לעגלה?"
 
             **Multiple Products (curated):**
             User: "חפש חלב, לחם וגבינה"
@@ -144,10 +135,14 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
     return agent
 
 @router.post("/conversation")
-async def send_message(request: SendMessageRequest, http_request: Request):
+async def send_message(
+    request: SendMessageRequest, 
+    http_request: Request,
+    current_user: UserResponse = Depends(get_current_active_user)
+):
     """Send a message to a conversation (creates new conversation if needed)"""
     try:
-        logger.info(f"Processing message for user: {request.user_id}")
+        logger.info(f"Processing message for user: {current_user.email}")
 
         # Extract headers for credential management
         request_headers = dict(http_request.headers)
@@ -170,7 +165,7 @@ async def send_message(request: SendMessageRequest, http_request: Request):
             # Stream response with intermediate steps
             response_stream = await agent.arun(
                 request.message, 
-                user_id=request.user_id, 
+                user_id=str(current_user.id), 
                 session_id=conversation_id,
                 stream=True,
                 stream_intermediate_steps=True
@@ -203,19 +198,18 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         raise HTTPException(status_code=500, detail=f"Failed to process message: {str(e)}")
 
 @router.get("/conversation/{conversation_id}")
-async def get_conversation(conversation_id: str, user_id: str = "default_user"):
+async def get_conversation(
+    conversation_id: str, 
+    current_user: UserResponse = Depends(get_current_active_user)
+):
     """Get a specific conversation with all its messages"""
     try:
-        logger.info(f"Retrieving conversation: {conversation_id} for user: {user_id}")
+        logger.info(f"Retrieving conversation: {conversation_id} for user: {current_user.email}")
 
         # Initialize PostgreSQL storage
-        db_url = os.getenv("DATABASE_URL")
-        if not db_url:
-            raise ValueError("DATABASE_URL environment variable is required")
-            
         storage = PostgresStorage(
             table_name="conversations", 
-            db_url=db_url
+            db_url=config.DATABASE_URL
         )
         
         # Create a temporary agent with the storage to access the session
@@ -250,3 +244,26 @@ async def get_conversation(conversation_id: str, user_id: str = "default_user"):
     except Exception as e:
         logger.error(f"Error retrieving conversation: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve conversation: {str(e)}")
+
+@router.get("/conversations")
+async def list_conversations(
+    current_user: UserResponse = Depends(get_current_active_user),
+    limit: int = 50
+):
+    """List all conversations for the authenticated user"""
+    try:
+        logger.info(f"Listing conversations for user: {current_user.email} (limit: {limit})")
+        
+        # Initialize PostgreSQL storage
+        storage = PostgresStorage(
+            table_name="conversations", 
+            db_url=config.DATABASE_URL
+        )
+        
+        # TODO: Implement proper conversation listing with user filtering
+        # For now, return empty list as placeholder
+        return {"conversations": [], "total": 0, "user": current_user.email}
+        
+    except Exception as e:
+        logger.error(f"Error listing conversations: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to list conversations: {str(e)}")

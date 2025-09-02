@@ -45,6 +45,16 @@ const translations: Translations = {
     quick_basic_items_desc: "חלב, לחם, ביצים",
     quick_vegetables_sale: "🥦 תראה לי ירקות במבצע",
     quick_recipe_suggestion: "🛒 הצע מתכון וקנה מרכיבים",
+
+    // Auth Modal
+    auth_modal_title: "היכנס לחשבון שלך",
+    auth_modal_subtitle: "התחבר כדי לקבל חוויה אישית ושמורה",
+    auth_feature_personalized: "המלצות מותאמות אישית",
+    auth_feature_history: "היסטוריית קניות שמורה",
+    auth_feature_secure: "אבטחה מתקדמת עם Google",
+    auth_sign_in_google: "התחבר עם Google",
+    auth_signing_in: "מתחבר...",
+    auth_privacy_note: "אנחנו לא נשמור מידע אישי ללא רשותך",
   },
   en: {
     // Header
@@ -78,6 +88,17 @@ const translations: Translations = {
     quick_basic_items_desc: "milk, bread, eggs",
     quick_vegetables_sale: "🥦 Show me vegetables on sale",
     quick_recipe_suggestion: "🛒 Suggest a recipe and buy ingredients",
+
+    // Auth Modal
+    auth_modal_title: "Sign In to Your Account",
+    auth_modal_subtitle: "Sign in to get a personalized and saved experience",
+    auth_feature_personalized: "Personalized recommendations",
+    auth_feature_history: "Saved shopping history",
+    auth_feature_secure: "Advanced security with Google",
+    auth_sign_in_google: "Continue with Google",
+    auth_signing_in: "Signing in...",
+    auth_privacy_note:
+      "We won't save personal information without your permission",
   },
 };
 
