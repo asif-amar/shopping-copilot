@@ -22,6 +22,14 @@ class Config:
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-pro")
     
+    # JWT Configuration
+    JWT_SECRET_KEY: Optional[str] = os.getenv("JWT_SECRET_KEY")
+    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+    JWT_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_MINUTES", str(60 * 24 * 7)))  # 1 week
+    
+    # OAuth Configuration
+    GOOGLE_CLIENT_ID: Optional[str] = os.getenv("GOOGLE_CLIENT_ID")
+    
     # CORS Configuration
     FRONTEND_URL: Optional[str] = os.getenv("FRONTEND_URL")
     CORS_ORIGINS: Optional[str] = os.getenv("CORS_ORIGINS")
@@ -39,6 +47,7 @@ class Config:
         required_vars = {
             "DATABASE_URL": cls.DATABASE_URL,
             "GEMINI_API_KEY": cls.GEMINI_API_KEY,
+            "JWT_SECRET_KEY": cls.JWT_SECRET_KEY,
         }
         
         missing_vars = []

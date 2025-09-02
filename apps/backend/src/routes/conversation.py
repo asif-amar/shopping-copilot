@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel
 from agno.agent import Agent
 from agno.models.google import Gemini
@@ -15,6 +15,7 @@ from agno.tools.googlesearch import GoogleSearchTools
 from ..config import config
 from ..tools.shopping_tools import ShoppingTools
 from ..tools.shopping.constants import get_supported_sites
+from ..auth import get_current_active_user, UserResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["conversation"])
@@ -38,7 +39,6 @@ class ConversationModel(BaseModel):
 class SendMessageRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
-    user_id: str = "default_user"
     hostname: Optional[str] = None
 
 class ConversationResponse(BaseModel):
@@ -135,10 +135,14 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
     return agent
 
 @router.post("/conversation")
-async def send_message(request: SendMessageRequest, http_request: Request):
+async def send_message(
+    request: SendMessageRequest, 
+    http_request: Request,
+    current_user: UserResponse = Depends(get_current_active_user)
+):
     """Send a message to a conversation (creates new conversation if needed)"""
     try:
-        logger.info(f"Processing message for user: {request.user_id}")
+        logger.info(f"Processing message for user: {current_user.email}")
 
         # Extract headers for credential management
         request_headers = dict(http_request.headers)
@@ -161,7 +165,7 @@ async def send_message(request: SendMessageRequest, http_request: Request):
             # Stream response with intermediate steps
             response_stream = await agent.arun(
                 request.message, 
-                user_id=request.user_id, 
+                user_id=str(current_user.id), 
                 session_id=conversation_id,
                 stream=True,
                 stream_intermediate_steps=True
@@ -194,10 +198,13 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         raise HTTPException(status_code=500, detail=f"Failed to process message: {str(e)}")
 
 @router.get("/conversation/{conversation_id}")
-async def get_conversation(conversation_id: str, user_id: str = "default_user"):
+async def get_conversation(
+    conversation_id: str, 
+    current_user: UserResponse = Depends(get_current_active_user)
+):
     """Get a specific conversation with all its messages"""
     try:
-        logger.info(f"Retrieving conversation: {conversation_id} for user: {user_id}")
+        logger.info(f"Retrieving conversation: {conversation_id} for user: {current_user.email}")
 
         # Initialize PostgreSQL storage
         storage = PostgresStorage(
@@ -237,3 +244,26 @@ async def get_conversation(conversation_id: str, user_id: str = "default_user"):
     except Exception as e:
         logger.error(f"Error retrieving conversation: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve conversation: {str(e)}")
+
+@router.get("/conversations")
+async def list_conversations(
+    current_user: UserResponse = Depends(get_current_active_user),
+    limit: int = 50
+):
+    """List all conversations for the authenticated user"""
+    try:
+        logger.info(f"Listing conversations for user: {current_user.email} (limit: {limit})")
+        
+        # Initialize PostgreSQL storage
+        storage = PostgresStorage(
+            table_name="conversations", 
+            db_url=config.DATABASE_URL
+        )
+        
+        # TODO: Implement proper conversation listing with user filtering
+        # For now, return empty list as placeholder
+        return {"conversations": [], "total": 0, "user": current_user.email}
+        
+    except Exception as e:
+        logger.error(f"Error listing conversations: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to list conversations: {str(e)}")

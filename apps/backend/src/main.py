@@ -5,6 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import config
 from .routes.conversation import router as conversation_router
+from .routes.auth import router as auth_router
+from .middleware import RequestLoggingMiddleware, SecurityHeadersMiddleware
+from .database import create_tables
 
 load_dotenv()
 
@@ -18,6 +21,8 @@ logger = logging.getLogger(__name__)
 # Validate required environment variables
 try:
     config.validate_required_env_vars()
+    # Initialize database tables
+    create_tables()
 except ValueError as e:
     logger.error(f"Configuration error: {e}")
     raise
@@ -28,6 +33,10 @@ app = FastAPI(
     docs_url="/docs" if not config.is_production() else None,
     redoc_url="/redoc" if not config.is_production() else None
 )
+
+# Add custom middleware
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,6 +51,7 @@ async def health_check():
     return {"status": "healthy"}
 
 app.include_router(conversation_router, prefix="/api")
+app.include_router(auth_router, prefix="/api/auth")
 
 # For Vercel deployment, the app instance is automatically detected
 # For local development, use: uvicorn src.main:app --host 127.0.0.1 --port 8000 --reload

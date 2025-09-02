@@ -17,8 +17,24 @@ export type ShoppingActionResponse = {
   error?: string;
 };
 
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+}
+
 export class ApiService {
   private static readonly BASE_URL = BACKEND_URL;
+
+  /**
+   * Get stored auth token
+   */
+  private static async getAuthToken(): Promise<string | null> {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['authToken'], (result) => {
+        resolve(result.authToken || null);
+      });
+    });
+  }
 
   /**
    * Get headers with website context and credentials
@@ -29,6 +45,12 @@ export class ApiService {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
+
+    // Add authentication header if token exists
+    const authToken = await this.getAuthToken();
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`;
+    }
 
     // If no hostname provided, try to get current one
     if (!hostname) {
@@ -159,10 +181,16 @@ export class ApiService {
   /**
    * Get a conversation by ID
    */
-  static async getConversation(conversationId: string, userId: string = "1") {
-    const response = await fetch(`${this.BASE_URL}/conversation/${conversationId}?user_id=${userId}`);
+  static async getConversation(conversationId: string) {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/conversation/${conversationId}`, {
+      headers
+    });
     
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
@@ -170,16 +198,179 @@ export class ApiService {
   }
 
   /**
-   * List all conversations for a user
+   * List all conversations for the authenticated user
    */
-  static async listConversations(userId: string = "1", limit: number = 50) {
-    const response = await fetch(`${this.BASE_URL}/conversations?user_id=${userId}&limit=${limit}`);
+  static async listConversations(limit: number = 50) {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/conversations?limit=${limit}`, {
+      headers
+    });
     
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     return response.json();
+  }
+
+  /**
+   * Authenticate with Google OAuth token
+   */
+  static async authenticateWithGoogle(googleToken: string): Promise<AuthResponse> {
+    const response = await fetch(`${this.BASE_URL}/auth/google`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token: googleToken }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.detail || `Authentication failed! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Sign in with Google using Chrome Identity API
+   */
+  static async signInWithGoogle(): Promise<AuthResponse> {
+    return new Promise((resolve, reject) => {
+      // Get Google Access Token from Chrome's Identity API
+      chrome.identity.getAuthToken({ interactive: true }, async (googleToken) => {
+        if (chrome.runtime.lastError || !googleToken) {
+          console.error("Could not get Google token:", chrome.runtime.lastError);
+          reject(new Error("Could not get Google token"));
+          return;
+        }
+
+        console.log("Google token received:", googleToken);
+
+        try {
+          // Send the token to the backend
+          const authResponse = await this.authenticateWithGoogle(googleToken);
+          
+          // Store the backend's JWT securely
+          await chrome.storage.local.set({ authToken: authResponse.access_token });
+          console.log("Successfully logged in!");
+          
+          resolve(authResponse);
+        } catch (error) {
+          console.error("Error authenticating with backend:", error);
+          reject(error);
+        }
+      });
+    });
+  }
+
+  /**
+   * Check if user is authenticated
+   */
+  static async isAuthenticated(): Promise<boolean> {
+    const token = await this.getAuthToken();
+    return !!token;
+  }
+
+  /**
+   * Call backend logout endpoint to invalidate JWT
+   */
+  static async logoutFromBackend(): Promise<void> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await fetch(`${this.BASE_URL}/auth/logout`, {
+        method: "POST",
+        headers
+      });
+      
+      if (response.ok) {
+        console.log("Backend logout successful");
+      } else {
+        console.warn("Backend logout failed, but continuing with client-side cleanup");
+      }
+    } catch (error) {
+      console.warn("Error calling backend logout:", error, "- continuing with client-side cleanup");
+    }
+  }
+
+  /**
+   * Sign out user by clearing stored token and revoking Google's token
+   */
+  static async signOut(): Promise<void> {
+    return new Promise((resolve) => {
+      // Helper function to clear our JWT token
+      const clearOurToken = () => {
+        chrome.storage.local.remove(['authToken'], () => {
+          console.log("User signed out - all tokens cleared");
+          resolve();
+        });
+      };
+
+      // Helper function to handle Google token cleanup
+      const cleanupGoogleToken = async () => {
+        // First, get the current Google access token
+        chrome.identity.getAuthToken({ interactive: false }, (currentToken) => {
+          if (chrome.runtime.lastError || !currentToken) {
+            console.error("Could not get current token to clear:", chrome.runtime.lastError);
+            // Even if this fails, we should still clear our own token
+            clearOurToken();
+            return;
+          }
+
+          // Revoke the Google token using the correct accounts URL
+          fetch(`https://accounts.google.com/o/oauth2/revoke?token=${currentToken}`)
+            .then(() => {
+              console.log("Google token revoked successfully");
+              // Remove the token from Chrome's cache
+              chrome.identity.removeCachedAuthToken({ token: currentToken }, () => {
+                console.log("Google token cache cleared");
+                // Finally, remove our backend's token from storage
+                clearOurToken();
+              });
+            })
+            .catch((error) => {
+              console.error("Error revoking Google token:", error);
+              // Still try to remove from cache even if revocation fails
+              chrome.identity.removeCachedAuthToken({ token: currentToken }, () => {
+                console.log("Google token cache cleared (after revocation error)");
+                clearOurToken();
+              });
+            });
+        });
+      };
+
+      // First, try to logout from backend, then cleanup tokens
+      this.logoutFromBackend()
+        .finally(() => {
+          // Always cleanup Google tokens regardless of backend logout result
+          cleanupGoogleToken();
+        });
+    });
+  }
+
+  /**
+   * Get current user info from stored token (basic decode)
+   */
+  static async getCurrentUserInfo(): Promise<{email: string} | null> {
+    const token = await this.getAuthToken();
+    if (!token) return null;
+
+    try {
+      // Basic JWT decode (payload only, no verification)
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return {
+        email: payload.email || payload.sub
+      };
+    } catch (error) {
+      console.error("Failed to decode token:", error);
+      return null;
+    }
   }
 
   /**

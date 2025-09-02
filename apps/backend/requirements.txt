@@ -17,3 +17,5 @@ newspaper4k
 lxml_html_clean
 googlesearch-python
 pycountry
+python-jose[cryptography]
+httpx
