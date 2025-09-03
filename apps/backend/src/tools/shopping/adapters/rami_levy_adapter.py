@@ -228,22 +228,122 @@ class RamiLevyAdapter(BaseShoppingAdapter):
             logger.error(f"Rami Levy search error: {e}")
             return self.create_error_result(f"Search failed: {str(e)}")
     
-    async def _get_current_cart(self, credentials: RamiLevyCredentials) -> Dict[str, int]:
+    async def _get_current_cart(self, credentials: RamiLevyCredentials) -> ShoppingOperationResult:
         """Get current cart contents as product_id -> quantity mapping"""
         try:
             await self._ensure_clients()
             
             response = await self.user_api_client.get(
-                f"/users/{credentials.user_id}/cart",
+                f"/v2/site/clubs/customer/{credentials.user_id}",
                 headers=self._create_auth_headers(credentials)
             )
             
             cart_data = response.get('cart', {})
-            return cart_data.get('items', {})
+            items = cart_data.get('items', {})
+
+            # items structure: {"21588": 2} where key=product_id, value=quantity
+            logger.info(f"Cart items from API: {items}")
+            
+            if not items:
+                # No items -> return empty result
+                empty_result = ProductSearchResult(products=[], total_count=0, website=self.website.value)
+                return self.create_success_result(empty_result)
+
+            # 2) build ids payload for /items
+            # Normalize keys to strings and remove empty/non-numeric if any
+            ids_list = [str(k).strip() for k in items.keys() if str(k).strip()]
+            ids_str = ", ".join(ids_list)
+            logger.info(f"Fetching product details for IDs: {ids_str}")
+
+            payload = {"ids": ids_str, "type": "id"}
+
+            items_response = await self.api_client.post(
+                "/items",
+                json_data=payload,
+                headers=self._create_auth_headers(credentials)
+            )
+
+            # safe-get the data array
+            raw_products = items_response.get('data', []) or []
+            logger.info(f"Got {len(raw_products)} products from /items API")
+
+            products = []
+            for item in raw_products:
+                # id can be missing; coerce to str for mapping
+                item_id = item.get('id', '')
+                item_id_str = str(item_id)
+                
+                logger.info(f"Processing product with ID: {item_id_str}")
+
+                # Simple quantity lookup - the cart items dict has string keys
+                quantity = items.get(item_id_str, 0)
+                if quantity == 0:
+                    # Fallback: try converting cart keys to match
+                    for cart_key, cart_quantity in items.items():
+                        if str(cart_key) == item_id_str:
+                            quantity = cart_quantity
+                            break
+                
+                logger.info(f"Product {item_id_str}: quantity = {quantity}")
+
+                # Extract image URL (robust handling)
+                image_url = None
+                main_image = item.get('mainImage')
+                images_dict = item.get('images', {}) or {}
+
+                # if mainImage is a string path
+                if isinstance(main_image, str) and main_image.strip():
+                    image_url = f"https://img.rami-levy.co.il{main_image}"
+                else:
+                    # prefer images.small, then images.original, then try images.gallery if present
+                    small = images_dict.get('small')
+                    original = images_dict.get('original')
+                    gallery = images_dict.get('gallery') or []
+                    if small:
+                        image_url = f"https://img.rami-levy.co.il{small}"
+                    elif original:
+                        image_url = f"https://img.rami-levy.co.il{original}"
+                    elif isinstance(gallery, list) and gallery:
+                        # gallery items might be paths or dicts; attempt to handle simple string paths
+                        first = gallery[0]
+                        if isinstance(first, str):
+                            image_url = f"https://img.rami-levy.co.il{first}"
+                        elif isinstance(first, dict) and first.get('small'):
+                            image_url = f"https://img.rami-levy.co.il{first.get('small')}"
+
+                # Brand info (defensive)
+                brand_raw = item.get('gs', {}) or {}
+                brand_name = brand_raw.get('BrandName') if brand_raw else None
+
+                # Basic product mapping (add quantity)
+                product_data = {
+                    'id': item_id_str,
+                    'title': item.get('name', '') or '',
+                    'description': item.get('name', '') or '',
+                    'price': (item.get('price') or {}).get('price', 0),
+                    'currency': 'ILS',
+                    'image_url': image_url,
+                    'availability': len(item.get('available_in', []) or []) > 0,
+                    'category': (item.get('department') or {}).get('name'),
+                    'brand': brand_name,
+                    'url': f"https://www.rami-levy.co.il/he/online/search?item={item.get('barcode', '')}",
+                    'quantity': int(quantity or 0)
+                }
+
+                # sanitize and append
+                products.append(self.sanitize_product(product_data))
+
+            result = ProductSearchResult(
+                products=products,
+                total_count=items_response.get('total', len(products)),
+                website=self.website.value
+            )
+
+            return self.create_success_result(result)
             
         except Exception as e:
             logger.error(f"Failed to get current cart: {e}")
-            return {}
+            return self.create_error_result(f"Failed to get cart: {str(e)}")
     
     async def _update_cart(self, items: Dict[str, int], credentials: RamiLevyCredentials) -> bool:
         """Update the entire cart with new items and quantities"""
@@ -376,25 +476,39 @@ class RamiLevyAdapter(BaseShoppingAdapter):
         """Get current cart contents"""
         try:
             current_cart = await self._get_current_cart(credentials)
-            
-            cart_items = []
-            total_items = 0
-            
-            for product_id, quantity in current_cart.items():
-                cart_item = CartItem(
-                    id=f"cart_{product_id}",
-                    product_id=product_id,
-                    product_title=f"Product {product_id}",
-                    quantity=quantity
+            data = current_cart.data or ProductSearchResult(products=[], total_count=0, website="rami-levy")
+            products = data.products        
+            print("+" * 50)
+            print(current_cart)
+            print("+" * 50)
+            print("+" * 50)
+            print(products)
+            print("+" * 50)
+
+            items = []
+            for product in products:
+                item = CartItem(
+                    id=product.id,
+                    product_id=product.id,  # Use the same ID for both
+                    product_title=product.title or product.description,
+                    quantity=product.quantity or 1,
+                    unit_price=product.price,
+                    total_price=(product.price * (product.quantity or 1)) if product.price is not None else None,
+                    variant=None,  # or map if you have variant info
+                    description=product.description,
+                    image_url=product.image_url,
+                    brand=product.brand,
+                    category=product.category,
+                    url=product.url,
                 )
-                cart_items.append(cart_item)
-                total_items += quantity
-            
+                items.append(item)
+
             cart = Cart(
-                items=cart_items,
-                total_items=total_items,
+                items=items,
+                total_items=len(items),
+                total_price=sum(i.total_price for i in items if i.total_price is not None) if items else None,
                 currency="ILS",
-                website=self.website.value
+                website=self.website.value,
             )
             
             return self.create_success_result(cart)
@@ -402,6 +516,7 @@ class RamiLevyAdapter(BaseShoppingAdapter):
         except Exception as e:
             logger.error(f"Get cart contents error: {e}")
             return self.create_error_result(f"Failed to get cart contents: {str(e)}")
+
     
     async def close(self):
         """Close API clients"""

@@ -113,7 +113,8 @@ class BaseShoppingAdapter(ABC):
             review_count=max(int(product_data.get('review_count', 0)), 0) if product_data.get('review_count') is not None else None,
             category=str(product_data.get('category', '')).replace('<', '').replace('>', '')[:100] if product_data.get('category') else None,
             brand=str(product_data.get('brand', '')).replace('<', '').replace('>', '')[:100] if product_data.get('brand') else None,
-            url=self._sanitize_url(product_data.get('url'))
+            url=self._sanitize_url(product_data.get('url')),
+            quantity=max(int(product_data.get('quantity', 0)), 0) if product_data.get('quantity') is not None else None
         )
     
     def _sanitize_url(self, url: Optional[str]) -> Optional[str]:

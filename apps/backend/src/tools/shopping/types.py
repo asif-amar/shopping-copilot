@@ -23,6 +23,7 @@ class Product:
     category: Optional[str] = None
     brand: Optional[str] = None
     url: Optional[str] = None
+    quantity: Optional[int] = None
 
 
 @dataclass
@@ -59,6 +60,10 @@ class CartItem:
     total_price: Optional[float] = None
     variant: Optional[str] = None
     image_url: Optional[str] = None
+    description: Optional[str] = None
+    brand: Optional[str] = None
+    category: Optional[str] = None
+    url: Optional[str] = None
 
 
 @dataclass

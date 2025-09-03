@@ -202,7 +202,7 @@ class StreamContentParser {
   }
 
   private _addTextPart(content: string): void {
-    const trimmedContent = content.trim();
+    const trimmedContent = content; //.trim();
     if (!trimmedContent) return;
 
     // Check if the last part is a text part and merge if so

@@ -162,6 +162,7 @@ export function getToolDisplayName(toolName: string): string {
     read_article: "קריאת מאמר",
     scrape_url: "סריקת עמוד",
     fetch_content: "טעינת תוכן",
+    get_cart_contents: "צפייה בעגלה",
   };
 
   return toolNames[toolName] || toolName.replace(/_/g, " ");
