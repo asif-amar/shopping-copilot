@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, ShoppingBag, User, LogOut } from "lucide-react";
+import { Plus, ShoppingBag, User, LogOut, Settings, Menu, Languages } from "lucide-react";
 import {
   getSiteAdapterFromHostname,
   getSiteDisplayName,
@@ -9,7 +9,20 @@ import {
 import { useLanguage } from "@/hooks/useLanguage";
 import { ApiService } from "@/services/api";
 import { AuthModal } from "./AuthModal";
+import { SettingsModal } from "./SettingsModal";
 import { TooltipButton } from "./TooltipButton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { cn } from "../lib/utils";
 
 interface HeaderProps {
   currentHostname: string;
@@ -29,6 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   useEffect(() => {
     checkAuthStatus();
@@ -41,14 +55,6 @@ export const Header: React.FC<HeaderProps> = ({
     if (authenticated) {
       const userInfo = await ApiService.getCurrentUserInfo();
       setUserEmail(userInfo?.email || null);
-    }
-  };
-
-  const handleUserIconClick = () => {
-    if (isAuthenticated) {
-      handleSignOut();
-    } else {
-      setIsAuthModalOpen(true);
     }
   };
 
@@ -67,86 +73,35 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
+  const handleLanguageChange = (lang: 'en' | 'he') => {
+    if (lang !== language) {
+      toggleLanguage();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      style={{
-        padding: "20px 24px",
-        background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-        borderBottom: "1px solid #e2e8f0",
-        flexShrink: 0,
-        direction: isRTL ? "rtl" : "ltr",
-      }}
+      className="px-6 py-5 bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex-shrink-0"
+      style={{ direction: isRTL ? "rtl" : "ltr" }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div
-            style={{
-              width: "36px",
-              height: "36px",
-              background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-              borderRadius: "12px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 2px 8px rgba(59, 130, 246, 0.3)",
-            }}
-          >
+      <div className="flex items-center justify-between">
+        {/* Left side - Logo and title */}
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
             <ShoppingBag size={18} color="white" />
           </div>
-          <div style={{ flex: 1 }}>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "20px",
-                fontWeight: "700",
-                color: "#1e293b",
-                letterSpacing: "-0.02em",
-              }}
-            >
+          <div className="flex-1">
+            <h1 className="m-0 text-xl font-bold text-slate-800 tracking-tight">
               {t("shopping_assistant")}
             </h1>
-            <div
-              style={{
-                margin: "4px 0 0 0",
-                fontSize: "13px",
-                color: "#64748b",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
+            <div className="mt-1 text-xs text-slate-500 flex items-center gap-2">
               <span>{displayName || t("loading")}</span>
               {isSupported && (
-                <span
-                  style={{
-                    backgroundColor: "#dcfce7",
-                    color: "#16a34a",
-                    padding: "2px 8px",
-                    borderRadius: "12px",
-                    fontSize: "11px",
-                    fontWeight: "600",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "6px",
-                      height: "6px",
-                      backgroundColor: "#16a34a",
-                      borderRadius: "50%",
-                    }}
-                  />
+                <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-green-600 rounded-full" />
                   {t("supported")}
                 </span>
               )}
@@ -154,144 +109,172 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "8px" }}>
-          {isAuthenticated ? (
-            <TooltipButton
-              tooltip={`${t("sign_out")}${userEmail ? ` (${userEmail})` : ""}`}
-              onClick={handleSignOut}
-              buttonStyle={{
-                background: "rgba(239, 68, 68, 0.1)",
-                border: "none",
-                color: "#dc2626",
-                borderRadius: "8px",
-                padding: "8px",
-                fontSize: "13px",
-                fontWeight: "500",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "36px",
-                height: "36px",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                  "rgba(239, 68, 68, 0.15)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                  "rgba(239, 68, 68, 0.1)";
-              }}
-            >
-              <LogOut size={16} />
-            </TooltipButton>
-          ) : (
-            <TooltipButton
-              tooltip={t("sign_in")}
-              onClick={handleUserIconClick}
-              buttonStyle={{
-                background: "rgba(34, 197, 94, 0.1)",
-                border: "none",
-                color: "#16a34a",
-                borderRadius: "8px",
-                padding: "8px",
-                fontSize: "13px",
-                fontWeight: "500",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "36px",
-                height: "36px",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                  "rgba(34, 197, 94, 0.15)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                  "rgba(34, 197, 94, 0.1)";
-              }}
-            >
-              <User size={16} />
-            </TooltipButton>
-          )}
-
-          <TooltipButton
-            tooltip={`${t("switch_to")} ${language === "he" ? "English" : "Hebrew"}`}
-            onClick={toggleLanguage}
-            buttonStyle={{
-              background: "rgba(71, 85, 105, 0.08)",
-              border: "none",
-              color: "#475569",
-              borderRadius: "8px",
-              padding: "8px",
-              fontSize: "13px",
-              fontWeight: "500",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "36px",
-              height: "36px",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                "rgba(71, 85, 105, 0.12)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                "rgba(71, 85, 105, 0.08)";
-            }}
-          >
-            {language === "he" ? "EN" : "HE"}
-          </TooltipButton>
-
+        {/* Right side - New chat button and dropdown */}
+        <div className="flex items-center gap-2">
+          {/* New Chat Button */}
           <TooltipButton
             tooltip={t("new_chat")}
             onClick={onNewConversation}
             buttonStyle={{
+              width: "36px",
+              height: "36px",
               background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
               border: "none",
               color: "white",
               borderRadius: "8px",
-              padding: "8px",
-              fontSize: "13px",
-              fontWeight: "500",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: "36px",
-              height: "36px",
+              cursor: "pointer",
               boxShadow: "0 2px 6px rgba(59, 130, 246, 0.25)",
+              transition: "all 0.2s ease",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform =
-                "translateY(-1px)";
-              (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                "0 4px 12px rgba(59, 130, 246, 0.35)";
+              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.35)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform =
-                "translateY(0)";
-              (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                "0 2px 6px rgba(59, 130, 246, 0.25)";
+              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 6px rgba(59, 130, 246, 0.25)";
             }}
           >
             <Plus size={14} />
           </TooltipButton>
+
+          {/* Dropdown Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-9 h-9 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg flex items-center justify-center transition-all duration-200 border border-slate-300 cursor-pointer">
+                <Menu size={16} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align={isRTL ? "start" : "end"}
+              className={cn("w-56", isRTL ? "text-right" : "text-left")}
+              style={{ direction: isRTL ? "rtl" : "ltr" }}
+            >
+              {/* User section */}
+              {isAuthenticated && userEmail && (
+                <DropdownMenuLabel className={cn("text-xs", isRTL ? "text-right" : "text-left")}>
+                  {userEmail}
+                </DropdownMenuLabel>
+              )}
+
+              {/* Language submenu */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className={cn("flex items-center gap-2", isRTL ? "flex-row-reverse justify-between" : "flex-row")}>
+                  {isRTL ? (
+                    <>
+                      <span>{t("language")}</span>
+                      <Languages size={16} />
+                    </>
+                  ) : (
+                    <>
+                      <Languages size={16} />
+                      <span>{t("language")}</span>
+                    </>
+                  )}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent style={{ direction: isRTL ? "rtl" : "ltr" }}>
+                  <DropdownMenuItem
+                    onClick={() => handleLanguageChange('en')}
+                    className={cn(
+                      "cursor-pointer flex justify-between",
+                      language === 'en' ? "bg-accent" : ""
+                    )}
+                  >
+                    <span>English</span>
+                    {language === 'en' && <span>✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleLanguageChange('he')}
+                    className={cn(
+                      "cursor-pointer flex justify-between",
+                      language === 'he' ? "bg-accent" : ""
+                    )}
+                  >
+                    <span>עברית</span>
+                    {language === 'he' && <span>✓</span>}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              <DropdownMenuSeparator />
+
+              {/* Auth section */}
+              {isAuthenticated ? (
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  variant="destructive"
+                  className={cn("cursor-pointer flex items-center gap-2", isRTL ? "flex-row-reverse" : "flex-row")}
+                >
+                  {isRTL ? (
+                    <>
+                      <span>{t("sign_out")}</span>
+                      <LogOut size={16} />
+                    </>
+                  ) : (
+                    <>
+                      <LogOut size={16} />
+                      <span>{t("sign_out")}</span>
+                    </>
+                  )}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className={cn("cursor-pointer flex items-center gap-2", isRTL ? "flex-row-reverse" : "flex-row")}
+                >
+                  {isRTL ? (
+                    <>
+                      <span>{t("sign_in")}</span>
+                      <User size={16} />
+                    </>
+                  ) : (
+                    <>
+                      <User size={16} />
+                      <span>{t("sign_in")}</span>
+                    </>
+                  )}
+                </DropdownMenuItem>
+              )}
+
+              {/* Settings - only show for authenticated users */}
+              {isAuthenticated && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setIsSettingsModalOpen(true)}
+                    className={cn("cursor-pointer flex items-center gap-2", isRTL ? "flex-row-reverse" : "flex-row")}
+                  >
+                    {isRTL ? (
+                      <>
+                        <span>{language === 'he' ? 'הגדרות' : 'Settings'}</span>
+                        <Settings size={16} />
+                      </>
+                    ) : (
+                      <>
+                        <Settings size={16} />
+                        <span>{language === 'he' ? 'הגדרות' : 'Settings'}</span>
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
+      {/* Modals */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onAuthSuccess={handleAuthSuccess}
+      />
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
       />
     </motion.div>
   );
