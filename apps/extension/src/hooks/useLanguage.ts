@@ -23,6 +23,7 @@ const translations: Translations = {
     sign_in: "התחבר",
     sign_out: "התנתק",
     switch_to: "עבור ל",
+    language: "שפה",
 
     // Chat Input
     type_message: "איך אוכל לעזור לך היום?",
@@ -67,6 +68,7 @@ const translations: Translations = {
     sign_in: "Sign In",
     sign_out: "Sign Out",
     switch_to: "Switch to",
+    language: "Language",
 
     // Chat Input
     type_message: "How can I help you today?",

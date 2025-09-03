@@ -22,6 +22,22 @@ export interface AuthResponse {
   token_type: string;
 }
 
+export interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  profile_picture_url: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  last_login_at: string | null;
+}
+
+export interface UserProfileUpdate {
+  full_name?: string | null;
+  profile_picture_url?: string | null;
+}
+
 export class ApiService {
   private static readonly BASE_URL = BACKEND_URL;
 
@@ -371,6 +387,53 @@ export class ApiService {
       console.error("Failed to decode token:", error);
       return null;
     }
+  }
+
+  /**
+   * Get user profile from backend
+   */
+  static async getUserProfile(): Promise<UserProfile> {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/user/me`, {
+      method: "GET",
+      headers
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.detail || `Failed to get user profile! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Update user profile
+   */
+  static async updateUserProfile(updates: UserProfileUpdate): Promise<UserProfile> {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/user/me`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.detail || `Failed to update user profile! status: ${response.status}`
+      );
+    }
+
+    return response.json();
   }
 
   /**

@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, ShoppingBag, User, LogOut, Settings, Menu, Languages } from "lucide-react";
+import {
+  Plus,
+  ShoppingBag,
+  User,
+  LogOut,
+  Settings,
+  Menu,
+  Languages,
+} from "lucide-react";
 import {
   getSiteAdapterFromHostname,
   getSiteDisplayName,
@@ -73,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const handleLanguageChange = (lang: 'en' | 'he') => {
+  const handleLanguageChange = (lang: "en" | "he") => {
     if (lang !== language) {
       toggleLanguage();
     }
@@ -130,12 +138,16 @@ export const Header: React.FC<HeaderProps> = ({
               transition: "all 0.2s ease",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.35)";
+              (e.currentTarget as HTMLButtonElement).style.transform =
+                "translateY(-1px)";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                "0 4px 12px rgba(59, 130, 246, 0.35)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 6px rgba(59, 130, 246, 0.25)";
+              (e.currentTarget as HTMLButtonElement).style.transform =
+                "translateY(0)";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                "0 2px 6px rgba(59, 130, 246, 0.25)";
             }}
           >
             <Plus size={14} />
@@ -155,111 +167,120 @@ export const Header: React.FC<HeaderProps> = ({
             >
               {/* User section */}
               {isAuthenticated && userEmail && (
-                <DropdownMenuLabel className={cn("text-xs", isRTL ? "text-right" : "text-left")}>
+                <DropdownMenuLabel
+                  className={cn("text-xs", isRTL ? "text-right" : "text-left")}
+                >
                   {userEmail}
                 </DropdownMenuLabel>
               )}
 
               {/* Language submenu */}
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger className={cn("flex items-center gap-2", isRTL ? "flex-row-reverse justify-between" : "flex-row")}>
-                  {isRTL ? (
-                    <>
-                      <span>{t("language")}</span>
-                      <Languages size={16} />
-                    </>
-                  ) : (
-                    <>
-                      <Languages size={16} />
-                      <span>{t("language")}</span>
-                    </>
+                <DropdownMenuSubTrigger
+                  className={cn(
+                    "flex items-center gap-2",
+                    isRTL ? "flex-row justify-between" : "flex-row"
                   )}
+                >
+                  <Languages size={16} />
+                  <span>{t("language")}</span>
                 </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent style={{ direction: isRTL ? "rtl" : "ltr" }}>
+                <DropdownMenuSubContent
+                  style={{ direction: isRTL ? "rtl" : "ltr" }}
+                >
                   <DropdownMenuItem
-                    onClick={() => handleLanguageChange('en')}
+                    onClick={() => handleLanguageChange("en")}
                     className={cn(
                       "cursor-pointer flex justify-between",
-                      language === 'en' ? "bg-accent" : ""
+                      language === "en" ? "bg-accent" : ""
                     )}
                   >
                     <span>English</span>
-                    {language === 'en' && <span>✓</span>}
+                    {language === "en" && <span>✓</span>}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => handleLanguageChange('he')}
+                    onClick={() => handleLanguageChange("he")}
                     className={cn(
                       "cursor-pointer flex justify-between",
-                      language === 'he' ? "bg-accent" : ""
+                      language === "he" ? "bg-accent" : ""
                     )}
                   >
                     <span>עברית</span>
-                    {language === 'he' && <span>✓</span>}
+                    {language === "he" && <span>✓</span>}
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
 
               <DropdownMenuSeparator />
 
+              {/* Settings - only show for authenticated users */}
+              {isAuthenticated && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => setIsSettingsModalOpen(true)}
+                    className={cn(
+                      "cursor-pointer flex items-center gap-2",
+                      isRTL ? "flex-row" : "flex flex-row-reverse justify-end"
+                    )}
+                  >
+                    {isRTL ? (
+                      <>
+                        <Settings size={16} />
+                        <span>{language === "he" ? "הגדרות" : "Settings"}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{language === "he" ? "הגדרות" : "Settings"}</span>
+                        <Settings size={16} />
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+
               {/* Auth section */}
               {isAuthenticated ? (
                 <DropdownMenuItem
                   onClick={handleSignOut}
                   variant="destructive"
-                  className={cn("cursor-pointer flex items-center gap-2", isRTL ? "flex-row-reverse" : "flex-row")}
+                  className={cn(
+                    "cursor-pointer flex items-center gap-2",
+                    isRTL ? "flex-row" : "flex flex-row-reverse justify-end"
+                  )}
                 >
                   {isRTL ? (
                     <>
-                      <span>{t("sign_out")}</span>
                       <LogOut size={16} />
+                      <span>{t("sign_out")}</span>
                     </>
                   ) : (
                     <>
-                      <LogOut size={16} />
                       <span>{t("sign_out")}</span>
+                      <LogOut size={16} />
                     </>
                   )}
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem
                   onClick={() => setIsAuthModalOpen(true)}
-                  className={cn("cursor-pointer flex items-center gap-2", isRTL ? "flex-row-reverse" : "flex-row")}
+                  className={cn(
+                    "cursor-pointer flex items-center gap-2",
+                    isRTL ? "flex-row" : "flex flex-row-reverse justify-end"
+                  )}
                 >
                   {isRTL ? (
                     <>
-                      <span>{t("sign_in")}</span>
                       <User size={16} />
+                      <span>{t("sign_in")}</span>
                     </>
                   ) : (
                     <>
-                      <User size={16} />
                       <span>{t("sign_in")}</span>
+                      <User size={16} />
                     </>
                   )}
                 </DropdownMenuItem>
-              )}
-
-              {/* Settings - only show for authenticated users */}
-              {isAuthenticated && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setIsSettingsModalOpen(true)}
-                    className={cn("cursor-pointer flex items-center gap-2", isRTL ? "flex-row-reverse" : "flex-row")}
-                  >
-                    {isRTL ? (
-                      <>
-                        <span>{language === 'he' ? 'הגדרות' : 'Settings'}</span>
-                        <Settings size={16} />
-                      </>
-                    ) : (
-                      <>
-                        <Settings size={16} />
-                        <span>{language === 'he' ? 'הגדרות' : 'Settings'}</span>
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
