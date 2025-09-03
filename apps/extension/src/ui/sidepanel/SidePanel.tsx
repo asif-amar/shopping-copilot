@@ -14,19 +14,19 @@ const SidePanelContent: React.FC = () => {
     sendMessage,
     startNewConversation,
   } = useChat();
-  
+
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
+
   useEffect(() => {
     checkAuthStatus();
   }, []);
-  
+
   const checkAuthStatus = async () => {
     const authenticated = await ApiService.isAuthenticated();
     setIsAuthenticated(authenticated);
   };
-  
+
   const handleSendMessage = async (message: string) => {
     if (!isAuthenticated) {
       setIsAuthModalOpen(true);
@@ -34,7 +34,7 @@ const SidePanelContent: React.FC = () => {
     }
     await sendMessage(message);
   };
-  
+
   const handleAuthSuccess = async () => {
     await checkAuthStatus();
   };
@@ -55,11 +55,15 @@ const SidePanelContent: React.FC = () => {
         onNewConversation={startNewConversation}
       />
 
-      <MessageList messages={messages} isLoading={isLoading} onSendMessage={sendMessage} />
+      <MessageList
+        messages={messages}
+        isLoading={isLoading}
+        onSendMessage={sendMessage}
+      />
 
       <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
-      
-      <AuthModal 
+
+      <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onAuthSuccess={handleAuthSuccess}

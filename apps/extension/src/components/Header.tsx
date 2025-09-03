@@ -37,7 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
   const checkAuthStatus = async () => {
     const authenticated = await ApiService.isAuthenticated();
     setIsAuthenticated(authenticated);
-    
+
     if (authenticated) {
       const userInfo = await ApiService.getCurrentUserInfo();
       setUserEmail(userInfo?.email || null);
@@ -66,7 +66,6 @@ export const Header: React.FC<HeaderProps> = ({
       console.error("Sign-out failed:", error);
     }
   };
-
 
   return (
     <motion.div
@@ -177,10 +176,12 @@ export const Header: React.FC<HeaderProps> = ({
                 height: "36px",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(239, 68, 68, 0.15)";
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                  "rgba(239, 68, 68, 0.15)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                  "rgba(239, 68, 68, 0.1)";
               }}
             >
               <LogOut size={16} />
@@ -206,10 +207,12 @@ export const Header: React.FC<HeaderProps> = ({
                 height: "36px",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(34, 197, 94, 0.15)";
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                  "rgba(34, 197, 94, 0.15)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(34, 197, 94, 0.1)";
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                  "rgba(34, 197, 94, 0.1)";
               }}
             >
               <User size={16} />
@@ -236,10 +239,12 @@ export const Header: React.FC<HeaderProps> = ({
               height: "36px",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(71, 85, 105, 0.12)";
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                "rgba(71, 85, 105, 0.12)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(71, 85, 105, 0.08)";
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                "rgba(71, 85, 105, 0.08)";
             }}
           >
             {language === "he" ? "EN" : "HE"}
@@ -266,12 +271,14 @@ export const Header: React.FC<HeaderProps> = ({
               boxShadow: "0 2px 6px rgba(59, 130, 246, 0.25)",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+              (e.currentTarget as HTMLButtonElement).style.transform =
+                "translateY(-1px)";
               (e.currentTarget as HTMLButtonElement).style.boxShadow =
                 "0 4px 12px rgba(59, 130, 246, 0.35)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+              (e.currentTarget as HTMLButtonElement).style.transform =
+                "translateY(0)";
               (e.currentTarget as HTMLButtonElement).style.boxShadow =
                 "0 2px 6px rgba(59, 130, 246, 0.25)";
             }}
@@ -280,8 +287,8 @@ export const Header: React.FC<HeaderProps> = ({
           </TooltipButton>
         </div>
       </div>
-      
-      <AuthModal 
+
+      <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onAuthSuccess={handleAuthSuccess}
