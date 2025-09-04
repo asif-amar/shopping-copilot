@@ -354,7 +354,7 @@ class RamiLevyAdapter(BaseShoppingAdapter):
             tomorrow = datetime.now() + timedelta(days=1)
             
             payload = {
-                "store": self.store,
+                "store": self.store or "331",
                 "isClub": 0,
                 "supplyAt": tomorrow.isoformat(),
                 "items": {str(k): str(v) for k, v in items.items()},
@@ -382,7 +382,17 @@ class RamiLevyAdapter(BaseShoppingAdapter):
     ) -> ShoppingOperationResult:
         """Add a product to the shopping cart"""
         try:
-            current_cart = await self._get_current_cart(credentials)
+            # Get the actual cart items dictionary from the API
+            await self._ensure_clients()
+            
+            response = await self.user_api_client.get(
+                f"/v2/site/clubs/customer/{credentials.user_id}",
+                headers=self._create_auth_headers(credentials)
+            )
+            
+            cart_data = response.get('cart', {})
+            current_cart = cart_data.get('items', {})
+            
             current_quantity = current_cart.get(product_id, 0)
             new_quantity = current_quantity + quantity
             
@@ -418,11 +428,27 @@ class RamiLevyAdapter(BaseShoppingAdapter):
             # Extract product ID from cart item ID
             product_id = cart_item_id.replace("cart_", "")
             
-            current_cart = await self._get_current_cart(credentials)
+            # Get the actual cart items dictionary from the API
+            await self._ensure_clients()
+            
+            response = await self.user_api_client.get(
+                f"/v2/site/clubs/customer/{credentials.user_id}",
+                headers=self._create_auth_headers(credentials)
+            )
+            
+            cart_data = response.get('cart', {})
+            current_cart = cart_data.get('items', {})
+
+
+            
             if product_id in current_cart:
-                del current_cart[product_id]
+                # del current_cart[product_id]
+                # cart_with_shipping = { **current_cart, "164854": "1.00" }
+                # success = await self._update_cart(cart_with_shipping, credentials)
+                new_quantity = 0
+                current_cart[product_id] = new_quantity
                 success = await self._update_cart(current_cart, credentials)
-                
+                print("SUCCESS", success)
                 if not success:
                     return self.create_error_result("Failed to remove item from cart")
                 
@@ -445,7 +471,16 @@ class RamiLevyAdapter(BaseShoppingAdapter):
             # Extract product ID from cart item ID
             product_id = cart_item_id.replace("cart_", "")
             
-            current_cart = await self._get_current_cart(credentials)
+            # Get the actual cart items dictionary from the API
+            await self._ensure_clients()
+            
+            response = await self.user_api_client.get(
+                f"/v2/site/clubs/customer/{credentials.user_id}",
+                headers=self._create_auth_headers(credentials)
+            )
+            
+            cart_data = response.get('cart', {})
+            current_cart = cart_data.get('items', {})
             
             if quantity == 0:
                 # Remove item if quantity is 0

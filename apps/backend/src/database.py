@@ -26,8 +26,8 @@ engine = create_engine(
         "connect_timeout": 10,
         "application_name": "shopping_copilot_backend",
     },
-    # Echo SQL queries in development for debugging
-    echo=config.ENVIRONMENT == "development"
+    # Only echo SQL queries when LOG_LEVEL is DEBUG
+    echo=config.LOG_LEVEL.upper() == "DEBUG"
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

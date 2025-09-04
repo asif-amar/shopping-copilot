@@ -93,6 +93,7 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             2. **Singular/Plural**: Start with singular form (e.g., if asked for "מסטיקים" search for "מסטיק"), then try plural if no results where found
             3. **Alternative terms**: Try different Hebrew terms if initial search fails (e.g., "חלב" → "חלב טרי" → "מוצרי חלב")
             4. **Multiple products**: For multiple items, search each separately to get comprehensive results
+            5. **No unrelated products**: Never show unrelated products in the search results. If user asks for ״שעועית״, and the search tool returns products like ״קישוא״ - do not show it.
 
             ### Response Handling:
             The search_products tool returns array of products.
@@ -124,6 +125,11 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             **No Results:**
             If search fails, suggest alternative terms or products.
             """,
+            """
+            ## Cart Operations Tool Instructions:
+            All of the cart operation tools has a built in get_cart_contents tool call.
+            You need to use the get_cart_contents yourself if you want to get the cart contents with the product_ids.
+            """
         ],
         markdown=True,
         storage=storage,

@@ -19,6 +19,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Reduce verbose logging from third-party libraries
+if config.LOG_LEVEL.upper() != "DEBUG":
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.dialects").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.pool").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.orm").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+
 # Validate required environment variables
 try:
     config.validate_required_env_vars()
