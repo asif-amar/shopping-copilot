@@ -117,4 +117,14 @@
   body {
     @apply bg-background text-foreground;
   }
+  button {
+    @apply cursor-pointer;
+  }
+  [role="menuitem"], 
+  [data-slot="dropdown-menu-item"], 
+  [data-slot="dropdown-menu-checkbox-item"], 
+  [data-slot="dropdown-menu-radio-item"],
+  [data-slot="dropdown-menu-sub-trigger"] {
+    @apply cursor-pointer;
+  }
 }

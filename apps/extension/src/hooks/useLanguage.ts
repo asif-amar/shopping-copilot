@@ -50,6 +50,17 @@ const translations: Translations = {
     quick_vegetables_sale: "🥦 תראה לי ירקות במבצע",
     quick_recipe_suggestion: "🛒 הצע מתכון וקנה מרכיבים",
 
+    // Preferences
+    preferences: "העדפות",
+    ai_style: "סגנון AI",
+    ai_behavior_style: "סגנון התנהגות AI",
+    flexible: "גמיש",
+    balanced: "מאוזן",
+    strict: "קפדן",
+    flexible_desc: "AI יבחר עבורך באופן חכם (למשל: 'הוסף חלב' → מוסיף חלב פופולרי)",
+    balanced_desc: "AI ישאל כשיהיה לא בטוח בהעדפות שלך",
+    strict_desc: "AI תמיד ישאל הבהרות לפני פעולה",
+
     // Auth Modal
     auth_modal_title: "היכנס לחשבון שלך",
     auth_modal_subtitle: "התחבר כדי לקבל חוויה אישית ושמורה",
@@ -96,6 +107,17 @@ const translations: Translations = {
     quick_basic_items_desc: "milk, bread, eggs",
     quick_vegetables_sale: "🥦 Show me vegetables on sale",
     quick_recipe_suggestion: "🛒 Suggest a recipe and buy ingredients",
+
+    // Preferences
+    preferences: "Preferences",
+    ai_style: "AI Style",
+    ai_behavior_style: "AI Behavior Style",
+    flexible: "Flexible",
+    balanced: "Balanced",
+    strict: "Strict",
+    flexible_desc: "AI will make smart choices for you (e.g., 'add milk' → adds popular milk)",
+    balanced_desc: "AI will ask when unsure about your preferences",
+    strict_desc: "AI will always ask for clarification before taking action",
 
     // Auth Modal
     auth_modal_title: "Sign In to Your Account",

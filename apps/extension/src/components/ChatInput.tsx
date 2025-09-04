@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowUp, Loader2, Settings2, Zap, Shield, Target } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -7,8 +7,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -28,7 +26,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onSendMessage,
   isLoading,
 }) => {
-  const { language, isRTL, t } = useLanguage();
+  const { isRTL, t } = useLanguage();
   const [inputText, setInputText] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [aiStyle, setAIStyle] = useState<AIStyle>("balanced");
@@ -56,22 +54,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       case "flexible":
         return {
           icon: Zap,
-          label: "Flexible",
-          description: "AI will make smart choices for you",
+          label: t("flexible"),
+          description: t("flexible_desc"),
           color: "text-green-600",
         };
       case "balanced":
         return {
           icon: Target,
-          label: "Balanced",
-          description: "AI will ask when unsure",
+          label: t("balanced"),
+          description: t("balanced_desc"),
           color: "text-blue-600",
         };
       case "strict":
         return {
           icon: Shield,
-          label: "Strict",
-          description: "AI will always ask for clarification",
+          label: t("strict"),
+          description: t("strict_desc"),
           color: "text-orange-600",
         };
     }
@@ -129,82 +127,130 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 </motion.button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                align="start"
-                className="w-56 bg-white border border-slate-200 shadow-lg"
+                align={isRTL ? "end" : "start"}
+                className="w-56 bg-white border border-slate-200 shadow-lg max-h-[80vh] overflow-y-auto"
                 side="top"
                 sideOffset={8}
+                style={{ direction: isRTL ? "rtl" : "ltr" }}
+                avoidCollisions={true}
+                collisionPadding={8}
               >
                 <DropdownMenuLabel className="text-slate-700 font-medium">
-                  Preferences
+                  {t("preferences")}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
 
                 {/* AI Style submenu */}
                 <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="flex items-center gap-2">
+                  <DropdownMenuSubTrigger
+                    className={cn(
+                      "flex items-center gap-2",
+                      isRTL && "[&>svg]:ml-0 [&>svg]:mr-auto [&>svg]:rotate-180"
+                    )}
+                  >
                     <currentStyleConfig.icon
                       size={14}
                       className={currentStyleConfig.color}
                     />
-                    <span>AI Style</span>
-                    <span className="ml-auto text-xs text-slate-500">
+                    <span>{t("ai_style")}</span>
+                    <span
+                      className={cn(
+                        "text-xs text-slate-500",
+                        isRTL ? "mr-auto" : "ml-auto"
+                      )}
+                    >
                       {currentStyleConfig.label}
                     </span>
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-72 bg-white border border-slate-200 shadow-lg">
+                  <DropdownMenuSubContent
+                    className="w-72 max-w-[90vw] bg-white border border-slate-200 shadow-lg max-h-[70vh] overflow-y-auto"
+                    style={{ direction: isRTL ? "rtl" : "ltr" }}
+                    avoidCollisions={true}
+                    collisionPadding={8}
+                  >
                     <DropdownMenuLabel className="text-slate-700 font-medium">
-                      AI Behavior Style
+                      {t("ai_behavior_style")}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuRadioGroup
-                      value={aiStyle}
-                      onValueChange={(value) => setAIStyle(value as AIStyle)}
-                    >
-                      <DropdownMenuRadioItem
-                        value="flexible"
-                        className="flex flex-col items-start gap-1 py-3 px-3 cursor-pointer hover:bg-slate-50"
+                    <div className="space-y-1">
+                      {/* Flexible Option */}
+                      <div
+                        onClick={() => setAIStyle("flexible")}
+                        className={cn(
+                          "flex flex-col items-start gap-1 py-3 px-3 rounded-md transition-colors cursor-pointer",
+                          aiStyle === "flexible"
+                            ? "bg-green-50"
+                            : "hover:bg-slate-50"
+                        )}
                       >
                         <div className="flex items-center gap-2">
                           <Zap size={14} className="text-green-600" />
                           <span className="font-medium text-slate-700">
-                            Flexible
+                            {t("flexible")}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 ml-5">
-                          AI will make smart choices for you (e.g., "add milk" →
-                          adds popular milk)
+                        <p
+                          className={cn(
+                            "text-xs text-slate-500",
+                            isRTL ? "mr-5 text-right" : "ml-5 text-left"
+                          )}
+                        >
+                          {t("flexible_desc")}
                         </p>
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem
-                        value="balanced"
-                        className="flex flex-col items-start gap-1 py-3 px-3 cursor-pointer hover:bg-slate-50"
+                      </div>
+
+                      {/* Balanced Option */}
+                      <div
+                        onClick={() => setAIStyle("balanced")}
+                        className={cn(
+                          "flex flex-col items-start gap-1 py-3 px-3 rounded-md transition-colors cursor-pointer",
+                          aiStyle === "balanced"
+                            ? "bg-blue-50"
+                            : "hover:bg-slate-50"
+                        )}
                       >
                         <div className="flex items-center gap-2">
                           <Target size={14} className="text-blue-600" />
                           <span className="font-medium text-slate-700">
-                            Balanced
+                            {t("balanced")}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 ml-5">
-                          AI will ask when unsure about your preferences
+                        <p
+                          className={cn(
+                            "text-xs text-slate-500",
+                            isRTL ? "mr-5 text-right" : "ml-5 text-left"
+                          )}
+                        >
+                          {t("balanced_desc")}
                         </p>
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem
-                        value="strict"
-                        className="flex flex-col items-start gap-1 py-3 px-3 cursor-pointer hover:bg-slate-50"
+                      </div>
+
+                      {/* Strict Option */}
+                      <div
+                        onClick={() => setAIStyle("strict")}
+                        className={cn(
+                          "flex flex-col items-start gap-1 py-3 px-3 rounded-md transition-colors cursor-pointer",
+                          aiStyle === "strict"
+                            ? "bg-orange-50"
+                            : "hover:bg-slate-50"
+                        )}
                       >
                         <div className="flex items-center gap-2">
                           <Shield size={14} className="text-orange-600" />
                           <span className="font-medium text-slate-700">
-                            Strict
+                            {t("strict")}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 ml-5">
-                          AI will always ask for clarification before taking
-                          action
+                        <p
+                          className={cn(
+                            "text-xs text-slate-500",
+                            isRTL ? "mr-5 text-right" : "ml-5 text-left"
+                          )}
+                        >
+                          {t("strict_desc")}
                         </p>
-                      </DropdownMenuRadioItem>
-                    </DropdownMenuRadioGroup>
+                      </div>
+                    </div>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
 
@@ -221,7 +267,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               className={cn(
                 "w-8 h-8 rounded-full border-none transition-all duration-200 flex items-center justify-center shrink-0",
                 canSend
-                  ? "bg-blue-500 hover:bg-blue-600 text-white cursor-pointer shadow-sm"
+                  ? "bg-blue-500 hover:bg-blue-600 text-white shadow-sm"
                   : "bg-slate-300 text-slate-500 cursor-not-allowed"
               )}
               title={canSend ? t("send_message") : t("type_message")}
@@ -238,20 +284,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               )}
             </motion.button>
           </div>
-        </div>
-
-        {/* AI Style indicator (subtle) */}
-        <div
-          className={cn(
-            "flex items-center gap-1 mt-2 text-xs text-slate-500",
-            isRTL ? "justify-end" : "justify-start"
-          )}
-        >
-          <currentStyleConfig.icon
-            size={12}
-            className={currentStyleConfig.color}
-          />
-          <span>AI Style: {currentStyleConfig.label}</span>
         </div>
       </motion.form>
     </div>
