@@ -163,11 +163,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   {/* AI Style submenu */}
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger
-                      className={cn(
-                        "flex items-center gap-2",
-                        isRTL &&
-                          "[&>svg]:ml-0 [&>svg]:mr-auto [&>svg]:rotate-180"
-                      )}
+                      isRTL={isRTL}
+                      className={cn("flex flex-row items-center gap-2")}
+                      chevronClassName="size-4"
                     >
                       <currentStyleConfig.icon
                         size={14}

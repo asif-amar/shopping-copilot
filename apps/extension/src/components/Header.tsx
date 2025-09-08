@@ -177,13 +177,16 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Language submenu */}
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger
+                  isRTL={isRTL}
                   className={cn(
                     "flex items-center gap-2",
                     isRTL ? "flex-row justify-between" : "flex-row"
                   )}
                 >
-                  <Languages size={16} />
-                  <span>{t("language")}</span>
+                  <div className="flex items-center gap-2">
+                    <Languages size={16} />
+                    <span>{t("language")}</span>
+                  </div>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent
                   style={{ direction: isRTL ? "rtl" : "ltr" }}
