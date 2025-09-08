@@ -14,13 +14,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
+import { UserPreferences, AIStyle, DEFAULT_PREFERENCES } from "@/types/preferences";
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => Promise<void>;
+  onSendMessage: (message: string, preferences?: UserPreferences) => Promise<void>;
   isLoading: boolean;
 }
-
-type AIStyle = "flexible" | "balanced" | "strict";
 
 export const ChatInput: React.FC<ChatInputProps> = ({
   onSendMessage,
@@ -29,7 +28,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const { isRTL, t } = useLanguage();
   const [inputText, setInputText] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  const [aiStyle, setAIStyle] = useState<AIStyle>("balanced");
+  const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +36,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     const message = inputText.trim();
     setInputText("");
-    await onSendMessage(message);
+    await onSendMessage(message, preferences);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -75,7 +74,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const currentStyleConfig = getAIStyleConfig(aiStyle);
+  const currentStyleConfig = getAIStyleConfig(preferences.aiStyle);
 
   return (
     <div
@@ -175,10 +174,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     <div className="space-y-1">
                       {/* Flexible Option */}
                       <div
-                        onClick={() => setAIStyle("flexible")}
+                        onClick={() => setPreferences({...preferences, aiStyle: "flexible"})}
                         className={cn(
                           "flex flex-col items-start gap-1 py-3 px-3 rounded-md transition-colors cursor-pointer",
-                          aiStyle === "flexible"
+                          preferences.aiStyle === "flexible"
                             ? "bg-green-50"
                             : "hover:bg-slate-50"
                         )}
@@ -201,10 +200,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
                       {/* Balanced Option */}
                       <div
-                        onClick={() => setAIStyle("balanced")}
+                        onClick={() => setPreferences({...preferences, aiStyle: "balanced"})}
                         className={cn(
                           "flex flex-col items-start gap-1 py-3 px-3 rounded-md transition-colors cursor-pointer",
-                          aiStyle === "balanced"
+                          preferences.aiStyle === "balanced"
                             ? "bg-blue-50"
                             : "hover:bg-slate-50"
                         )}
@@ -227,10 +226,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
                       {/* Strict Option */}
                       <div
-                        onClick={() => setAIStyle("strict")}
+                        onClick={() => setPreferences({...preferences, aiStyle: "strict"})}
                         className={cn(
                           "flex flex-col items-start gap-1 py-3 px-3 rounded-md transition-colors cursor-pointer",
-                          aiStyle === "strict"
+                          preferences.aiStyle === "strict"
                             ? "bg-orange-50"
                             : "hover:bg-slate-50"
                         )}

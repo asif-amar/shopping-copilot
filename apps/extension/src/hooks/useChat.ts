@@ -10,13 +10,14 @@ import {
 import { ApiService } from "@/services/api";
 import { useLanguage } from "@/hooks/useLanguage";
 import { getToolDisplayName } from "@/utils/toolCallParser";
+import { UserPreferences } from "@/types/preferences";
 
 interface UseChatReturn {
   messages: ChatMessage[];
   isLoading: boolean;
   currentHostname: string;
   conversationId: string | null;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, preferences?: UserPreferences) => Promise<void>;
   startNewConversation: () => Promise<void>;
 }
 
@@ -349,7 +350,7 @@ export function useChat(): UseChatReturn {
   }, []);
 
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, preferences?: UserPreferences) => {
       if (!content.trim() || isLoading || !currentHostname) return;
 
       // Add user message immediately
@@ -374,7 +375,8 @@ export function useChat(): UseChatReturn {
         const reader = await ApiService.sendMessage(
           content,
           conversationId || undefined,
-          currentHostname
+          currentHostname,
+          preferences
         );
         const decoder = new TextDecoder();
 

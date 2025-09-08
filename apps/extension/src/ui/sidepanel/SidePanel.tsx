@@ -5,6 +5,7 @@ import { LanguageProvider } from "@/hooks/useLanguage";
 import { Header, MessageList, ChatInput } from "@/components";
 import { AuthModal } from "@/components/AuthModal";
 import { ApiService } from "@/services/api";
+import { UserPreferences } from "@/types/preferences";
 
 const SidePanelContent: React.FC = () => {
   const {
@@ -27,12 +28,12 @@ const SidePanelContent: React.FC = () => {
     setIsAuthenticated(authenticated);
   };
 
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = async (message: string, preferences?: UserPreferences) => {
     if (!isAuthenticated) {
       setIsAuthModalOpen(true);
       return;
     }
-    await sendMessage(message);
+    await sendMessage(message, preferences);
   };
 
   const handleAuthSuccess = async () => {

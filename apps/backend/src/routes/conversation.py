@@ -36,19 +36,35 @@ class ConversationModel(BaseModel):
     updated_at: datetime
     metadata: Optional[Dict[str, Any]] = None
 
+class UserPreferences(BaseModel):
+    aiStyle: Optional[str] = "balanced"
+    # Future preferences can be added here
+    
 class SendMessageRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
     hostname: Optional[str] = None
+    preferences: Optional[UserPreferences] = None
 
 class ConversationResponse(BaseModel):
     conversation: ConversationModel
     status: str = "success"
 
-def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
+def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[UserPreferences] = None) -> Agent:
     """Create a basic Agno agent with Gemini model"""
     
     model = Gemini(id=config.GEMINI_MODEL, api_key=config.GEMINI_API_KEY)
+    
+    # Define AI style behaviors
+    style_instructions = {
+        "flexible": "Be very flexible and creative. Be proactive and autonomous. You can make autonomous decisions and suggestions that go beyond the exact user request. Example, if the user ask for 'תוסיף חלב לעגלה', you don't have to list the products that you found, but just add the best fit product to the cart.",
+        "balanced": "Be helpful and efficient while staying focused on the user's specific request. Provide relevant suggestions and take reasonable initiative, but ask for clarification when needed.",
+        "strict": "Be precise and focused strictly on the user's exact request. Only perform the specific actions requested without making additional suggestions or taking extra assumptions unless explicitly asked. If the request is ambiguous or general (e.g., 'תוסיף חלב לעגלה'), always show the user product results first and ask for clarification."
+    }
+
+    # Set default style and get style instruction
+    current_style = preferences.aiStyle if preferences else "balanced"
+    style_instruction = style_instructions.get(current_style, style_instructions["balanced"])
     
     storage = PostgresStorage(
         table_name="conversations",
@@ -82,10 +98,10 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             "Then use the newspaper tools to read and extract the actual content from those URLs",
             "Provide comprehensive information based on the scraped content, not just URLs",
             "IMPORTANT: Never expose inside errors to the user!",
+            "CRITICAL: Whenever the user asks to search, show, or add specific products, you must ALWAYS use the search_products tool to fetch real product data. Never invent, summarize, or output products without using the tool first, since product availability and details may change.",
             "CRITICAL: When tool responses include images (markdown format like ![alt](url) or HTML img tags), ALWAYS preserve them exactly in your response. Do not summarize or rewrite responses that contain images - show them as-is.",
             "When displaying product search results, always include the original formatted output from the search tool, including any images, links, and formatting.",
-            "You can take initiative and perform actions on behalf of the user when the intent is clear, without asking for unnecessary confirmations.",
-            "For example, if the user asks to show milk products and then says \"add one of these to the cart,\" you should autonomously choose the most relevant or best option and add it.",
+            f"BEHAVIOR STYLE: {style_instruction}",
             """
             ## SEARCH_PRODUCTS Tool Instructions
             ### Search Strategy:
@@ -133,10 +149,11 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
         ],
         markdown=True,
         storage=storage,
+        session_state={"preferences": preferences.dict() if preferences else {"aiStyle": "balanced"}},
         add_datetime_to_instructions=True,
         add_history_to_messages=True,
         num_history_runs=5, # TODO: Find the magic number for us...
-        show_tool_calls=True,
+        show_tool_calls=False,
     )
     return agent
 
@@ -162,7 +179,7 @@ async def send_message(
             conversation_id = str(uuid.uuid4())
         
         # Create the agent
-        agent = create_basic_agent(request_headers)
+        agent = create_basic_agent(request_headers, request.preferences)
         
         async def generate_stream():
             # First, send conversation info to frontend

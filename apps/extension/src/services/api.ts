@@ -7,6 +7,7 @@ import {
 import { BACKEND_URL } from "@/utils/constants";
 import { getSiteAdapterFromHostname } from "./websiteContext";
 import { CredentialExtractor } from "./credentialExtractor";
+import { UserPreferences } from "@/types/preferences";
 
 export type ShoppingActionResponse = {
   success: boolean;
@@ -162,7 +163,8 @@ export class ApiService {
   static async sendMessage(
     content: string,
     conversationId?: string,
-    hostname?: string
+    hostname?: string,
+    preferences?: UserPreferences
   ): Promise<ReadableStreamDefaultReader<Uint8Array>> {
     const headers = await this.getHeaders(hostname);
 
@@ -176,6 +178,7 @@ export class ApiService {
         conversation_id: conversationId,
         user_id: "1",
         hostname: hostname,
+        preferences: preferences,
       }),
     });
 
