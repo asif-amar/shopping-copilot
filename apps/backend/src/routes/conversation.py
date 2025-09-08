@@ -283,9 +283,76 @@ async def list_conversations(
             db_url=config.DATABASE_URL
         )
         
-        # TODO: Implement proper conversation listing with user filtering
-        # For now, return empty list as placeholder
-        return {"conversations": [], "total": 0, "user": current_user.email}
+        # Get recent conversations for the user
+        # This queries the Agno storage for sessions belonging to the user
+        try:
+            # Get conversations from the database
+            # The storage.get_all_sessions() method gets all sessions, 
+            # but we need to filter by user_id
+            import psycopg
+            
+            conversations = []
+            
+            # Connect to the database directly to query user sessions
+            with psycopg.connect(config.DATABASE_URL) as conn:
+                with conn.cursor() as cur:
+                    # Query for sessions belonging to this user
+                    cur.execute("""
+                        SELECT 
+                            session_id,
+                            agent_data,
+                            created_at,
+                            updated_at
+                        FROM ai.conversations 
+                        WHERE agent_data->>'user_id' = %s
+                        ORDER BY updated_at DESC
+                        LIMIT %s
+                    """, (str(current_user.id), limit))
+                    
+                    rows = cur.fetchall()
+                    
+                    for row in rows:
+                        session_id, agent_data, created_at, updated_at = row
+                        
+                        # Extract messages from agent_data
+                        messages = []
+                        if agent_data and 'messages' in agent_data:
+                            messages = agent_data['messages']
+                        
+                        # Extract hostname from session data
+                        hostname = "Unknown"
+                        if agent_data and 'session_data' in agent_data:
+                            hostname = agent_data['session_data'].get('hostname', 'Unknown')
+                        
+                        # Generate a title from the first user message
+                        title = f"Conversation on {hostname}"
+                        if messages:
+                            for msg in messages:
+                                if msg.get('role') == 'user' and msg.get('content'):
+                                    # Use first 50 chars of first user message as title
+                                    title = msg['content'][:50] + ("..." if len(msg['content']) > 50 else "")
+                                    break
+                        
+                        conversation_item = ConversationModel(
+                            id=session_id,
+                            title=title,
+                            hostname=hostname,
+                            messages=[],  # We'll populate this when specifically requested
+                            created_at=created_at,
+                            updated_at=updated_at,
+                            metadata={'message_count': len(messages)}
+                        )
+                        conversations.append(conversation_item)
+            
+            return {
+                "conversations": [conv.dict() for conv in conversations], 
+                "total": len(conversations), 
+                "user": current_user.email
+            }
+            
+        except Exception as db_error:
+            logger.warning(f"Database query failed: {db_error}, returning empty list")
+            return {"conversations": [], "total": 0, "user": current_user.email}
         
     except Exception as e:
         logger.error(f"Error listing conversations: {e}")

@@ -4,6 +4,7 @@ import { useChat } from "@/hooks/useChat";
 import { LanguageProvider } from "@/hooks/useLanguage";
 import { Header, MessageList, ChatInput } from "@/components";
 import { AuthModal } from "@/components/AuthModal";
+import { ConversationsDrawer } from "@/components/ConversationsDrawer";
 import { ApiService } from "@/services/api";
 import { UserPreferences } from "@/types/preferences";
 
@@ -14,10 +15,12 @@ const SidePanelContent: React.FC = () => {
     currentHostname,
     sendMessage,
     startNewConversation,
+    loadConversation,
   } = useChat();
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isConversationsDrawerOpen, setIsConversationsDrawerOpen] = useState(false);
 
   useEffect(() => {
     checkAuthStatus();
@@ -54,6 +57,7 @@ const SidePanelContent: React.FC = () => {
       <Header
         currentHostname={currentHostname}
         onNewConversation={startNewConversation}
+        onOpenConversations={() => setIsConversationsDrawerOpen(true)}
       />
 
       <MessageList
@@ -68,6 +72,12 @@ const SidePanelContent: React.FC = () => {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onAuthSuccess={handleAuthSuccess}
+      />
+
+      <ConversationsDrawer
+        isOpen={isConversationsDrawerOpen}
+        onClose={() => setIsConversationsDrawerOpen(false)}
+        onLoadConversation={loadConversation}
       />
     </div>
   );

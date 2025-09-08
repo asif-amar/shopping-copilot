@@ -7,3 +7,4 @@ export { ToolCall } from './ToolCall';
 export { EmptyState } from './EmptyState';
 export { ProductCard } from './ProductCard';
 export { ProductGrid } from './ProductGrid';
+export { ConversationsDrawer } from './ConversationsDrawer';

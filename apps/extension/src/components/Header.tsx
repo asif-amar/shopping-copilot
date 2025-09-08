@@ -8,6 +8,7 @@ import {
   Settings,
   Menu,
   Languages,
+  MessageSquare,
 } from "lucide-react";
 import {
   getSiteAdapterFromHostname,
@@ -35,11 +36,13 @@ import { cn } from "../lib/utils";
 interface HeaderProps {
   currentHostname: string;
   onNewConversation: () => void;
+  onOpenConversations?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   currentHostname,
   onNewConversation,
+  onOpenConversations,
 }) => {
   const { language, isRTL, toggleLanguage, t } = useLanguage();
   const siteAdapter = getSiteAdapterFromHostname(currentHostname);
@@ -117,8 +120,44 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Right side - New chat button and dropdown */}
+        {/* Right side - Action buttons and dropdown */}
         <div className="flex items-center gap-2">
+          {/* Conversations Button */}
+          {onOpenConversations && (
+            <TooltipButton
+              tooltip={t("conversations") || "Conversations"}
+              onClick={onOpenConversations}
+              buttonStyle={{
+                width: "36px",
+                height: "36px",
+                background: "#f1f5f9",
+                border: "1px solid #e2e8f0",
+                color: "#64748b",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "#e2e8f0";
+                (e.currentTarget as HTMLButtonElement).style.color = "#475569";
+                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.1)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "#f1f5f9";
+                (e.currentTarget as HTMLButtonElement).style.color = "#64748b";
+                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 1px 2px rgba(0, 0, 0, 0.05)";
+              }}
+            >
+              <MessageSquare size={14} />
+            </TooltipButton>
+          )}
+
           {/* New Chat Button */}
           <TooltipButton
             tooltip={t("new_chat")}

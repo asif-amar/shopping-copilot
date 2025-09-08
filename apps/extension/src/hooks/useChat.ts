@@ -19,6 +19,7 @@ interface UseChatReturn {
   conversationId: string | null;
   sendMessage: (content: string, preferences?: UserPreferences) => Promise<void>;
   startNewConversation: () => Promise<void>;
+  loadConversation: (conversationId: string) => Promise<void>;
 }
 
 /**
@@ -569,6 +570,41 @@ export function useChat(): UseChatReturn {
     }
   }, [currentHostname]);
 
+  const loadConversation = useCallback(async (conversationId: string) => {
+    try {
+      setIsLoading(true);
+      const response = await ApiService.getConversation(conversationId);
+      
+      if (response.conversation?.messages) {
+        const loadedMessages: ChatMessage[] = response.conversation.messages.map((msg: any) => ({
+          id: msg.id || `loaded_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+          parts: [
+            {
+              type: "text" as const,
+              id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+              content: msg.content,
+            },
+          ],
+          isUser: msg.role === "user",
+          timestamp: new Date(msg.timestamp || Date.now()),
+          isComplete: true,
+        }));
+        
+        setMessages(loadedMessages);
+        setConversationId(conversationId);
+        
+        // Update localStorage to persist the loaded conversation
+        if (currentHostname) {
+          localStorage.setItem(`conversation_${currentHostname}`, conversationId);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load conversation:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentHostname]);
+
   return {
     messages,
     isLoading,
@@ -576,5 +612,6 @@ export function useChat(): UseChatReturn {
     conversationId,
     sendMessage,
     startNewConversation,
+    loadConversation,
   };
 }
