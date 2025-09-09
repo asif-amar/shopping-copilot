@@ -18,23 +18,34 @@ interface ConversationsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onLoadConversation: (conversationId: string) => void;
+  preloadConversations?: boolean;
+  onRefreshConversations?: (refreshFn: () => Promise<void>) => void;
 }
 
 export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
   isOpen,
   onClose,
   onLoadConversation,
+  preloadConversations = false,
+  onRefreshConversations,
 }) => {
-  const { isRTL, t } = useLanguage();
+  const { isRTL, t, language } = useLanguage();
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen || preloadConversations) {
       fetchConversations();
     }
-  }, [isOpen]);
+  }, [isOpen, preloadConversations]);
+
+  // Expose refresh function to parent component
+  useEffect(() => {
+    if (onRefreshConversations) {
+      onRefreshConversations(fetchConversations);
+    }
+  }, [onRefreshConversations]);
 
   const fetchConversations = async () => {
     setIsLoading(true);
@@ -42,15 +53,27 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
     try {
       const response = await ApiService.listConversations(20);
       // Transform backend response to our interface
-      const formattedConversations: ConversationItem[] = response.conversations.map((conv: any) => ({
-        id: conv.id,
-        title: conv.title || `${conv.hostname} - ${new Date(conv.updated_at).toLocaleDateString()}`,
-        hostname: conv.hostname || "Unknown",
-        lastMessage: conv.messages?.[conv.messages.length - 1]?.content?.slice(0, 80) + "..." || "No messages",
-        timestamp: new Date(conv.updated_at).toLocaleString(),
-        messageCount: conv.messages?.length || 0,
-      }));
-      setConversations(formattedConversations);
+      const formattedConversations: ConversationItem[] =
+        response.conversations.map((conv: any) => ({
+          id: conv.id,
+          title:
+            conv.title ||
+            `${conv.hostname} - ${new Date(conv.updated_at).toLocaleDateString()}`,
+          hostname: conv.hostname || "Unknown",
+          lastMessage:
+            conv.messages?.[conv.messages.length - 1]?.content?.slice(0, 80) +
+              "..." || "No messages",
+          timestamp: new Date(
+            conv.updated_at || conv.created_at
+          ).toLocaleString(),
+          messageCount: conv.messages?.length || 0,
+        }));
+      setConversations(
+        formattedConversations.sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        )
+      );
     } catch (err) {
       console.error("Failed to fetch conversations:", err);
       setError("Failed to load conversations");
@@ -69,12 +92,30 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
     const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffHours / 24);
 
-    if (diffHours < 1) return t("just_now") || "Just now";
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMinutes < 1) {
+      return language === "he" ? "עכשיו" : "Just now";
+    }
+
+    if (diffMinutes < 60) {
+      if (language === "he") return `לפני ${diffMinutes} דקות`;
+      return `${diffMinutes}m ago`;
+    }
+
+    if (diffHours < 24) {
+      if (language === "he") return `לפני ${diffHours} שעות`;
+      return `${diffHours}h ago`;
+    }
+
+    if (diffDays < 7) {
+      if (language === "he") return `לפני ${diffDays} ימים`;
+      return `${diffDays}d ago`;
+    }
+
     return date.toLocaleDateString();
   };
 
@@ -100,7 +141,9 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
             className={cn(
               "fixed top-0 bottom-0 w-80 max-w-[90vw] bg-white shadow-xl z-50 flex flex-col",
-              isRTL ? "right-0 border-l border-slate-200" : "left-0 border-r border-slate-200"
+              isRTL
+                ? "right-0 border-l border-slate-200"
+                : "left-0 border-r border-slate-200"
             )}
             style={{ direction: isRTL ? "rtl" : "ltr" }}
           >
@@ -126,7 +169,9 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
                 <div className="flex items-center justify-center py-12">
                   <div className="flex flex-col items-center gap-2 text-slate-500">
                     <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm">{t("loading") || "Loading..."}</span>
+                    <span className="text-sm">
+                      {t("loading") || "Loading..."}
+                    </span>
                   </div>
                 </div>
               )}
@@ -150,13 +195,14 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
                     {t("no_conversations") || "No conversations yet"}
                   </h3>
                   <p className="text-slate-400 text-sm">
-                    {t("start_chatting_desc") || "Start chatting to see your conversation history here"}
+                    {t("start_chatting_desc") ||
+                      "Start chatting to see your conversation history here"}
                   </p>
                 </div>
               )}
 
               {!isLoading && !error && conversations.length > 0 && (
-                <div className="py-2">
+                <div className="">
                   {conversations.map((conversation, index) => (
                     <motion.button
                       key={conversation.id}
@@ -174,26 +220,30 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
                           <h4 className="text-sm font-medium text-slate-800 truncate">
                             {conversation.title}
                           </h4>
-                          <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                          {/* <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
                             {conversation.messageCount}
-                          </span>
+                          </span> */}
                         </div>
-                        <p className="text-xs text-slate-500 truncate mb-1">
+                        {/* <p className="text-xs text-slate-500 truncate mb-1">
                           {conversation.lastMessage}
-                        </p>
+                        </p> */}
                         <div className="flex items-center gap-1 text-xs text-slate-400">
                           <Clock size={12} />
-                          <span>{formatRelativeTime(conversation.timestamp)}</span>
-                          <span className="mx-1">•</span>
-                          <span className="truncate">{conversation.hostname}</span>
+                          <span>
+                            {formatRelativeTime(conversation.timestamp)}
+                          </span>
+                          {/* <span className="mx-1">•</span>
+                          <span className="truncate">
+                            {conversation.hostname}
+                          </span> */}
                         </div>
                       </div>
-                      <ChevronRight 
-                        size={16} 
+                      <ChevronRight
+                        size={16}
                         className={cn(
                           "text-slate-400 group-hover:text-slate-600 transition-colors flex-shrink-0",
                           isRTL && "rotate-180"
-                        )} 
+                        )}
                       />
                     </motion.button>
                   ))}

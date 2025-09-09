@@ -102,17 +102,17 @@ class BaseShoppingAdapter(ABC):
     def sanitize_product(self, product_data: dict) -> Product:
         """Sanitize product data to remove potential security issues"""
         return Product(
-            id=str(product_data.get('id', '')).replace('<', '').replace('>', '')[:100],
-            title=str(product_data.get('title', '')).replace('<', '').replace('>', '')[:200],
-            description=str(product_data.get('description', '')).replace('<', '').replace('>', '')[:1000],
+            id=str(product_data.get('id', '')).replace('<', '').replace('>', '').replace('"', '').replace("'", '')[:100],
+            title=str(product_data.get('title', '')).replace('<', '').replace('>', '').replace('"', '').replace("'", '')[:200],
+            description=str(product_data.get('description', '')).replace('<', '').replace('>', '').replace('"', '').replace("'", '')[:1000],
             price=float(product_data.get('price', 0)) if product_data.get('price') is not None else 0.0,
             currency=str(product_data.get('currency', 'ILS'))[:3],
             image_url=self._sanitize_url(product_data.get('image_url')),
             availability=bool(product_data.get('availability', True)),
             rating=self._sanitize_rating(product_data.get('rating')),
             review_count=max(int(product_data.get('review_count', 0)), 0) if product_data.get('review_count') is not None else None,
-            category=str(product_data.get('category', '')).replace('<', '').replace('>', '')[:100] if product_data.get('category') else None,
-            brand=str(product_data.get('brand', '')).replace('<', '').replace('>', '')[:100] if product_data.get('brand') else None,
+            category=str(product_data.get('category', '')).replace('<', '').replace('>', '').replace('"', '').replace("'", '')[:100] if product_data.get('category') else None,
+            brand=str(product_data.get('brand', '')).replace('<', '').replace('>', '').replace('"', '').replace("'", '')[:100] if product_data.get('brand') else None,
             url=self._sanitize_url(product_data.get('url')),
             quantity=max(int(product_data.get('quantity', 0)), 0) if product_data.get('quantity') is not None else None
         )

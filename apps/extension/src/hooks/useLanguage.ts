@@ -61,6 +61,14 @@ const translations: Translations = {
     balanced_desc: "AI ישאל כשיהיה לא בטוח בהעדפות שלך",
     strict_desc: "AI תמיד ישאל הבהרות לפני פעולה",
 
+    // Conversations
+    conversations: "שיחות",
+    no_conversations: "אין שיחות עדיין",
+    start_chatting_desc: "התחל לשוחח כדי לראות את היסטוריית השיחות שלך כאן",
+    just_now: "עכשיו",
+    retry: "נסה שוב",
+    refresh: "רענן",
+
     // Auth Modal
     auth_modal_title: "היכנס לחשבון שלך",
     auth_modal_subtitle: "התחבר כדי לקבל חוויה אישית ושמורה",
@@ -118,6 +126,14 @@ const translations: Translations = {
     flexible_desc: "AI will make smart choices for you (e.g., 'add milk' → adds popular milk)",
     balanced_desc: "AI will ask when unsure about your preferences",
     strict_desc: "AI will always ask for clarification before taking action",
+
+    // Conversations
+    conversations: "Conversations",
+    no_conversations: "No conversations yet",
+    start_chatting_desc: "Start chatting to see your conversation history here",
+    just_now: "Just now",
+    retry: "Retry",
+    refresh: "Refresh",
 
     // Auth Modal
     auth_modal_title: "Sign In to Your Account",

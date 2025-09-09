@@ -21,6 +21,7 @@ const SidePanelContent: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isConversationsDrawerOpen, setIsConversationsDrawerOpen] = useState(false);
+  const [refreshConversations, setRefreshConversations] = useState<(() => Promise<void>) | null>(null);
 
   useEffect(() => {
     checkAuthStatus();
@@ -43,6 +44,14 @@ const SidePanelContent: React.FC = () => {
     await checkAuthStatus();
   };
 
+  const handleNewConversation = async () => {
+    await startNewConversation();
+    // Refresh conversations list when starting a new conversation
+    if (refreshConversations) {
+      await refreshConversations();
+    }
+  };
+
   return (
     <div
       style={{
@@ -56,7 +65,7 @@ const SidePanelContent: React.FC = () => {
     >
       <Header
         currentHostname={currentHostname}
-        onNewConversation={startNewConversation}
+        onNewConversation={handleNewConversation}
         onOpenConversations={() => setIsConversationsDrawerOpen(true)}
       />
 
@@ -78,6 +87,8 @@ const SidePanelContent: React.FC = () => {
         isOpen={isConversationsDrawerOpen}
         onClose={() => setIsConversationsDrawerOpen(false)}
         onLoadConversation={loadConversation}
+        preloadConversations={isAuthenticated}
+        onRefreshConversations={setRefreshConversations}
       />
     </div>
   );

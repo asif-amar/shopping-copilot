@@ -287,6 +287,14 @@ class StreamContentParser {
       this.currentParts.push(toolCallPart);
     }
   }
+
+  /**
+   * Reset the parser state for processing a new message
+   */
+  reset(): void {
+    this.textBuffer = "";
+    this.currentParts = [];
+  }
 }
 
 export function useChat(): UseChatReturn {
@@ -308,39 +316,6 @@ export function useChat(): UseChatReturn {
           const url = new URL(tabs[0].url);
           const hostname = url.hostname;
           setCurrentHostname(hostname);
-
-          // Try to load existing conversation
-          const storedConversationId = localStorage.getItem(
-            `conversation_${hostname}`
-          );
-          if (storedConversationId) {
-            try {
-              const response =
-                await ApiService.getConversation(storedConversationId);
-              if (response.conversation?.messages) {
-                const loadedMessages: ChatMessage[] =
-                  response.conversation.messages.map((msg: any) => ({
-                    id:
-                      msg.id ||
-                      `loaded_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-                    parts: [
-                      {
-                        type: "text" as const,
-                        id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-                        content: msg.content,
-                      },
-                    ],
-                    isUser: msg.role === "user",
-                    timestamp: new Date(msg.timestamp || Date.now()),
-                    isComplete: true,
-                  }));
-                setMessages(loadedMessages);
-                setConversationId(storedConversationId);
-              }
-            } catch (error) {
-              console.error("Failed to load conversation:", error);
-            }
-          }
         }
       } catch (error) {
         console.error("Failed to initialize hostname:", error);
@@ -349,6 +324,136 @@ export function useChat(): UseChatReturn {
 
     initializeHostname();
   }, []);
+
+  // Load stored conversation when hostname is available
+  useEffect(() => {
+    if (!currentHostname) return;
+    
+    const loadStoredConversation = async () => {
+      const storedConversationId = localStorage.getItem(
+        `conversation_${currentHostname}`
+      );
+      if (storedConversationId) {
+        try {
+          setIsLoading(true);
+          const response = await ApiService.getConversation(storedConversationId);
+          
+          if (response.messages && Array.isArray(response.messages)) {
+            // Convert backend messages to frontend ChatMessage format (same as loadConversation)
+            const loadedMessages: ChatMessage[] = response.messages.map((msg: any) => {
+              const isUser = msg.sender === "human";
+              const parts: MessagePartType[] = [];
+              
+              if (isUser) {
+                // User messages have simple text content
+                parts.push({
+                  type: "text",
+                  id: `text_${msg.id}`,
+                  content: msg.content || "",
+                });
+              } else {
+                // Assistant messages have content array
+                if (!msg.content || !Array.isArray(msg.content)) {
+                  console.warn("Invalid assistant message content structure:", msg);
+                  return null;
+                }
+                
+                // Process content array to preserve order
+                let currentProducts: any[] = [];
+                
+                msg.content.forEach((contentItem: any, index: number) => {
+                  switch (contentItem.type) {
+                    case "text":
+                      // If we have accumulated products, add them first
+                      if (currentProducts.length > 0) {
+                        parts.push({
+                          type: "products",
+                          id: `products_${msg.id}_${parts.length}`,
+                          products: currentProducts,
+                          isLoading: false
+                        });
+                        currentProducts = [];
+                      }
+                      
+                      // Add text part
+                      if (contentItem.text && contentItem.text.trim()) {
+                        parts.push({
+                          type: "text",
+                          id: `text_${msg.id}_${index}`,
+                          content: contentItem.text.trim(),
+                        });
+                      }
+                      break;
+                      
+                    case "tool":
+                      // If we have accumulated products, add them first
+                      if (currentProducts.length > 0) {
+                        parts.push({
+                          type: "products",
+                          id: `products_${msg.id}_${parts.length}`,
+                          products: currentProducts,
+                          isLoading: false
+                        });
+                        currentProducts = [];
+                      }
+                      
+                      // Add tool call part
+                      parts.push({
+                        type: "tool-call",
+                        id: `tool_${msg.id}_${index}`,
+                        toolName: contentItem.tool,
+                        displayName: getToolDisplayName(contentItem.tool),
+                        state: "completed"
+                      });
+                      break;
+                      
+                    case "product":
+                      // Accumulate products to group them together
+                      if (contentItem.product) {
+                        currentProducts.push(contentItem.product);
+                      }
+                      break;
+                      
+                    default:
+                      console.warn("Unknown content type:", contentItem.type);
+                  }
+                });
+                
+                // Add any remaining accumulated products
+                if (currentProducts.length > 0) {
+                  parts.push({
+                    type: "products",
+                    id: `products_${msg.id}_${parts.length}`,
+                    products: currentProducts,
+                    isLoading: false
+                  });
+                }
+              }
+              
+              return {
+                id: msg.id,
+                parts,
+                isUser,
+                timestamp: new Date(msg.timestamp),
+                isComplete: true,
+              };
+            }).filter(Boolean); // Remove null entries
+            
+            setMessages(loadedMessages);
+            setConversationId(storedConversationId);
+          }
+        } catch (error) {
+          console.error("Failed to load stored conversation:", error);
+          // Clear invalid stored conversation ID
+          localStorage.removeItem(`conversation_${currentHostname}`);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadStoredConversation();
+  }, [currentHostname]);
 
   const sendMessage = useCallback(
     async (content: string, preferences?: UserPreferences) => {
@@ -573,31 +678,125 @@ export function useChat(): UseChatReturn {
   const loadConversation = useCallback(async (conversationId: string) => {
     try {
       setIsLoading(true);
+      setMessages([]); // Clear existing messages
+      
       const response = await ApiService.getConversation(conversationId);
       
-      if (response.conversation?.messages) {
-        const loadedMessages: ChatMessage[] = response.conversation.messages.map((msg: any) => ({
-          id: msg.id || `loaded_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-          parts: [
-            {
-              type: "text" as const,
-              id: `part_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-              content: msg.content,
-            },
-          ],
-          isUser: msg.role === "user",
-          timestamp: new Date(msg.timestamp || Date.now()),
-          isComplete: true,
-        }));
-        
-        setMessages(loadedMessages);
-        setConversationId(conversationId);
-        
-        // Update localStorage to persist the loaded conversation
-        if (currentHostname) {
-          localStorage.setItem(`conversation_${currentHostname}`, conversationId);
-        }
+      if (!response.messages || !Array.isArray(response.messages)) {
+        console.error("Invalid conversation response:", response);
+        return;
       }
+      
+      // Convert backend messages to frontend ChatMessage format
+      const loadedMessages: ChatMessage[] = response.messages.map((msg: any) => {
+        const isUser = msg.sender === "human";
+        const parts: MessagePartType[] = [];
+        
+        if (isUser) {
+          // User messages have simple text content
+          parts.push({
+            type: "text",
+            id: `text_${msg.id}`,
+            content: msg.content || "",
+          });
+        } else {
+          // Assistant messages have content array
+          if (!msg.content || !Array.isArray(msg.content)) {
+            console.warn("Invalid assistant message content structure:", msg);
+            return null;
+          }
+          
+          // Process content array to preserve order
+          let currentProducts: any[] = [];
+          
+          msg.content.forEach((contentItem: any, index: number) => {
+            switch (contentItem.type) {
+              case "text":
+                // If we have accumulated products, add them first
+                if (currentProducts.length > 0) {
+                  parts.push({
+                    type: "products",
+                    id: `products_${msg.id}_${parts.length}`,
+                    products: currentProducts,
+                    isLoading: false
+                  });
+                  currentProducts = [];
+                }
+                
+                // Add text part
+                if (contentItem.text && contentItem.text.trim()) {
+                  parts.push({
+                    type: "text",
+                    id: `text_${msg.id}_${index}`,
+                    content: contentItem.text.trim(),
+                  });
+                }
+                break;
+                
+              case "tool":
+                // If we have accumulated products, add them first
+                if (currentProducts.length > 0) {
+                  parts.push({
+                    type: "products",
+                    id: `products_${msg.id}_${parts.length}`,
+                    products: currentProducts,
+                    isLoading: false
+                  });
+                  currentProducts = [];
+                }
+                
+                // Add tool call part
+                parts.push({
+                  type: "tool-call",
+                  id: `tool_${msg.id}_${index}`,
+                  toolName: contentItem.tool,
+                  displayName: getToolDisplayName(contentItem.tool),
+                  state: "completed" // Loaded conversations show completed tools
+                });
+                break;
+                
+              case "product":
+                // Accumulate products to group them together
+                if (contentItem.product) {
+                  currentProducts.push(contentItem.product);
+                }
+                break;
+                
+              default:
+                console.warn("Unknown content type:", contentItem.type);
+            }
+          });
+          
+          // Add any remaining accumulated products
+          if (currentProducts.length > 0) {
+            parts.push({
+              type: "products",
+              id: `products_${msg.id}_${parts.length}`,
+              products: currentProducts,
+              isLoading: false
+            });
+          }
+        }
+        
+        return {
+          id: msg.id,
+          parts,
+          isUser,
+          timestamp: new Date(msg.timestamp),
+          isComplete: true,
+        };
+      }).filter(Boolean); // Remove null entries
+      
+      // Set conversation ID and update localStorage
+      setConversationId(conversationId);
+      if (currentHostname) {
+        localStorage.setItem(`conversation_${currentHostname}`, conversationId);
+      }
+      
+      // Update messages
+      setMessages(loadedMessages);
+      console.log("✅ Conversation loaded successfully with", loadedMessages.length, "messages");
+      
     } catch (error) {
       console.error("Failed to load conversation:", error);
     } finally {

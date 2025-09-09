@@ -513,12 +513,6 @@ class RamiLevyAdapter(BaseShoppingAdapter):
             current_cart = await self._get_current_cart(credentials)
             data = current_cart.data or ProductSearchResult(products=[], total_count=0, website="rami-levy")
             products = data.products        
-            print("+" * 50)
-            print(current_cart)
-            print("+" * 50)
-            print("+" * 50)
-            print(products)
-            print("+" * 50)
 
             items = []
             for product in products:

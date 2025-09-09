@@ -7,6 +7,7 @@ from agno.storage.postgres import PostgresStorage
 from typing import Dict, List, Optional, Any
 from fastapi.responses import StreamingResponse
 import json
+import re
 import uuid
 from datetime import datetime
 from agno.tools.newspaper4k import Newspaper4kTools
@@ -26,6 +27,7 @@ class MessageModel(BaseModel):
     role: str  # user or assistant
     timestamp: datetime
     metadata: Optional[Dict[str, Any]] = None
+    type: Optional[str] = None  # Add type field for streaming compatibility
 
 class ConversationModel(BaseModel):
     id: str
@@ -33,7 +35,7 @@ class ConversationModel(BaseModel):
     hostname: Optional[str] = None
     messages: List[MessageModel] = []
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
     metadata: Optional[Dict[str, Any]] = None
 
 class UserPreferences(BaseModel):
@@ -100,6 +102,7 @@ def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[Us
             "IMPORTANT: Never expose inside errors to the user!",
             "CRITICAL: Whenever the user asks to search, show, or add specific products, you must ALWAYS use the search_products tool to fetch real product data. Never invent, summarize, or output products without using the tool first, since product availability and details may change.",
             "CRITICAL: When tool responses include images (markdown format like ![alt](url) or HTML img tags), ALWAYS preserve them exactly in your response. Do not summarize or rewrite responses that contain images - show them as-is.",
+            "CRITICAL: Never expose dev related things to the user. For example necer ask the user for a product_id, or any other dev related things.",
             "When displaying product search results, always include the original formatted output from the search tool, including any images, links, and formatting.",
             f"BEHAVIOR STYLE: {style_instruction}",
             """
@@ -235,38 +238,130 @@ async def get_conversation(
             db_url=config.DATABASE_URL
         )
         
-        # Create a temporary agent with the storage to access the session
-        agent = Agent(storage=storage, session_id=conversation_id)
+        # Read the agent session directly from storage
+        agent_session = storage.read(session_id=conversation_id, user_id=str(current_user.id))
+        
+        if not agent_session:
+            raise HTTPException(status_code=404, detail=f"Conversation {conversation_id} not found")
 
-        # Get messages for the session
-        messages = agent.get_messages_for_session()
+        # Extract and format messages from agent session
+        result = []
+        
+        if agent_session.memory and 'runs' in agent_session.memory:
+            runs = agent_session.memory['runs']
+            
+            # Only process the last run since it contains the complete conversation
+            if runs:
+                last_run = runs[-1]
+                messages = last_run.get('messages', [])
+                print("PROCESSING LAST RUN\n", len(messages), "messages\n")
+                buffer = None
+                
+                for message in messages:
+                    role = message.get('role', '')
+                    content = message.get('content', '')
+                    timestamp = message.get('created_at', datetime.now().timestamp())
+                    
+                    if role == 'user':
+                        # Finalize any ongoing assistant message first
+                        if buffer:
+                            result.append(buffer)
+                            buffer = None
+                        
+                        # Add user message
+                        result.append({
+                            "id": f"user_{len(result)}_{int(timestamp)}",
+                            "sender": "human", 
+                            "content": content,
+                            "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                        })
+                    
+                    elif role == 'assistant':
+                        # If this is the first assistant message or we don't have a current one
+                        if not buffer:
+                            buffer = {
+                                "id": f"assistant_{len(result)}_{int(timestamp)}",
+                                "sender": "assistant",
+                                "content": [],
+                                "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                            }
+                        
+                        
+                        # Process content to extract products while preserving order
+                        if content:
+                            # Split content by product tags to preserve order
+                            parts = re.split(r'(<product>.*?</product>)', content, flags=re.DOTALL)
+                            
+                            for part in parts:
+                                part = part.strip()
+                                if not part:
+                                    continue
+                                    
+                                if part.startswith('<product>') and part.endswith('</product>'):
+                                    # Extract product JSON
+                                    product_json = part[9:-10]  # Remove <product> and </product>
+                                    try:
+                                        # Handle escaped quotes that might be double-escaped
+                                        cleaned_json = product_json.replace('\\"', '"').replace('\\\'', '\'')
+                                        product_data = json.loads(cleaned_json)
+                                        buffer["content"].append({
+                                            "type": "product",
+                                            "product": product_data,
+                                            "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                                        })
+                                    except json.JSONDecodeError as e:
+                                        # If JSON parsing still fails, try with original string
+                                        try:
+                                            product_data = json.loads(product_json)
+                                            buffer["content"].append({
+                                                "type": "product",
+                                                "product": product_data,
+                                                "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                                            })
+                                        except json.JSONDecodeError:
+                                            # If both attempts fail, treat as text
+                                            print(f"PRODUCT JSON ERROR: {e}")
+                                            print(f"Original JSON: {product_json}")
+                                            print(f"Cleaned JSON: {cleaned_json}")
 
-        # parsed_messages = [
-        #     {
-        #         "role": message.role,
-        #         "content": message.content,
-        #         "timestamp": getattr(message, 'timestamp', None)
-        #     }
-        #     for message in messages
-        # ]
+                                else:
+                                    # Regular text content
+                                    buffer["content"].append({
+                                        "type": "text",
+                                        "text": part,
+                                        "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                                    })
+                    elif role == 'tool':
+                        # Example: {'role': 'tool', 'content': ['**Added to Cart**\n**Website:** RAMI-LEVY\n**Product:** Product 3025\n**Quantity:** 5\n**Cart Item ID:** cart_3025'], 'metrics': {'time': 0.5974259579998034}, 'created_at': 1757405688, 'tool_calls': [{'content': '**Added to Cart**\n**Website:** RAMI-LEVY\n**Product:** Product 3025\n**Quantity:** 5\n**Cart Item ID:** cart_3025', 'tool_name': 'add_to_cart'}], 'from_history': False, 'stop_after_tool_call': False}
+                        tool_calls = message.get('tool_calls', [])
+                        if tool_calls:
+                            for tool_call in tool_calls:
+                                buffer["content"].append({
+                                    "type": "tool",
+                                    "tool": tool_call.get('tool_name', 'unknown_tool'),
+                                    "arguments": tool_call.get('content', 'unknown_content'),
+                                    "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                                })
 
-        conversation = ConversationModel(
-            id=conversation_id,
-            title="Conversation",
-            hostname="",
-            messages=messages,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-            metadata={}
-        )
+                    else:
+                        continue
+                
+                # Finalize any remaining assistant message
+                if buffer:
+                    result.append(buffer)
 
-        return ConversationResponse(conversation=conversation)
+        return {
+            "conversation_id": conversation_id,
+            "messages": result,
+            "total_messages": len(result)
+        }
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error retrieving conversation: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve conversation: {str(e)}")
+
 
 @router.get("/conversations")
 async def list_conversations(
@@ -276,12 +371,6 @@ async def list_conversations(
     """List all conversations for the authenticated user"""
     try:
         logger.info(f"Listing conversations for user: {current_user.email} (limit: {limit})")
-        
-        # Initialize PostgreSQL storage
-        storage = PostgresStorage(
-            table_name="conversations", 
-            db_url=config.DATABASE_URL
-        )
         
         # Get recent conversations for the user
         # This queries the Agno storage for sessions belonging to the user
@@ -302,36 +391,79 @@ async def list_conversations(
                             session_id,
                             agent_data,
                             created_at,
-                            updated_at
+                            updated_at,
+                            memory,
+                            extra_data
                         FROM ai.conversations 
-                        WHERE agent_data->>'user_id' = %s
+                        WHERE user_id = %s
                         ORDER BY updated_at DESC
                         LIMIT %s
                     """, (str(current_user.id), limit))
                     
                     rows = cur.fetchall()
-                    
+
                     for row in rows:
-                        session_id, agent_data, created_at, updated_at = row
-                        
-                        # Extract messages from agent_data
-                        messages = []
-                        if agent_data and 'messages' in agent_data:
-                            messages = agent_data['messages']
+                        session_id, agent_data, created_at, updated_at, memory, extra_data = row
                         
                         # Extract hostname from session data
                         hostname = "Unknown"
                         if agent_data and 'session_data' in agent_data:
                             hostname = agent_data['session_data'].get('hostname', 'Unknown')
                         
-                        # Generate a title from the first user message
-                        title = f"Conversation on {hostname}"
-                        if messages:
-                            for msg in messages:
-                                if msg.get('role') == 'user' and msg.get('content'):
-                                    # Use first 50 chars of first user message as title
-                                    title = msg['content'][:50] + ("..." if len(msg['content']) > 50 else "")
-                                    break
+                        # Check if title already exists in extra_data
+                        title = None
+                        if extra_data and isinstance(extra_data, dict):
+                            title = extra_data.get('title')
+                        
+                        # Generate title from first user message if not exists
+                        if not title:
+                            # Extract title from memory -> runs -> first run -> first user message
+                            if memory:
+                                runs = memory.get('runs', [])
+                                if runs and len(runs) > 0:
+                                    # Get the first run
+                                    first_run = runs[0]
+                                    messages = first_run.get('messages', [])
+                                    
+                                    # Find the first user message
+                                    for msg in messages:
+                                        if msg.get('role') == 'user' and msg.get('content'):
+                                            content = msg['content'].strip()
+                                            if content:
+                                                # Use first 40 chars as title
+                                                title = content[:40] + ("..." if len(content) > 40 else "")
+                                                break
+                            
+                            # Store the generated title in extra_data
+                            if title:
+                                try:
+                                    # Initialize extra_data as empty dict if None
+                                    updated_extra_data = extra_data or {}
+                                    updated_extra_data['title'] = title
+                                    
+                                    # Update the database with the new title
+                                    cur.execute("""
+                                        UPDATE ai.conversations 
+                                        SET extra_data = %s 
+                                        WHERE session_id = %s AND user_id = %s
+                                    """, (json.dumps(updated_extra_data), session_id, str(current_user.id)))
+                                    
+                                    logger.info(f"Generated and stored title for conversation {session_id}: {title}")
+                                except Exception as e:
+                                    logger.error(f"Failed to store title for conversation {session_id}: {e}")
+                        
+                        # Fallback title if still None
+                        if not title:
+                            title = f"Conversation on {hostname}"
+                        
+                        # Extract messages for metadata (message count)
+                        messages = []
+                        if agent_data and 'memory' in agent_data and 'runs' in agent_data['memory']:
+                            runs = agent_data['memory']['runs']
+                            # Get messages from the latest run for count
+                            if runs and len(runs) > 0:
+                                latest_run = runs[-1]  # Last run has the most complete message list
+                                messages = latest_run.get('messages', [])
                         
                         conversation_item = ConversationModel(
                             id=session_id,

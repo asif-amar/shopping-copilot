@@ -446,6 +446,8 @@ export class ApiService {
     chunk: string
   ):
     | { type: "message"; content: string }
+    | { type: "user_message"; content: string }
+    | { type: "response"; content: string }
     | { type: "action"; data: ShoppingActionResponse }
     | { type: "conversation_info"; conversationId: string; hostname: string }
     | { type: "complete"; conversationId: string }
@@ -490,6 +492,10 @@ export class ApiService {
 
           if (parsed.type === "response" && parsed.content) {
             return { type: "message", content: parsed.content };
+          }
+
+          if (parsed.type === "user_message" && parsed.content) {
+            return { type: "user_message", content: parsed.content };
           }
 
           if (parsed.type === "product_start") {
