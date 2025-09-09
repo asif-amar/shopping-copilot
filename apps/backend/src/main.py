@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import config
 from .routes.conversation import router as conversation_router
 from .routes.auth import router as auth_router
+from .routes.user import router as user_router
 from .middleware import RequestLoggingMiddleware, SecurityHeadersMiddleware
 from .database import create_tables
 
@@ -17,6 +18,14 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+# Reduce verbose logging from third-party libraries
+if config.LOG_LEVEL.upper() != "DEBUG":
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.dialects").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.pool").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.orm").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
 # Validate required environment variables
 try:
@@ -52,6 +61,7 @@ async def health_check():
 
 app.include_router(conversation_router, prefix="/api")
 app.include_router(auth_router, prefix="/api/auth")
+app.include_router(user_router, prefix="/api/user")
 
 # For Vercel deployment, the app instance is automatically detected
 # For local development, use: uvicorn src.main:app --host 127.0.0.1 --port 8000 --reload

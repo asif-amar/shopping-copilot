@@ -35,7 +35,7 @@ class Config:
     CORS_ORIGINS: Optional[str] = os.getenv("CORS_ORIGINS")
     
     # Logging
-    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
+    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "WARNING")
     
     # Server Configuration
     HOST: str = os.getenv("HOST", "0.0.0.0")

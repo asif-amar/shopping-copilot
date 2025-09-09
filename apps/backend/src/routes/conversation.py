@@ -7,6 +7,7 @@ from agno.storage.postgres import PostgresStorage
 from typing import Dict, List, Optional, Any
 from fastapi.responses import StreamingResponse
 import json
+import re
 import uuid
 from datetime import datetime
 from agno.tools.newspaper4k import Newspaper4kTools
@@ -26,6 +27,7 @@ class MessageModel(BaseModel):
     role: str  # user or assistant
     timestamp: datetime
     metadata: Optional[Dict[str, Any]] = None
+    type: Optional[str] = None  # Add type field for streaming compatibility
 
 class ConversationModel(BaseModel):
     id: str
@@ -33,22 +35,38 @@ class ConversationModel(BaseModel):
     hostname: Optional[str] = None
     messages: List[MessageModel] = []
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
     metadata: Optional[Dict[str, Any]] = None
 
+class UserPreferences(BaseModel):
+    aiStyle: Optional[str] = "balanced"
+    # Future preferences can be added here
+    
 class SendMessageRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
     hostname: Optional[str] = None
+    preferences: Optional[UserPreferences] = None
 
 class ConversationResponse(BaseModel):
     conversation: ConversationModel
     status: str = "success"
 
-def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
+def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[UserPreferences] = None) -> Agent:
     """Create a basic Agno agent with Gemini model"""
     
     model = Gemini(id=config.GEMINI_MODEL, api_key=config.GEMINI_API_KEY)
+    
+    # Define AI style behaviors
+    style_instructions = {
+        "flexible": "Be very flexible and creative. Be proactive and autonomous. You can make autonomous decisions and suggestions that go beyond the exact user request. Example, if the user ask for 'תוסיף חלב לעגלה', you don't have to list the products that you found, but just add the best fit product to the cart.",
+        "balanced": "Be helpful and efficient while staying focused on the user's specific request. Provide relevant suggestions and take reasonable initiative, but ask for clarification when needed.",
+        "strict": "Be precise and focused strictly on the user's exact request. Only perform the specific actions requested without making additional suggestions or taking extra assumptions unless explicitly asked. If the request is ambiguous or general (e.g., 'תוסיף חלב לעגלה'), always show the user product results first and ask for clarification."
+    }
+
+    # Set default style and get style instruction
+    current_style = preferences.aiStyle if preferences else "balanced"
+    style_instruction = style_instructions.get(current_style, style_instructions["balanced"])
     
     storage = PostgresStorage(
         table_name="conversations",
@@ -82,10 +100,11 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             "Then use the newspaper tools to read and extract the actual content from those URLs",
             "Provide comprehensive information based on the scraped content, not just URLs",
             "IMPORTANT: Never expose inside errors to the user!",
+            "CRITICAL: Whenever the user asks to search, show, or add specific products, you must ALWAYS use the search_products tool to fetch real product data. Never invent, summarize, or output products without using the tool first, since product availability and details may change.",
             "CRITICAL: When tool responses include images (markdown format like ![alt](url) or HTML img tags), ALWAYS preserve them exactly in your response. Do not summarize or rewrite responses that contain images - show them as-is.",
+            "CRITICAL: Never expose dev related things to the user. For example necer ask the user for a product_id, or any other dev related things.",
             "When displaying product search results, always include the original formatted output from the search tool, including any images, links, and formatting.",
-            "You can take initiative and perform actions on behalf of the user when the intent is clear, without asking for unnecessary confirmations.",
-            "For example, if the user asks to show milk products and then says \"add one of these to the cart,\" you should autonomously choose the most relevant or best option and add it.",
+            f"BEHAVIOR STYLE: {style_instruction}",
             """
             ## SEARCH_PRODUCTS Tool Instructions
             ### Search Strategy:
@@ -93,6 +112,7 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             2. **Singular/Plural**: Start with singular form (e.g., if asked for "מסטיקים" search for "מסטיק"), then try plural if no results where found
             3. **Alternative terms**: Try different Hebrew terms if initial search fails (e.g., "חלב" → "חלב טרי" → "מוצרי חלב")
             4. **Multiple products**: For multiple items, search each separately to get comprehensive results
+            5. **No unrelated products**: Never show unrelated products in the search results. If user asks for ״שעועית״, and the search tool returns products like ״קישוא״ - do not show it.
 
             ### Response Handling:
             The search_products tool returns array of products.
@@ -124,13 +144,19 @@ def create_basic_agent(request_headers: Dict[str, str]) -> Agent:
             **No Results:**
             If search fails, suggest alternative terms or products.
             """,
+            """
+            ## Cart Operations Tool Instructions:
+            All of the cart operation tools has a built in get_cart_contents tool call.
+            You need to use the get_cart_contents yourself if you want to get the cart contents with the product_ids.
+            """
         ],
         markdown=True,
         storage=storage,
+        session_state={"preferences": preferences.dict() if preferences else {"aiStyle": "balanced"}},
         add_datetime_to_instructions=True,
         add_history_to_messages=True,
         num_history_runs=5, # TODO: Find the magic number for us...
-        show_tool_calls=True,
+        show_tool_calls=False,
     )
     return agent
 
@@ -156,7 +182,7 @@ async def send_message(
             conversation_id = str(uuid.uuid4())
         
         # Create the agent
-        agent = create_basic_agent(request_headers)
+        agent = create_basic_agent(request_headers, request.preferences)
         
         async def generate_stream():
             # First, send conversation info to frontend
@@ -212,38 +238,130 @@ async def get_conversation(
             db_url=config.DATABASE_URL
         )
         
-        # Create a temporary agent with the storage to access the session
-        agent = Agent(storage=storage, session_id=conversation_id)
+        # Read the agent session directly from storage
+        agent_session = storage.read(session_id=conversation_id, user_id=str(current_user.id))
+        
+        if not agent_session:
+            raise HTTPException(status_code=404, detail=f"Conversation {conversation_id} not found")
 
-        # Get messages for the session
-        messages = agent.get_messages_for_session()
+        # Extract and format messages from agent session
+        result = []
+        
+        if agent_session.memory and 'runs' in agent_session.memory:
+            runs = agent_session.memory['runs']
+            
+            # Only process the last run since it contains the complete conversation
+            if runs:
+                last_run = runs[-1]
+                messages = last_run.get('messages', [])
+                print("PROCESSING LAST RUN\n", len(messages), "messages\n")
+                buffer = None
+                
+                for message in messages:
+                    role = message.get('role', '')
+                    content = message.get('content', '')
+                    timestamp = message.get('created_at', datetime.now().timestamp())
+                    
+                    if role == 'user':
+                        # Finalize any ongoing assistant message first
+                        if buffer:
+                            result.append(buffer)
+                            buffer = None
+                        
+                        # Add user message
+                        result.append({
+                            "id": f"user_{len(result)}_{int(timestamp)}",
+                            "sender": "human", 
+                            "content": content,
+                            "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                        })
+                    
+                    elif role == 'assistant':
+                        # If this is the first assistant message or we don't have a current one
+                        if not buffer:
+                            buffer = {
+                                "id": f"assistant_{len(result)}_{int(timestamp)}",
+                                "sender": "assistant",
+                                "content": [],
+                                "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                            }
+                        
+                        
+                        # Process content to extract products while preserving order
+                        if content:
+                            # Split content by product tags to preserve order
+                            parts = re.split(r'(<product>.*?</product>)', content, flags=re.DOTALL)
+                            
+                            for part in parts:
+                                part = part.strip()
+                                if not part:
+                                    continue
+                                    
+                                if part.startswith('<product>') and part.endswith('</product>'):
+                                    # Extract product JSON
+                                    product_json = part[9:-10]  # Remove <product> and </product>
+                                    try:
+                                        # Handle escaped quotes that might be double-escaped
+                                        cleaned_json = product_json.replace('\\"', '"').replace('\\\'', '\'')
+                                        product_data = json.loads(cleaned_json)
+                                        buffer["content"].append({
+                                            "type": "product",
+                                            "product": product_data,
+                                            "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                                        })
+                                    except json.JSONDecodeError as e:
+                                        # If JSON parsing still fails, try with original string
+                                        try:
+                                            product_data = json.loads(product_json)
+                                            buffer["content"].append({
+                                                "type": "product",
+                                                "product": product_data,
+                                                "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                                            })
+                                        except json.JSONDecodeError:
+                                            # If both attempts fail, treat as text
+                                            print(f"PRODUCT JSON ERROR: {e}")
+                                            print(f"Original JSON: {product_json}")
+                                            print(f"Cleaned JSON: {cleaned_json}")
 
-        # parsed_messages = [
-        #     {
-        #         "role": message.role,
-        #         "content": message.content,
-        #         "timestamp": getattr(message, 'timestamp', None)
-        #     }
-        #     for message in messages
-        # ]
+                                else:
+                                    # Regular text content
+                                    buffer["content"].append({
+                                        "type": "text",
+                                        "text": part,
+                                        "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                                    })
+                    elif role == 'tool':
+                        # Example: {'role': 'tool', 'content': ['**Added to Cart**\n**Website:** RAMI-LEVY\n**Product:** Product 3025\n**Quantity:** 5\n**Cart Item ID:** cart_3025'], 'metrics': {'time': 0.5974259579998034}, 'created_at': 1757405688, 'tool_calls': [{'content': '**Added to Cart**\n**Website:** RAMI-LEVY\n**Product:** Product 3025\n**Quantity:** 5\n**Cart Item ID:** cart_3025', 'tool_name': 'add_to_cart'}], 'from_history': False, 'stop_after_tool_call': False}
+                        tool_calls = message.get('tool_calls', [])
+                        if tool_calls:
+                            for tool_call in tool_calls:
+                                buffer["content"].append({
+                                    "type": "tool",
+                                    "tool": tool_call.get('tool_name', 'unknown_tool'),
+                                    "arguments": tool_call.get('content', 'unknown_content'),
+                                    "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                                })
 
-        conversation = ConversationModel(
-            id=conversation_id,
-            title="Conversation",
-            hostname="",
-            messages=messages,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-            metadata={}
-        )
+                    else:
+                        continue
+                
+                # Finalize any remaining assistant message
+                if buffer:
+                    result.append(buffer)
 
-        return ConversationResponse(conversation=conversation)
+        return {
+            "conversation_id": conversation_id,
+            "messages": result,
+            "total_messages": len(result)
+        }
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error retrieving conversation: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve conversation: {str(e)}")
+
 
 @router.get("/conversations")
 async def list_conversations(
@@ -254,15 +372,119 @@ async def list_conversations(
     try:
         logger.info(f"Listing conversations for user: {current_user.email} (limit: {limit})")
         
-        # Initialize PostgreSQL storage
-        storage = PostgresStorage(
-            table_name="conversations", 
-            db_url=config.DATABASE_URL
-        )
-        
-        # TODO: Implement proper conversation listing with user filtering
-        # For now, return empty list as placeholder
-        return {"conversations": [], "total": 0, "user": current_user.email}
+        # Get recent conversations for the user
+        # This queries the Agno storage for sessions belonging to the user
+        try:
+            # Get conversations from the database
+            # The storage.get_all_sessions() method gets all sessions, 
+            # but we need to filter by user_id
+            import psycopg
+            
+            conversations = []
+            
+            # Connect to the database directly to query user sessions
+            with psycopg.connect(config.DATABASE_URL) as conn:
+                with conn.cursor() as cur:
+                    # Query for sessions belonging to this user
+                    cur.execute("""
+                        SELECT 
+                            session_id,
+                            agent_data,
+                            created_at,
+                            updated_at,
+                            memory,
+                            extra_data
+                        FROM ai.conversations 
+                        WHERE user_id = %s
+                        ORDER BY updated_at DESC
+                        LIMIT %s
+                    """, (str(current_user.id), limit))
+                    
+                    rows = cur.fetchall()
+
+                    for row in rows:
+                        session_id, agent_data, created_at, updated_at, memory, extra_data = row
+                        
+                        # Extract hostname from session data
+                        hostname = "Unknown"
+                        if agent_data and 'session_data' in agent_data:
+                            hostname = agent_data['session_data'].get('hostname', 'Unknown')
+                        
+                        # Check if title already exists in extra_data
+                        title = None
+                        if extra_data and isinstance(extra_data, dict):
+                            title = extra_data.get('title')
+                        
+                        # Generate title from first user message if not exists
+                        if not title:
+                            # Extract title from memory -> runs -> first run -> first user message
+                            if memory:
+                                runs = memory.get('runs', [])
+                                if runs and len(runs) > 0:
+                                    # Get the first run
+                                    first_run = runs[0]
+                                    messages = first_run.get('messages', [])
+                                    
+                                    # Find the first user message
+                                    for msg in messages:
+                                        if msg.get('role') == 'user' and msg.get('content'):
+                                            content = msg['content'].strip()
+                                            if content:
+                                                # Use first 40 chars as title
+                                                title = content[:40] + ("..." if len(content) > 40 else "")
+                                                break
+                            
+                            # Store the generated title in extra_data
+                            if title:
+                                try:
+                                    # Initialize extra_data as empty dict if None
+                                    updated_extra_data = extra_data or {}
+                                    updated_extra_data['title'] = title
+                                    
+                                    # Update the database with the new title
+                                    cur.execute("""
+                                        UPDATE ai.conversations 
+                                        SET extra_data = %s 
+                                        WHERE session_id = %s AND user_id = %s
+                                    """, (json.dumps(updated_extra_data), session_id, str(current_user.id)))
+                                    
+                                    logger.info(f"Generated and stored title for conversation {session_id}: {title}")
+                                except Exception as e:
+                                    logger.error(f"Failed to store title for conversation {session_id}: {e}")
+                        
+                        # Fallback title if still None
+                        if not title:
+                            title = f"Conversation on {hostname}"
+                        
+                        # Extract messages for metadata (message count)
+                        messages = []
+                        if agent_data and 'memory' in agent_data and 'runs' in agent_data['memory']:
+                            runs = agent_data['memory']['runs']
+                            # Get messages from the latest run for count
+                            if runs and len(runs) > 0:
+                                latest_run = runs[-1]  # Last run has the most complete message list
+                                messages = latest_run.get('messages', [])
+                        
+                        conversation_item = ConversationModel(
+                            id=session_id,
+                            title=title,
+                            hostname=hostname,
+                            messages=[],  # We'll populate this when specifically requested
+                            created_at=created_at,
+                            updated_at=updated_at,
+                            metadata={'message_count': len(messages)}
+                        )
+                        conversations.append(conversation_item)
+            
+            return {
+                "conversations": [conv.dict() for conv in conversations], 
+                "total": len(conversations), 
+                "user": current_user.email
+            }
+            
+        except Exception as db_error:
+            logger.warning(f"Database query failed: {db_error}, returning empty list")
+            return {"conversations": [], "total": 0, "user": current_user.email}
         
     except Exception as e:
         logger.error(f"Error listing conversations: {e}")

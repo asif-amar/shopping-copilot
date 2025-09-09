@@ -4,7 +4,9 @@ import { useChat } from "@/hooks/useChat";
 import { LanguageProvider } from "@/hooks/useLanguage";
 import { Header, MessageList, ChatInput } from "@/components";
 import { AuthModal } from "@/components/AuthModal";
+import { ConversationsDrawer } from "@/components/ConversationsDrawer";
 import { ApiService } from "@/services/api";
+import { UserPreferences } from "@/types/preferences";
 
 const SidePanelContent: React.FC = () => {
   const {
@@ -13,30 +15,41 @@ const SidePanelContent: React.FC = () => {
     currentHostname,
     sendMessage,
     startNewConversation,
+    loadConversation,
   } = useChat();
-  
+
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
+  const [isConversationsDrawerOpen, setIsConversationsDrawerOpen] = useState(false);
+  const [refreshConversations, setRefreshConversations] = useState<(() => Promise<void>) | null>(null);
+
   useEffect(() => {
     checkAuthStatus();
   }, []);
-  
+
   const checkAuthStatus = async () => {
     const authenticated = await ApiService.isAuthenticated();
     setIsAuthenticated(authenticated);
   };
-  
-  const handleSendMessage = async (message: string) => {
+
+  const handleSendMessage = async (message: string, preferences?: UserPreferences) => {
     if (!isAuthenticated) {
       setIsAuthModalOpen(true);
       return;
     }
-    await sendMessage(message);
+    await sendMessage(message, preferences);
   };
-  
+
   const handleAuthSuccess = async () => {
     await checkAuthStatus();
+  };
+
+  const handleNewConversation = async () => {
+    await startNewConversation();
+    // Refresh conversations list when starting a new conversation
+    if (refreshConversations) {
+      await refreshConversations();
+    }
   };
 
   return (
@@ -52,17 +65,30 @@ const SidePanelContent: React.FC = () => {
     >
       <Header
         currentHostname={currentHostname}
-        onNewConversation={startNewConversation}
+        onNewConversation={handleNewConversation}
+        onOpenConversations={() => setIsConversationsDrawerOpen(true)}
       />
 
-      <MessageList messages={messages} isLoading={isLoading} onSendMessage={sendMessage} />
+      <MessageList
+        messages={messages}
+        isLoading={isLoading}
+        onSendMessage={sendMessage}
+      />
 
       <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
-      
-      <AuthModal 
+
+      <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onAuthSuccess={handleAuthSuccess}
+      />
+
+      <ConversationsDrawer
+        isOpen={isConversationsDrawerOpen}
+        onClose={() => setIsConversationsDrawerOpen(false)}
+        onLoadConversation={loadConversation}
+        preloadConversations={isAuthenticated}
+        onRefreshConversations={setRefreshConversations}
       />
     </div>
   );

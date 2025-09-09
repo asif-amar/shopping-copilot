@@ -9,9 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogClose,
 } from "./ui/Dialog";
 import { GoogleSignInButton } from "./ui/GoogleSignInButton";
+import { cn } from "../lib/utils";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -68,56 +68,23 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        style={{
-          direction: isRTL ? "rtl" : "ltr",
-          textAlign: isRTL ? "right" : "left",
-        }}
+        className={cn(isRTL ? "text-right" : "text-left")}
+        style={{ direction: isRTL ? "rtl" : "ltr" }}
       >
-        <DialogClose onClick={onClose} />
-
         <DialogHeader>
           {/* Icon */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              marginBottom: "var(--spacing-lg)",
-            }}
-          >
+          <div className="flex justify-center mb-6">
             <motion.div
               variants={iconVariants}
               initial="hidden"
               animate="visible"
-              style={{ position: "relative" }}
+              className="relative"
             >
-              <div
-                style={{
-                  width: "64px",
-                  height: "64px",
-                  background:
-                    "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
-                  borderRadius: "var(--border-radius-xl)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
                 <ShieldCheck size={32} color="white" />
               </div>
               <motion.div
-                style={{
-                  position: "absolute",
-                  top: "-4px",
-                  right: "-4px",
-                  width: "24px",
-                  height: "24px",
-                  background:
-                    "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+                className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-amber-400 to-amber-500 rounded-full flex items-center justify-center"
                 animate={{
                   scale: [1, 1.1, 1],
                   rotate: [0, 10, 0],
@@ -158,118 +125,80 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
 
         {/* Features */}
         <motion.div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "var(--spacing-md)",
-            marginBottom: "var(--spacing-xl)",
-            direction: isRTL ? "rtl" : "ltr",
-          }}
+          className="flex flex-col gap-4 mb-6"
+          style={{ direction: isRTL ? "rtl" : "ltr" }}
           variants={textVariants}
           initial="hidden"
           animate="visible"
           custom={2}
         >
           <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "var(--spacing-md)",
-              flexDirection: isRTL ? "row-reverse" : "row",
-              width: "100%",
-              textAlign: isRTL ? "right" : "left",
-              direction: isRTL ? "rtl" : "ltr",
-              justifyContent: isRTL ? "flex-end" : "flex-start",
-            }}
+            className={cn(
+              "flex items-center gap-4 w-full",
+              isRTL
+                ? "flex-row-reverse text-right justify-end"
+                : "flex-row text-left justify-start"
+            )}
           >
             <div
-              style={{
-                width: "8px",
-                height: "8px",
-                backgroundColor: "#10b981",
-                borderRadius: "50%",
-                flexShrink: 0,
-                order: isRTL ? 2 : 1,
-              }}
+              className={cn(
+                "w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0",
+                isRTL ? "order-2" : "order-1"
+              )}
             />
             <span
-              style={{
-                fontSize: "var(--font-size-sm)",
-                color: "var(--text-secondary)",
-                lineHeight: "1.4",
-                flex: 1,
-                order: isRTL ? 1 : 2,
-              }}
+              className={cn(
+                "text-sm text-muted-foreground leading-relaxed flex-1",
+                isRTL ? "order-1" : "order-2"
+              )}
             >
               {t("auth_feature_personalized")}
             </span>
           </div>
 
           <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "var(--spacing-md)",
-              flexDirection: isRTL ? "row-reverse" : "row",
-              width: "100%",
-              textAlign: isRTL ? "right" : "left",
-              direction: isRTL ? "rtl" : "ltr",
-              justifyContent: isRTL ? "flex-end" : "flex-start",
-            }}
+            className={cn(
+              "flex items-center gap-4 w-full",
+              isRTL
+                ? "flex-row-reverse text-right justify-end"
+                : "flex-row text-left justify-start"
+            )}
           >
             <div
-              style={{
-                width: "8px",
-                height: "8px",
-                backgroundColor: "#3b82f6",
-                borderRadius: "50%",
-                flexShrink: 0,
-                order: isRTL ? 2 : 1,
-              }}
+              className={cn(
+                "w-2 h-2 bg-blue-500 rounded-full flex-shrink-0",
+                isRTL ? "order-2" : "order-1"
+              )}
             />
             <span
-              style={{
-                fontSize: "var(--font-size-sm)",
-                color: "var(--text-secondary)",
-                lineHeight: "1.4",
-                flex: 1,
-                order: isRTL ? 1 : 2,
-              }}
+              className={cn(
+                "text-sm text-muted-foreground leading-relaxed flex-1",
+                isRTL ? "order-1" : "order-2"
+              )}
             >
               {t("auth_feature_history")}
             </span>
           </div>
 
           <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "var(--spacing-md)",
-              flexDirection: isRTL ? "row-reverse" : "row",
-              width: "100%",
-              textAlign: isRTL ? "right" : "left",
-              direction: isRTL ? "rtl" : "ltr",
-              justifyContent: isRTL ? "flex-end" : "flex-start",
-            }}
+            className={cn(
+              "flex items-center gap-4 w-full",
+              isRTL
+                ? "flex-row-reverse text-right justify-end"
+                : "flex-row text-left justify-start"
+            )}
           >
             <div
-              style={{
-                width: "8px",
-                height: "8px",
-                backgroundColor: "#6366f1",
-                borderRadius: "50%",
-                flexShrink: 0,
-                order: isRTL ? 2 : 1,
-              }}
+              className={cn(
+                "w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0",
+                isRTL ? "order-2" : "order-1"
+              )}
             />
             <span
-              style={{
-                fontSize: "var(--font-size-sm)",
-                color: "var(--text-secondary)",
-                lineHeight: "1.4",
-                flex: 1,
-                order: isRTL ? 1 : 2,
-              }}
+              className={cn(
+                "text-sm text-muted-foreground leading-relaxed flex-1",
+                isRTL ? "order-1" : "order-2"
+              )}
             >
               {t("auth_feature_secure")}
             </span>
@@ -282,7 +211,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
           initial="hidden"
           animate="visible"
           custom={3}
-          style={{ marginBottom: "var(--spacing-md)" }}
+          className="text-center"
         >
           <GoogleSignInButton
             onClick={handleSignIn}
@@ -299,13 +228,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
           initial="hidden"
           animate="visible"
           custom={4}
-          style={{
-            fontSize: "var(--font-size-xs)",
-            color: "var(--text-muted)",
-            textAlign: "center",
-            lineHeight: "1.4",
-            margin: "0",
-          }}
+          className="text-xs text-muted-foreground text-center leading-relaxed m-0"
         >
           {t("auth_privacy_note")}
         </motion.p>

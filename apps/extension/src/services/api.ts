@@ -7,6 +7,7 @@ import {
 import { BACKEND_URL } from "@/utils/constants";
 import { getSiteAdapterFromHostname } from "./websiteContext";
 import { CredentialExtractor } from "./credentialExtractor";
+import { UserPreferences } from "@/types/preferences";
 
 export type ShoppingActionResponse = {
   success: boolean;
@@ -20,6 +21,22 @@ export type ShoppingActionResponse = {
 export interface AuthResponse {
   access_token: string;
   token_type: string;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  profile_picture_url: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  last_login_at: string | null;
+}
+
+export interface UserProfileUpdate {
+  full_name?: string | null;
+  profile_picture_url?: string | null;
 }
 
 export class ApiService {
@@ -146,7 +163,8 @@ export class ApiService {
   static async sendMessage(
     content: string,
     conversationId?: string,
-    hostname?: string
+    hostname?: string,
+    preferences?: UserPreferences
   ): Promise<ReadableStreamDefaultReader<Uint8Array>> {
     const headers = await this.getHeaders(hostname);
 
@@ -160,6 +178,7 @@ export class ApiService {
         conversation_id: conversationId,
         user_id: "1",
         hostname: hostname,
+        preferences: preferences,
       }),
     });
 
@@ -374,12 +393,61 @@ export class ApiService {
   }
 
   /**
+   * Get user profile from backend
+   */
+  static async getUserProfile(): Promise<UserProfile> {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/user/me`, {
+      method: "GET",
+      headers
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.detail || `Failed to get user profile! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Update user profile
+   */
+  static async updateUserProfile(updates: UserProfileUpdate): Promise<UserProfile> {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/user/me`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.detail || `Failed to update user profile! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
    * Parse a stream chunk into various response types
    */
   static parseStreamChunk(
     chunk: string
   ):
     | { type: "message"; content: string }
+    | { type: "user_message"; content: string }
+    | { type: "response"; content: string }
     | { type: "action"; data: ShoppingActionResponse }
     | { type: "conversation_info"; conversationId: string; hostname: string }
     | { type: "complete"; conversationId: string }
@@ -424,6 +492,10 @@ export class ApiService {
 
           if (parsed.type === "response" && parsed.content) {
             return { type: "message", content: parsed.content };
+          }
+
+          if (parsed.type === "user_message" && parsed.content) {
+            return { type: "user_message", content: parsed.content };
           }
 
           if (parsed.type === "product_start") {

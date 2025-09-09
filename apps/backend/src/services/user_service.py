@@ -246,3 +246,55 @@ class UserService:
         except Exception as e:
             logger.error(f"Error getting active sessions count: {e}")
             return 0
+    
+    @staticmethod
+    @retry_db_operation(max_retries=3, delay=0.5)
+    def update_user_profile(
+        db: Session,
+        user_id: str,
+        full_name: Optional[str] = None,
+        profile_picture_url: Optional[str] = None
+    ) -> Optional[User]:
+        """Update user profile information."""
+        try:
+            # Get the user
+            user = db.query(User).filter(User.id == user_id).first()
+            
+            if not user:
+                logger.warning(f"User not found for profile update: {user_id}")
+                return None
+            
+            # Track if any changes were made
+            changes_made = False
+            
+            # Update full_name if provided
+            if full_name is not None and full_name != user.full_name:
+                user.full_name = full_name
+                changes_made = True
+                logger.info(f"Updated full_name for user {user.email}")
+            
+            # Update profile_picture_url if provided
+            if profile_picture_url is not None and profile_picture_url != user.profile_picture_url:
+                user.profile_picture_url = profile_picture_url
+                changes_made = True
+                logger.info(f"Updated profile_picture_url for user {user.email}")
+            
+            # Only commit if changes were made
+            if changes_made:
+                # updated_at is automatically updated by SQLAlchemy due to onupdate=func.now()
+                db.commit()
+                db.refresh(user)
+                logger.info(f"User profile updated successfully: {user.email}")
+            else:
+                logger.info(f"No changes made to user profile: {user.email}")
+            
+            return user
+            
+        except IntegrityError as e:
+            db.rollback()
+            logger.error(f"Integrity error updating user profile {user_id}: {e}")
+            raise
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error updating user profile {user_id}: {e}")
+            raise
