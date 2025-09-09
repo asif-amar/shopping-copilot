@@ -148,6 +148,7 @@ export function getToolDisplayName(toolName: string): string {
     add_to_cart: "הוספה לעגלה",
     get_cart: "צפייה בעגלה",
     remove_from_cart: "הסרה מהעגלה",
+    update_cart_quantity: "עדכון עגלה",
     get_product_details: "פרטי מוצר",
     search_deals: "חיפוש מבצעים",
     compare_prices: "השוואת מחירים",

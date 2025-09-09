@@ -482,12 +482,12 @@ class RamiLevyAdapter(BaseShoppingAdapter):
             cart_data = response.get('cart', {})
             current_cart = cart_data.get('items', {})
             
-            if quantity == 0:
-                # Remove item if quantity is 0
-                if product_id in current_cart:
-                    del current_cart[product_id]
-            else:
-                current_cart[product_id] = quantity
+            # if quantity == 0:
+            #     # Remove item if quantity is 0
+            #     if product_id in current_cart:
+            #         del current_cart[product_id]
+            # else:
+            current_cart[product_id] = quantity
             
             success = await self._update_cart(current_cart, credentials)
             
