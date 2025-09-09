@@ -134,18 +134,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
             <div className="flex flex-row gap-2">
               {/* Preferences button - left side */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <motion.button
-                    type="button"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 transition-colors flex items-center justify-center text-slate-600 hover:text-slate-700"
-                    title="Preferences"
-                  >
-                    <Settings2 size={14} />
-                  </motion.button>
-                </DropdownMenuTrigger>
+              <div className="group relative">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 transition-colors flex items-center justify-center text-slate-600 hover:text-slate-700"
+                    >
+                      <Settings2 size={14} />
+                    </motion.button>
+                  </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align={isRTL ? "end" : "start"}
                   className="w-56 bg-white border border-slate-200 shadow-lg max-h-[80vh] overflow-y-auto"
@@ -291,6 +291,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   {/* Future preferences can be added here */}
                 </DropdownMenuContent>
               </DropdownMenu>
+              {/* CSS-only Tooltip */}
+              <div className="absolute bottom-[-35px] left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-2 py-1.5 rounded-md text-xs font-medium whitespace-nowrap z-[1000] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ease-out">
+                {t("preferences") || "Preferences"}
+                <div className="absolute top-[-4px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-slate-800" />
+              </div>
+            </div>
               {/* AI Style Tag - only show when not balanced */}
               {preferences.aiStyle !== "balanced" && (
                 <motion.div
