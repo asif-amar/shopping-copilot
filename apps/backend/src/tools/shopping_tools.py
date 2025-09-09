@@ -416,7 +416,7 @@ class ShoppingTools(Toolkit):
             response_lines.extend(["", "**Items:**"])
             
             for i, item in enumerate(cart.items, 1):
-                item_lines = [f"{i}. **{item.product_title or item.title or item.description or ""}**", f"   - Quantity: {item.quantity}"]
+                item_lines = [f"{i}. **{item.product_title or item.title or item.description or ''}**", f"   - Quantity: {item.quantity}"]
                 
                 if item.unit_price is not None:
                     item_lines.append(f"   - Unit Price: {cart.currency} {item.unit_price:.2f}")

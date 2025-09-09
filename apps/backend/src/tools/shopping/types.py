@@ -4,7 +4,7 @@ Port of TypeScript interfaces from the MCP server
 """
 
 from dataclasses import dataclass
-from typing import Optional, List, Literal, Any
+from typing import Optional, List, Literal, Any, Union
 from pydantic import BaseModel
 
 
@@ -113,7 +113,7 @@ class ShufersalCredentials:
 
 
 # Type aliases for credential types
-CredentialsType = RamiLevyCredentials | ShufersalCredentials
+CredentialsType = Union[RamiLevyCredentials, ShufersalCredentials]
 
 
 # Pydantic models for structured responses (for Agno streaming)
