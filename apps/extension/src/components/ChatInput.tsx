@@ -137,16 +137,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               {/* Preferences button - left side */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Hint text={t("preferences") || "Preferences"}>
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 transition-colors flex items-center justify-center text-slate-600 hover:text-slate-700"
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 transition-colors flex items-center justify-center text-slate-600 hover:text-slate-700"
+                  >
+                    <Hint
+                      text={t("preferences") || "Preferences"}
+                      sideOffset={5}
                     >
                       <Settings2 size={14} />
-                    </motion.button>
-                  </Hint>
+                    </Hint>
+                  </motion.button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align={isRTL ? "end" : "start"}
