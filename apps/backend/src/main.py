@@ -7,6 +7,7 @@ from .config import config
 from .routes.conversation import router as conversation_router
 from .routes.auth import router as auth_router
 from .routes.user import router as user_router
+from .routes.feedback import router as feedback_router
 from .middleware import RequestLoggingMiddleware, SecurityHeadersMiddleware
 from .database import create_tables
 
@@ -62,6 +63,7 @@ async def health_check():
 app.include_router(conversation_router, prefix="/api")
 app.include_router(auth_router, prefix="/api/auth")
 app.include_router(user_router, prefix="/api/user")
+app.include_router(feedback_router, prefix="/api/feedback")
 
 # For Vercel deployment, the app instance is automatically detected
 # For local development, use: uvicorn src.main:app --host 127.0.0.1 --port 8000 --reload

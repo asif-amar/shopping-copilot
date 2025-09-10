@@ -94,6 +94,34 @@ class UserSession(Base):
         return f"<UserSession(id={self.id}, user_email='{self.user_email}', active={self.is_active})>"
 
 
+class UserFeedback(Base):
+    """Model for storing user feedback and feature requests."""
+    __tablename__ = "user_feedback"
+    
+    id = Column(String(36), primary_key=True, index=True, default=lambda: str(uuid4()))
+    user_id = Column(String(36), index=True, nullable=False)
+    user_email = Column(String(255), index=True, nullable=False)
+    feedback_type = Column(String(20), nullable=False)  # bug, feature, general, improvement
+    subject = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
+    status = Column(String(20), default="open", nullable=False)  # open, acknowledged, resolved, closed
+    priority = Column(String(10), default="medium", nullable=True)  # low, medium, high, critical
+    created_at = Column(DateTime(timezone=True), default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False)
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+    admin_notes = Column(Text, nullable=True)
+    
+    # Indexes for efficient queries
+    __table_args__ = (
+        Index('idx_feedback_user_created', 'user_id', 'created_at'),
+        Index('idx_feedback_type_status', 'feedback_type', 'status'),
+        Index('idx_feedback_created', 'created_at'),
+    )
+    
+    def __repr__(self):
+        return f"<UserFeedback(id={self.id}, type='{self.feedback_type}', user_email='{self.user_email}')>"
+
+
 def get_db() -> Session:
     """Get database session."""
     db = SessionLocal()

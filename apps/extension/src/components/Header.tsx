@@ -9,6 +9,7 @@ import {
   Menu,
   Languages,
   MessageSquare,
+  MessageCircle,
 } from "lucide-react";
 import {
   getSiteAdapterFromHostname,
@@ -19,6 +20,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { ApiService } from "@/services/api";
 import { AuthModal } from "./AuthModal";
 import { SettingsModal } from "./SettingsModal";
+import { FeedbackModal } from "./FeedbackModal";
 import { TooltipButton } from "./TooltipButton";
 import {
   DropdownMenu,
@@ -54,6 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
   useEffect(() => {
     checkAuthStatus();
@@ -255,7 +258,7 @@ export const Header: React.FC<HeaderProps> = ({
 
               <DropdownMenuSeparator />
 
-              {/* Settings - only show for authenticated users */}
+              {/* Settings & Feedback - only show for authenticated users */}
               {isAuthenticated && (
                 <>
                   <DropdownMenuItem
@@ -274,6 +277,25 @@ export const Header: React.FC<HeaderProps> = ({
                       <>
                         <span>{language === "he" ? "הגדרות" : "Settings"}</span>
                         <Settings size={16} />
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setIsFeedbackModalOpen(true)}
+                    className={cn(
+                      "cursor-pointer flex items-center gap-2",
+                      isRTL ? "flex-row" : "flex flex-row-reverse justify-end"
+                    )}
+                  >
+                    {isRTL ? (
+                      <>
+                        <MessageCircle size={16} />
+                        <span>{t("feedback")}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{t("feedback")}</span>
+                        <MessageCircle size={16} />
                       </>
                     )}
                   </DropdownMenuItem>
@@ -338,6 +360,10 @@ export const Header: React.FC<HeaderProps> = ({
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
+      />
+      <FeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
       />
     </motion.div>
   );

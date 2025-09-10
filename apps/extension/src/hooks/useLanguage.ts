@@ -85,6 +85,32 @@ const translations: Translations = {
     auth_and: "ו",
     auth_beta_notice:
       "זהו מוצר ניסיוני/בטא. השירות עלול להיות לא זמין או לא מושלם.",
+
+    // Feedback
+    feedback: "משוב",
+    feedback_title: "שתף אותנו במחשבותיך",
+    feedback_subtitle: "המשוב שלך עוזר לנו לשפר את החוויה",
+    feedback_type: "סוג המשוב",
+    feedback_type_bug: "דיווח על באג",
+    feedback_type_feature: "בקשת תכונה",
+    feedback_type_general: "משוב כללי",
+    feedback_type_improvement: "הצעה לשיפור",
+    feedback_subject: "נושא",
+    feedback_subject_placeholder: "תאר בקצרה את המשוב שלך...",
+    feedback_message: "הודעה",
+    feedback_message_placeholder: "ספר לנו יותר פרטים...",
+    feedback_submit: "שלח משוב",
+    feedback_submitting: "שולח...",
+    feedback_success: "תודה על המשוב!",
+    feedback_success_message: "המשוב שלך נקלט בהצלחה ויעזור לנו לשפר את המוצר",
+    feedback_error: "שגיאה בשליחת המשוב",
+    feedback_cancel: "ביטול",
+
+    // Validation messages
+    validation_subject_min: "הנושא חייב להכיל לפחות 3 תווים",
+    validation_subject_max: "הנושא לא יכול להכיל יותר מ-255 תווים",
+    validation_message_min: "ההודעה חייבת להכיל לפחות 5 תווים",
+    validation_message_max: "ההודעה לא יכולה להכיל יותר מ-2000 תווים",
   },
   en: {
     // Header
@@ -159,6 +185,33 @@ const translations: Translations = {
     auth_and: "and",
     auth_beta_notice:
       "This is an experimental/beta product. Service may be unavailable or imperfect.",
+
+    // Feedback
+    feedback: "Feedback",
+    feedback_title: "Share Your Thoughts",
+    feedback_subtitle: "Your feedback helps us improve the experience",
+    feedback_type: "Feedback Type",
+    feedback_type_bug: "Bug Report",
+    feedback_type_feature: "Feature Request",
+    feedback_type_general: "General Feedback",
+    feedback_type_improvement: "Improvement Suggestion",
+    feedback_subject: "Subject",
+    feedback_subject_placeholder: "What’s your feedback about?",
+    feedback_message: "Message",
+    feedback_message_placeholder: "Tell us more details...",
+    feedback_submit: "Submit Feedback",
+    feedback_submitting: "Submitting...",
+    feedback_success: "Thank you for your feedback!",
+    feedback_success_message:
+      "Your feedback has been received and will help us improve the product",
+    feedback_error: "Error submitting feedback",
+    feedback_cancel: "Cancel",
+
+    // Validation messages
+    validation_subject_min: "Subject must be at least 3 characters long",
+    validation_subject_max: "Subject cannot exceed 255 characters",
+    validation_message_min: "Message must be at least 5 characters long",
+    validation_message_max: "Message cannot exceed 2000 characters",
   },
 };
 

@@ -39,6 +39,21 @@ export interface UserProfileUpdate {
   profile_picture_url?: string | null;
 }
 
+export interface FeedbackSubmission {
+  type: "bug" | "feature" | "general" | "improvement";
+  subject: string;
+  message: string;
+}
+
+export interface FeedbackResponse {
+  id: string;
+  type: string;
+  subject: string;
+  message: string;
+  status: string;
+  created_at: string;
+}
+
 export class ApiService {
   private static readonly BASE_URL = BACKEND_URL;
 
@@ -433,6 +448,30 @@ export class ApiService {
       const error = await response.json().catch(() => ({}));
       throw new Error(
         error.detail || `Failed to update user profile! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Submit user feedback
+   */
+  static async submitFeedback(feedback: FeedbackSubmission): Promise<FeedbackResponse> {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/feedback/`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(feedback),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.detail || `Failed to submit feedback! status: ${response.status}`
       );
     }
 
