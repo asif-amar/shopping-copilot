@@ -5,7 +5,9 @@ import {
   TextPart,
   ToolCallPart,
   ProductsPart,
+  CartItemsPart,
   Product,
+  CartItem,
 } from "@/types/chat";
 import { ApiService } from "@/services/api";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -115,6 +117,41 @@ class StreamContentParser {
         continue;
       }
 
+      // Look for complete individual cart item tags
+      const cartItemTagMatch = this.textBuffer.match(
+        /<cart-item>(.*?)<\/cart-item>/s
+      );
+
+      if (cartItemTagMatch) {
+        console.log("✅ Found complete cart-item tag");
+        const [fullMatch, cartItemContent] = cartItemTagMatch;
+        const beforeTag = this.textBuffer.substring(
+          0,
+          this.textBuffer.indexOf(fullMatch)
+        );
+        const afterTag = this.textBuffer.substring(
+          this.textBuffer.indexOf(fullMatch) + fullMatch.length
+        );
+
+        // Add text before the tag if any
+        if (beforeTag.trim()) {
+          console.log(
+            "📝 Adding text before cart-item tag:",
+            beforeTag.substring(0, 50) + "..."
+          );
+          this._addTextPart(beforeTag);
+        }
+
+        // Parse and add individual cart item
+        console.log("🛒 Processing individual cart item");
+        this._handleIndividualCartItem(cartItemContent);
+
+        // Continue with remaining content
+        this.textBuffer = afterTag;
+        hasChanges = true;
+        continue;
+      }
+
       // Check for incomplete product tags - keep them in buffer
       const openProductIndex = this.textBuffer.lastIndexOf("<product>");
       const closeProductIndex = this.textBuffer.indexOf("</product>");
@@ -133,6 +170,23 @@ class StreamContentParser {
         break; // Wait for more content
       }
 
+      // Check for incomplete cart-item tags - keep them in buffer
+      const openCartItemIndex = this.textBuffer.lastIndexOf("<cart-item>");
+      const closeCartItemIndex = this.textBuffer.indexOf("</cart-item>");
+
+      if (openCartItemIndex !== -1 && closeCartItemIndex === -1) {
+        console.log(
+          "⏸️ Found incomplete cart-item tag, keeping in buffer from position:",
+          openCartItemIndex
+        );
+        const beforeIncomplete = this.textBuffer.substring(0, openCartItemIndex);
+        if (beforeIncomplete.trim()) {
+          this._addTextPart(beforeIncomplete);
+        }
+        this.textBuffer = this.textBuffer.substring(openCartItemIndex);
+        break; // Wait for more content
+      }
+
       // Check if we might have a partial opening product tag at the end
       const potentialProductStart = this.textBuffer.match(/<product?$/);
       if (potentialProductStart) {
@@ -148,6 +202,25 @@ class StreamContentParser {
         }
         this.textBuffer = this.textBuffer.substring(
           potentialProductStart.index!
+        );
+        break; // Wait for more content
+      }
+
+      // Check if we might have a partial opening cart-item tag at the end
+      const potentialCartItemStart = this.textBuffer.match(/<cart-item?$/);
+      if (potentialCartItemStart) {
+        console.log(
+          "⏸️ Found potential partial cart-item tag start, keeping in buffer"
+        );
+        const beforePotential = this.textBuffer.substring(
+          0,
+          potentialCartItemStart.index
+        );
+        if (beforePotential.trim()) {
+          this._addTextPart(beforePotential);
+        }
+        this.textBuffer = this.textBuffer.substring(
+          potentialCartItemStart.index!
         );
         break; // Wait for more content
       }
@@ -257,6 +330,44 @@ class StreamContentParser {
     } catch (error) {
       console.error("❌ Failed to parse individual product JSON:", error);
       console.error("❌ Problem JSON:", productContent);
+    }
+  }
+
+  private _handleIndividualCartItem(cartItemContent: string): void {
+    try {
+      console.log(
+        "🛒 Parsing individual cart item JSON:",
+        cartItemContent.substring(0, 100) + "..."
+      );
+      const cartItem: CartItem = JSON.parse(cartItemContent);
+      console.log("✅ Successfully parsed cart item:", cartItem.name);
+
+      // Find existing cart items part or create new one
+      let cartItemsPart = this.currentParts.find(
+        (part) => part.type === "cart-items"
+      ) as CartItemsPart | undefined;
+
+      if (!cartItemsPart) {
+        // Create new cart items part - no loading state, show items immediately
+        cartItemsPart = {
+          type: "cart-items",
+          id: `cart-items_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+          items: [],
+          isLoading: false, // Always false - show items immediately
+        };
+        this.currentParts.push(cartItemsPart);
+        console.log("🆕 Created new cart items part");
+      }
+
+      // Add cart item to existing array (create new array for React to detect change)
+      cartItemsPart.items = [...cartItemsPart.items, cartItem];
+      console.log(
+        "✅ Added cart item to part, total items:",
+        cartItemsPart.items.length
+      );
+    } catch (error) {
+      console.error("❌ Failed to parse individual cart item JSON:", error);
+      console.error("❌ Problem JSON:", cartItemContent);
     }
   }
 

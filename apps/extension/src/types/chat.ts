@@ -11,8 +11,21 @@ export interface Product {
   product_id: string;
 }
 
+export interface CartItem {
+  name: string;
+  price: string;
+  total_price: string;
+  quantity: number;
+  availability: string;
+  image: string;
+  brand?: string;
+  category?: string;
+  description?: string;
+  cart_item_id: string;
+}
+
 export interface MessagePart {
-  type: 'text' | 'tool-call' | 'products';
+  type: 'text' | 'tool-call' | 'products' | 'cart-items';
   id: string;
 }
 
@@ -35,7 +48,13 @@ export interface ProductsPart extends MessagePart {
   isLoading?: boolean;
 }
 
-export type MessagePartType = TextPart | ToolCallPart | ProductsPart;
+export interface CartItemsPart extends MessagePart {
+  type: 'cart-items';
+  items: CartItem[];
+  isLoading?: boolean;
+}
+
+export type MessagePartType = TextPart | ToolCallPart | ProductsPart | CartItemsPart;
 
 export interface ChatMessage {
   id: string;
