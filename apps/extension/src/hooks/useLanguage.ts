@@ -57,7 +57,8 @@ const translations: Translations = {
     flexible: "גמיש",
     balanced: "מאוזן",
     strict: "קפדן",
-    flexible_desc: "AI יבחר עבורך באופן חכם (למשל: 'הוסף חלב' → מוסיף חלב פופולרי)",
+    flexible_desc:
+      "AI יבחר עבורך באופן חכם (למשל: 'הוסף חלב' → מוסיף חלב פופולרי)",
     balanced_desc: "AI ישאל כשיהיה לא בטוח בהעדפות שלך",
     strict_desc: "AI תמיד ישאל הבהרות לפני פעולה",
 
@@ -78,6 +79,12 @@ const translations: Translations = {
     auth_sign_in_google: "התחבר עם Google",
     auth_signing_in: "מתחבר...",
     auth_privacy_note: "אנחנו לא נשמור מידע אישי ללא רשותך",
+    auth_agree_terms: "על ידי התחברות, אתה מסכים ל",
+    auth_terms_of_use: "תנאי השימוש",
+    auth_privacy_policy: "מדיניות הפרטיות",
+    auth_and: "ו",
+    auth_beta_notice:
+      "זהו מוצר ניסיוני/בטא. השירות עלול להיות לא זמין או לא מושלם.",
   },
   en: {
     // Header
@@ -123,7 +130,8 @@ const translations: Translations = {
     flexible: "Flexible",
     balanced: "Balanced",
     strict: "Strict",
-    flexible_desc: "AI will make smart choices for you (e.g., 'add milk' → adds popular milk)",
+    flexible_desc:
+      "AI will make smart choices for you (e.g., 'add milk' → adds popular milk)",
     balanced_desc: "AI will ask when unsure about your preferences",
     strict_desc: "AI will always ask for clarification before taking action",
 
@@ -145,6 +153,12 @@ const translations: Translations = {
     auth_signing_in: "Signing in...",
     auth_privacy_note:
       "We won't save personal information without your permission",
+    auth_agree_terms: "By signing in, you agree to our",
+    auth_terms_of_use: "Terms of Use",
+    auth_privacy_policy: "Privacy Policy",
+    auth_and: "and",
+    auth_beta_notice:
+      "This is an experimental/beta product. Service may be unavailable or imperfect.",
   },
 };
 

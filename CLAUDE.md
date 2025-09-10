@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Important
+
+Think carefully and only action the specific task that I have given you with the most concise and elegant solution that changes as little code as possible.
+
 ## Project Architecture
 
 This is a shopping assistant project with two main applications that work together:
@@ -12,6 +16,7 @@ This is a shopping assistant project with two main applications that work togeth
 ## Key Commands
 
 ### Monorepo Commands (Root Level)
+
 ```bash
 # Install all dependencies for all workspaces
 npm install
@@ -45,6 +50,7 @@ npm run clean          # Clean build artifacts
 ```
 
 ### Backend Development (Python FastAPI)
+
 ```bash
 cd apps/backend
 
@@ -68,6 +74,7 @@ npm run render:start  # Start with uvicorn on production host/port
 ```
 
 ### Chrome Extension Development
+
 ```bash
 cd apps/extension
 npm run dev          # Build with watch mode for development
@@ -83,6 +90,7 @@ npm run clean        # Clean dist folder
 ## Architecture Overview
 
 ### Backend Service Architecture (FastAPI + Agno)
+
 - **FastAPI** server with CORS configuration for Chrome extension integration
 - **Agno Toolkit integration** for shopping tools functionality using `ShoppingTools` class
 - **Shopping Adapters**: Extensible adapter pattern for different e-commerce sites (Rami Levy, Shufersal)
@@ -95,6 +103,7 @@ npm run clean        # Clean dist folder
   - `/api/chat/*` - Conversation handling with Agno integration
 
 ### Chrome Extension Architecture
+
 - **Manifest V3** Chrome extension with side panel UI
 - **React + TypeScript** frontend with Vite bundling
 - **Google OAuth integration** for user authentication
@@ -104,6 +113,7 @@ npm run clean        # Clean dist folder
 - **Website context detection** - Identifies current shopping website for contextual assistance
 
 ### Shopping Tools Integration
+
 - **Agno Toolkit**: Shopping functionality implemented as `ShoppingTools` class in `src/tools/shopping_tools.py`
 - **Supported Sites**: Rami Levy, Shufersal (Israeli grocery chains)
 - **Core Tools**: Product search, cart management (add/remove/update), price comparison
@@ -124,6 +134,7 @@ npm run clean        # Clean dist folder
 ## Environment Configuration
 
 ### Backend (.env)
+
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` - OAuth credentials
 - `JWT_SECRET_KEY` - For session management
 - `DATABASE_URL` - PostgreSQL connection string
@@ -133,6 +144,7 @@ npm run clean        # Clean dist folder
 - Shufersal credentials: `SHUFERSAL_CSRF_TOKEN`, `SHUFERSAL_COOKIE`
 
 ### Chrome Extension (manifest.json)
+
 - Google OAuth client ID configured in manifest
 - Host permissions for supported shopping sites and backend endpoints
 - Background service worker for credential capture
@@ -140,7 +152,9 @@ npm run clean        # Clean dist folder
 ## Key Development Patterns
 
 ### Shopping Tools Architecture
+
 Shopping functionality is organized in `/apps/backend/src/tools/shopping/`:
+
 - `shopping_tools.py` - Main Agno Toolkit implementation
 - `adapters/base_adapter.py` - Abstract base class defining shopping interface
 - `adapters/rami_levy_adapter.py`, `adapters/shufersal_adapter.py` - Site-specific implementations
@@ -149,19 +163,23 @@ Shopping functionality is organized in `/apps/backend/src/tools/shopping/`:
 - `credential_manager.py` - Credential extraction and management
 
 ### Chrome Extension Credential Flow
+
 - Background service worker intercepts network requests via `chrome.webRequest` API
 - Captures authentication headers and cookies from shopping site API calls
 - Stores credentials in Chrome storage for use by shopping tools
 - Extension sends credentials to backend via headers for tool authentication
 
 ### FastAPI + Agno Integration
+
 - Shopping tools implemented as Agno Toolkit class
 - Request headers passed to tools for credential extraction
 - Async tool execution with proper error handling
 - Structured response formatting for consistent UI display
 
 ## Database Schema
+
 Backend uses structured tables for:
+
 - User management with Google OAuth profiles
 - Conversation persistence with threading
 - Shopping session tracking per website

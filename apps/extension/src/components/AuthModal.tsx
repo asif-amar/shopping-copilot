@@ -11,6 +11,7 @@ import {
   DialogDescription,
 } from "./ui/Dialog";
 import { GoogleSignInButton } from "./ui/GoogleSignInButton";
+import { LegalModal } from "./LegalModal";
 import { cn } from "../lib/utils";
 
 interface AuthModalProps {
@@ -22,6 +23,9 @@ interface AuthModalProps {
 export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
   const { t, isRTL } = useLanguage();
   const [isSigningIn, setIsSigningIn] = React.useState(false);
+  const [legalModalType, setLegalModalType] = React.useState<
+    "terms" | "privacy" | null
+  >(null);
 
   const handleSignIn = async () => {
     if (isSigningIn) return;
@@ -222,17 +226,44 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
           </GoogleSignInButton>
         </motion.div>
 
-        {/* Privacy Note */}
-        <motion.p
+        {/* Terms Agreement */}
+        <motion.div
           variants={textVariants}
           initial="hidden"
           animate="visible"
-          custom={4}
-          className="text-xs text-muted-foreground text-center leading-relaxed m-0"
+          custom={5}
+          className="text-center"
         >
-          {t("auth_privacy_note")}
-        </motion.p>
+          <p className="text-xs text-muted-foreground leading-relaxed m-0 mb-2">
+            {t("auth_agree_terms")}{" "}
+            <button
+              onClick={() => setLegalModalType("terms")}
+              className="text-blue-600 hover:text-blue-800 underline"
+            >
+              {t("auth_terms_of_use")}
+            </button>{" "}
+            {t("auth_and")}{" "}
+            <button
+              onClick={() => setLegalModalType("privacy")}
+              className="text-blue-600 hover:text-blue-800 underline"
+            >
+              {t("auth_privacy_policy")}
+            </button>
+          </p>
+
+          <p className="text-xs text-muted-foreground text-center leading-relaxed m-0">
+            {/* {t("auth_privacy_note")} */}
+            {t("auth_beta_notice")}
+          </p>
+        </motion.div>
       </DialogContent>
+
+      {/* Legal Modal */}
+      <LegalModal
+        isOpen={legalModalType !== null}
+        onClose={() => setLegalModalType(null)}
+        type={legalModalType}
+      />
     </Dialog>
   );
 }
