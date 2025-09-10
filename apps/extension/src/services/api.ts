@@ -54,6 +54,34 @@ export interface FeedbackResponse {
   created_at: string;
 }
 
+export interface CreditStatus {
+  credits_remaining: number;
+  credits_total_monthly: number;
+  credits_reset_date: string | null;
+  plan_type: string;
+  is_low_credits: boolean;
+  credits_exhausted: boolean;
+  reset_due: boolean;
+}
+
+export interface CreditTransaction {
+  id: number;
+  credit_change: number;
+  credits_before: number;
+  credits_after: number;
+  reason: string;
+  conversation_id: string | null;
+  description: string | null;
+  created_at: string;
+}
+
+export interface CreditHistory {
+  transactions: CreditTransaction[];
+  total_count: number;
+  limit: number;
+  offset: number;
+}
+
 export class ApiService {
   private static readonly BASE_URL = BACKEND_URL;
 
@@ -479,6 +507,52 @@ export class ApiService {
   }
 
   /**
+   * Get user credit status
+   */
+  static async getUserCredits(): Promise<CreditStatus> {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/user/credits`, {
+      method: "GET",
+      headers
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.detail || `Failed to get user credits! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get user credit history
+   */
+  static async getCreditHistory(limit: number = 20, offset: number = 0): Promise<CreditHistory> {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/user/credit-history?limit=${limit}&offset=${offset}`, {
+      method: "GET",
+      headers
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.detail || `Failed to get credit history! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
    * Parse a stream chunk into various response types
    */
   static parseStreamChunk(
@@ -489,7 +563,7 @@ export class ApiService {
     | { type: "response"; content: string }
     | { type: "action"; data: ShoppingActionResponse }
     | { type: "conversation_info"; conversationId: string; hostname: string }
-    | { type: "complete"; conversationId: string }
+    | { type: "complete"; conversationId: string; credits_remaining?: number; is_low_credits?: boolean; credits_exhausted?: boolean }
     | { type: "thinking"; content: string }
     | { type: "tool"; content: string }
     | { type: "product_start" }
@@ -518,7 +592,13 @@ export class ApiService {
           }
 
           if (parsed.type === "complete") {
-            return { type: "complete", conversationId: parsed.conversation_id };
+            return { 
+              type: "complete", 
+              conversationId: parsed.conversation_id,
+              credits_remaining: parsed.credits_remaining,
+              is_low_credits: parsed.is_low_credits,
+              credits_exhausted: parsed.credits_exhausted
+            };
           }
 
           if (parsed.type === "thinking" && parsed.content) {

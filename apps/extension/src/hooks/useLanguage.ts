@@ -111,6 +111,24 @@ const translations: Translations = {
     validation_subject_max: "הנושא לא יכול להכיל יותר מ-255 תווים",
     validation_message_min: "ההודעה חייבת להכיל לפחות 5 תווים",
     validation_message_max: "ההודעה לא יכולה להכיל יותר מ-2000 תווים",
+
+    // Credit system
+    credits: "קרדיטים",
+    credits_remaining: "קרדיטים נותרים",
+    credits_monthly: "קרדיטים חודשיים",
+    credits_usage: "שימוש בקרדיטים",
+    credits_history: "היסטוריית קרדיטים",
+    credits_reset_date: "תאריך איפוס",
+    credits_low_warning: "קרדיטים נמוכים",
+    credits_exhausted: "הקרדיטים אזלו",
+    credits_low_message: "נותרו לך {count} קרדיטים",
+    credits_exhausted_message:
+      "הקרדיטים שלך אזלו. תוכל להמשיך לשלוח הודעות בחודש הבא.",
+    credits_refresh_next_month: "הקרדיטים יתחדשו ב-{date}",
+    credit_transaction_conversation: "שיחה",
+    credit_transaction_refund: "החזרה",
+    credit_transaction_monthly_reset: "איפוס חודשי",
+    credit_transaction_account_creation: "פתיחת חשבון",
   },
   en: {
     // Header
@@ -212,6 +230,24 @@ const translations: Translations = {
     validation_subject_max: "Subject cannot exceed 255 characters",
     validation_message_min: "Message must be at least 5 characters long",
     validation_message_max: "Message cannot exceed 2000 characters",
+
+    // Credit system
+    credits: "Credits",
+    credits_remaining: "Credits Remaining",
+    credits_monthly: "Monthly Credits",
+    credits_usage: "Credit Usage",
+    credits_history: "Credit History",
+    credits_reset_date: "Reset Date",
+    credits_low_warning: "Low Credits",
+    credits_exhausted: "Credits Exhausted",
+    credits_low_message: "You have {count} credits remaining",
+    credits_exhausted_message:
+      "You've used up your credits. You can continue sending messages next month.",
+    credits_refresh_next_month: "Credits will refresh on {date}",
+    credit_transaction_conversation: "Conversation",
+    credit_transaction_refund: "Refund",
+    credit_transaction_monthly_reset: "Monthly Reset",
+    credit_transaction_account_creation: "Account Creation",
   },
 };
 

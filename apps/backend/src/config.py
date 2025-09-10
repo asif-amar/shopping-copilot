@@ -41,6 +41,10 @@ class Config:
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = int(os.getenv("PORT", "8000"))
     
+    # Credit System Configuration
+    DEFAULT_MONTHLY_CREDITS: int = int(os.getenv("DEFAULT_MONTHLY_CREDITS", "50"))
+    CREDIT_LOW_WARNING_THRESHOLD: int = int(os.getenv("CREDIT_LOW_WARNING_THRESHOLD", "10"))
+    
     @classmethod
     def validate_required_env_vars(cls) -> None:
         """Validate that all required environment variables are set."""

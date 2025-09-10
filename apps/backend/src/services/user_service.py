@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, OperationalError, DisconnectionError
 
 from ..database import User, TokenBlacklist, UserSession
+from ..services.credit_service import CreditService
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,12 @@ class UserService:
                     if google_user_info.get("sub") and not user.google_id:
                         user.google_id = google_user_info["sub"]
                 
+                # Check if monthly credit reset is due
+                try:
+                    CreditService.get_user_credit_status(db, user.id)  # This handles reset if needed
+                except Exception as credit_error:
+                    logger.warning(f"Error checking credit status for user {email}: {credit_error}")
+                
                 db.commit()
                 logger.info(f"Updated existing user: {email}")
                 return user
@@ -91,6 +98,14 @@ class UserService:
             db.add(user)
             db.commit()
             db.refresh(user)
+            
+            # Initialize credits for new user
+            try:
+                CreditService.initialize_user_credits(db, user.id, plan_type="free")
+                logger.info(f"Initialized credits for new user: {email}")
+            except Exception as credit_error:
+                logger.error(f"Error initializing credits for new user {email}: {credit_error}")
+                # Don't fail user creation if credit initialization fails
             
             logger.info(f"Created new user: {email}")
             return user

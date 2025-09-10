@@ -17,6 +17,9 @@ from ..config import config
 from ..tools.shopping_tools import ShoppingTools
 from ..tools.shopping.constants import get_supported_sites
 from ..auth import get_current_active_user, UserResponse
+from ..services.credit_service import CreditService, InsufficientCreditsError
+from ..database import get_db_dependency
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["conversation"])
@@ -164,11 +167,36 @@ def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[Us
 async def send_message(
     request: SendMessageRequest, 
     http_request: Request,
-    current_user: UserResponse = Depends(get_current_active_user)
+    current_user: UserResponse = Depends(get_current_active_user),
+    db: Session = Depends(get_db_dependency)
 ):
     """Send a message to a conversation (creates new conversation if needed)"""
     try:
         logger.info(f"Processing message for user: {current_user.email}")
+
+        # Check if user has enough credits before processing
+        try:
+            if not CreditService.check_credit_availability(db, current_user.id, 1):
+                credit_status = CreditService.get_user_credit_status(db, current_user.id)
+                raise HTTPException(
+                    status_code=402,  # Payment Required
+                    detail={
+                        "error": "insufficient_credits",
+                        "message": "You don't have enough credits to send this message.",
+                        "credits_remaining": credit_status["credits_remaining"],
+                        "credits_exhausted": True
+                    }
+                )
+        except InsufficientCreditsError as e:
+            raise HTTPException(
+                status_code=402,
+                detail={
+                    "error": "insufficient_credits", 
+                    "message": str(e),
+                    "credits_remaining": e.available,
+                    "credits_exhausted": True
+                }
+            )
 
         # Extract headers for credential management
         request_headers = dict(http_request.headers)
@@ -184,41 +212,98 @@ async def send_message(
         # Create the agent
         agent = create_basic_agent(request_headers, request.preferences)
         
+        # Track if we should deduct credit (will be set after successful response)
+        should_deduct_credit = False
+        full_response_content = ""
+        
         async def generate_stream():
-            # First, send conversation info to frontend
-            yield f"data: {json.dumps({'type': 'conversation_info', 'conversation_id': conversation_id, 'hostname': request.hostname})}\n\n"
+            nonlocal should_deduct_credit, full_response_content
             
-            # Stream response with intermediate steps
-            response_stream = await agent.arun(
-                request.message, 
-                user_id=str(current_user.id), 
-                session_id=conversation_id,
-                stream=True,
-                stream_intermediate_steps=True
-            )
-            
-            async for event in response_stream:
-                # Stream tool call events
-                if event.event == "ToolCallStarted":
-                    print(f"\nEvent tool: {event.tool}\n")
-                    yield f"data: {json.dumps({'type': 'tool', 'content': f'{event.tool.tool_name}_started'})}\n\n"
-                elif event.event == "ToolCallCompleted":
-                    print(f"\nTool call completed: {event.tool.tool_name}\n")
-                    yield f"data: {json.dumps({'type': 'tool', 'content': f'{event.tool.tool_name}_completed'})}\n\n"
-                elif event.event == "ReasoningStep":
-                    print(f"\nReasoning step: {event.content}\n")
-                    yield f"data: {json.dumps({'type': 'thinking', 'content': f'💭 {event.content}'})}\n\n"
-                elif event.event == "RunResponseContent":
-                    # print(f"\nRun response content: {event.content}\n")
-                    print(event.content)
-                    # Stream content as-is without parsing
-                    yield f"data: {json.dumps({'type': 'response', 'content': event.content})}\n\n"
-            
-            # Send completion event
-            yield f"data: {json.dumps({'type': 'complete', 'conversation_id': conversation_id})}\n\n"
+            try:
+                # First, send conversation info to frontend
+                yield f"data: {json.dumps({'type': 'conversation_info', 'conversation_id': conversation_id, 'hostname': request.hostname})}\n\n"
+                
+                # Stream response with intermediate steps
+                response_stream = await agent.arun(
+                    request.message, 
+                    user_id=str(current_user.id), 
+                    session_id=conversation_id,
+                    stream=True,
+                    stream_intermediate_steps=True
+                )
+                
+                async for event in response_stream:
+                    # Stream tool call events
+                    if event.event == "ToolCallStarted":
+                        print(f"\nEvent tool: {event.tool}\n")
+                        yield f"data: {json.dumps({'type': 'tool', 'content': f'{event.tool.tool_name}_started'})}\n\n"
+                    elif event.event == "ToolCallCompleted":
+                        print(f"\nTool call completed: {event.tool.tool_name}\n")
+                        yield f"data: {json.dumps({'type': 'tool', 'content': f'{event.tool.tool_name}_completed'})}\n\n"
+                    elif event.event == "ReasoningStep":
+                        print(f"\nReasoning step: {event.content}\n")
+                        yield f"data: {json.dumps({'type': 'thinking', 'content': f'💭 {event.content}'})}\n\n"
+                    elif event.event == "RunResponseContent":
+                        # print(f"\nRun response content: {event.content}\n")
+                        print(event.content)
+                        # Capture response content for credit decision
+                        full_response_content += event.content
+                        # Stream content as-is without parsing
+                        yield f"data: {json.dumps({'type': 'response', 'content': event.content})}\n\n"
+                
+                # Mark successful response for credit deduction
+                should_deduct_credit = True
+                
+                # Handle credit deduction for successful responses
+                try:
+                    # Check if this response should be refunded (error/refresh indicators)
+                    if CreditService.should_refund_for_response(full_response_content):
+                        logger.info(f"Response contains error indicators, not deducting credit for user {current_user.email}")
+                        should_deduct_credit = False
+                    else:
+                        # Deduct credit for successful conversation
+                        CreditService.deduct_credit(
+                            db=db,
+                            user_id=current_user.id,
+                            reason="conversation",
+                            conversation_id=conversation_id,
+                            description=f"Message: {request.message[:100]}..."
+                        )
+                        logger.info(f"Deducted 1 credit for user {current_user.email} - conversation {conversation_id}")
+                        
+                except Exception as credit_error:
+                    logger.error(f"Error handling credit deduction: {credit_error}")
+                    # Continue anyway - don't fail the response due to credit issues
+                
+                # Send completion event with updated credit info
+                credit_status = CreditService.get_user_credit_status(db, current_user.id)
+                completion_data = {
+                    'type': 'complete', 
+                    'conversation_id': conversation_id,
+                    'credits_remaining': credit_status['credits_remaining'],
+                    'is_low_credits': credit_status['is_low_credits'],
+                    'credits_exhausted': credit_status['credits_exhausted']
+                }
+                yield f"data: {json.dumps(completion_data)}\n\n"
+                
+            except Exception as stream_error:
+                logger.error(f"Error in stream generation: {stream_error}")
+                # Don't deduct credit on stream errors
+                should_deduct_credit = False
+                yield f"data: {json.dumps({'type': 'error', 'message': 'An error occurred while processing your request.'})}\n\n"
         
-        return StreamingResponse(generate_stream(), media_type="text/event-stream")
+        # Create the streaming response
+        response = StreamingResponse(generate_stream(), media_type="text/event-stream")
         
+        # Handle credit deduction after streaming is complete
+        # Note: This is a bit tricky with streaming responses, so we'll handle it in the stream
+        # The actual credit deduction happens in the generate_stream function
+        
+        return response
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions (like insufficient credits)
+        raise
     except Exception as e:
         logger.error(f"Error processing message: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to process message: {str(e)}")

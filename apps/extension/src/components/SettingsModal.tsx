@@ -10,9 +10,11 @@ import {
   Check,
   X,
   Loader2,
+  Calendar,
 } from "lucide-react";
 import { useLanguage } from "../hooks/useLanguage";
 import { useUser } from "../hooks/useUser";
+import { useCredits } from "../hooks/useCredits";
 import { Dialog, DialogContent } from "./ui/Dialog";
 import { cn } from "../lib/utils";
 
@@ -69,11 +71,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="max-w-3xl w-full rounded-2xl h-[600px] p-0 gap-0"
+        className="max-w-3xl w-full rounded-2xl max-h-[85vh] h-auto p-0 gap-0"
         style={{ direction: isRTL ? "rtl" : "ltr" }}
         showCloseButton={false}
       >
-        <div className="flex h-full">
+        <div className="flex h-full min-h-[500px] max-h-[85vh]">
           {/* Sidebar */}
           <div
             className={cn(
@@ -161,7 +163,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 overflow-y-auto">{renderTabContent()}</div>
+          <div className="flex-1 overflow-y-auto">
+            {renderTabContent()}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -171,6 +175,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 // Account Tab Component
 function AccountTab({ language }: { language: string }) {
   const { user, loading, error, updating, updateProfile } = useUser();
+  const {
+    creditStatus,
+    loading: creditsLoading,
+    refreshCredits,
+  } = useCredits();
   const { isRTL } = useLanguage();
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
@@ -286,7 +295,7 @@ function AccountTab({ language }: { language: string }) {
   };
 
   return (
-    <div className="p-6" style={{ direction: isRTL ? "rtl" : "ltr" }}>
+    <div className="p-6 pb-8" style={{ direction: isRTL ? "rtl" : "ltr" }}>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800 mb-2">
           {language === "he" ? "חשבון" : "Account"}
@@ -476,6 +485,94 @@ function AccountTab({ language }: { language: string }) {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Credits Section */}
+        <div>
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">
+            {language === "he" ? "קרדיטים" : "Credits"}
+          </h3>
+          <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
+            {creditsLoading ? (
+              <div className="flex items-center gap-3 text-slate-600 justify-center py-4">
+                <Loader2 size={20} className="animate-spin" />
+                <span>{language === "he" ? "טוען..." : "Loading..."}</span>
+              </div>
+            ) : creditStatus ? (
+              <div className="space-y-6">
+                {/* Main Credits Display */}
+                <div className="text-center space-y-2">
+                  <div className="text-3xl font-bold text-slate-800">
+                    {creditStatus.credits_remaining}
+                  </div>
+                  <div className="text-sm text-slate-500">
+                    {language === "he" ? "קרדיטים נותרו" : "Credits remaining"}
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mt-4">
+                    <div className="w-full bg-slate-100 rounded-full h-2 mb-2">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${Math.min(100, (creditStatus.credits_remaining / creditStatus.credits_total_monthly) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {creditStatus.credits_remaining}{" "}
+                      {language === "he" ? "מתוך" : "of"}{" "}
+                      {creditStatus.credits_total_monthly}{" "}
+                      {language === "he" ? "בחודש" : "per month"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reset Date */}
+                {creditStatus.credits_reset_date && (
+                  <div className="text-center py-3 bg-slate-50 rounded-lg">
+                    <div className="flex items-center justify-center gap-2 text-slate-600">
+                      <Calendar size={16} />
+                      <span className="text-sm">
+                        {language === "he" ? "הקרדיטים יתחדשו ב-" : "Resets on"}{" "}
+                        {new Date(
+                          creditStatus.credits_reset_date
+                        ).toLocaleDateString(
+                          language === "he" ? "he-IL" : "en-US",
+                          { month: "long", day: "numeric" }
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Status Messages */}
+                {creditStatus.credits_exhausted && (
+                  <div className="text-center p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="text-red-800 font-medium text-sm">
+                      {language === "he"
+                        ? "הקרדיטים אזלו"
+                        : "Credits exhausted"}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center text-slate-600 py-4">
+                <div className="text-sm mb-2">
+                  {language === "he"
+                    ? "לא ניתן לטעון מידע קרדיטים"
+                    : "Unable to load credits information"}
+                </div>
+                <button
+                  onClick={refreshCredits}
+                  className="text-blue-600 hover:text-blue-700 text-xs cursor-pointer"
+                >
+                  {language === "he" ? "נסה שוב" : "Try again"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

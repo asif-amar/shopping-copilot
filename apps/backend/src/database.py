@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, Text, Index
@@ -43,6 +42,13 @@ class User(Base):
     full_name = Column(String(255), nullable=True)
     profile_picture_url = Column(String(512), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
+    
+    # Credit system fields
+    credits_remaining = Column(Integer, default=50, nullable=False)
+    credits_total_monthly = Column(Integer, default=50, nullable=False)
+    credits_reset_date = Column(DateTime(timezone=True), nullable=True)
+    plan_type = Column(String(20), default="free", nullable=False)
+    
     created_at = Column(DateTime(timezone=True), default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False)
     last_login_at = Column(DateTime(timezone=True), nullable=True)
@@ -120,6 +126,33 @@ class UserFeedback(Base):
     
     def __repr__(self):
         return f"<UserFeedback(id={self.id}, type='{self.feedback_type}', user_email='{self.user_email}')>"
+
+
+class UserCreditLog(Base):
+    """Model for tracking credit transactions and usage history."""
+    __tablename__ = "user_credit_log"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String(36), index=True, nullable=False)
+    user_email = Column(String(255), index=True, nullable=False)
+    credit_change = Column(Integer, nullable=False)  # Positive for additions, negative for deductions
+    credits_before = Column(Integer, nullable=False)
+    credits_after = Column(Integer, nullable=False)
+    reason = Column(String(50), nullable=False)  # conversation, refund, monthly_reset, manual_adjustment
+    conversation_id = Column(String(255), nullable=True)  # For conversation-related transactions
+    description = Column(String(500), nullable=True)  # Additional details
+    created_at = Column(DateTime(timezone=True), default=func.now(), nullable=False)
+    
+    # Indexes for efficient queries
+    __table_args__ = (
+        Index('idx_credit_log_user_created', 'user_id', 'created_at'),
+        Index('idx_credit_log_conversation', 'conversation_id'),
+        Index('idx_credit_log_reason', 'reason'),
+        Index('idx_credit_log_created', 'created_at'),
+    )
+    
+    def __repr__(self):
+        return f"<UserCreditLog(id={self.id}, user_email='{self.user_email}', change={self.credit_change}, reason='{self.reason}')>"
 
 
 def get_db() -> Session:

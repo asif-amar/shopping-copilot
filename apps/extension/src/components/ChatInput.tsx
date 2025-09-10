@@ -10,7 +10,9 @@ import {
   X,
 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useCredits } from "@/hooks/useCredits";
 import { cn } from "@/lib/utils";
+import { CreditWarningBanner } from "./CreditWarningBanner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,18 +44,28 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   isLoading,
 }) => {
   const { isRTL, t } = useLanguage();
+  const { creditStatus, refreshCredits } = useCredits();
   const [inputText, setInputText] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [preferences, setPreferences] =
     useState<UserPreferences>(DEFAULT_PREFERENCES);
+  const [showCreditWarning, setShowCreditWarning] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || isLoading) return;
+    
+    // Check if credits are exhausted
+    if (creditStatus?.credits_exhausted) {
+      return; // Don't send message if no credits
+    }
 
     const message = inputText.trim();
     setInputText("");
     await onSendMessage(message, preferences);
+    
+    // Refresh credits after sending message
+    await refreshCredits();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -63,7 +75,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const canSend = inputText.trim() && !isLoading;
+  const canSend = inputText.trim() && !isLoading && !creditStatus?.credits_exhausted;
 
   const getAIStyleConfig = (style: AIStyle) => {
     switch (style) {
@@ -102,6 +114,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       className="p-4 bg-white border-t border-slate-200 shrink-0"
       style={{ direction: isRTL ? "rtl" : "ltr" }}
     >
+      {/* Credit Warning Banner */}
+      {creditStatus && showCreditWarning && (
+        <CreditWarningBanner
+          creditsRemaining={creditStatus.credits_remaining}
+          isLowCredits={creditStatus.is_low_credits}
+          creditsExhausted={creditStatus.credits_exhausted}
+          resetDate={creditStatus.credits_reset_date}
+          onClose={() => setShowCreditWarning(false)}
+        />
+      )}
+      
       <motion.form
         onSubmit={handleSubmit}
         initial={{ opacity: 0, y: 10 }}
@@ -122,8 +145,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             onKeyDown={handleKeyDown}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            placeholder={t("type_message")}
-            disabled={isLoading}
+            placeholder={
+              creditStatus?.credits_exhausted 
+                ? (isRTL ? "הקרדיטים אזלו - לא ניתן לשלוח הודעות" : "Credits exhausted - cannot send messages")
+                : t("type_message")
+            }
+            disabled={isLoading || creditStatus?.credits_exhausted}
             className={cn(
               "w-full min-h-[20px] max-h-[120px] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-3 pb-4 ring-0 border-none rounded-xl text-sm resize-none outline-none bg-transparent text-slate-700 leading-5 box-border placeholder:text-slate-400",
               isRTL ? "text-right" : "text-left"
@@ -348,7 +375,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   ? "bg-blue-500 hover:bg-blue-600 text-white shadow-sm"
                   : "bg-slate-300 text-slate-500 cursor-not-allowed"
               )}
-              title={canSend ? t("send_message") : t("type_message")}
+              title={
+                creditStatus?.credits_exhausted 
+                  ? (isRTL ? "הקרדיטים אזלו" : "Credits exhausted")
+                  : canSend 
+                    ? t("send_message") 
+                    : t("type_message")
+              }
             >
               {isLoading ? (
                 <motion.div

@@ -2,7 +2,7 @@
 
 import logging
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, Query
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from ..database import get_db_dependency
 from ..auth import get_current_active_user, UserResponse
 from ..services.user_service import UserService
+from ..services.credit_service import CreditService
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,37 @@ class UserProfileResponse(BaseModel):
     created_at: str
     updated_at: str
     last_login_at: Optional[str] = None
+
+
+class CreditStatusResponse(BaseModel):
+    """Response model for user credit status."""
+    credits_remaining: int
+    credits_total_monthly: int
+    credits_reset_date: Optional[str] = None
+    plan_type: str
+    is_low_credits: bool
+    credits_exhausted: bool
+    reset_due: bool
+
+
+class CreditTransactionResponse(BaseModel):
+    """Response model for credit transaction."""
+    id: int
+    credit_change: int
+    credits_before: int
+    credits_after: int
+    reason: str
+    conversation_id: Optional[str] = None
+    description: Optional[str] = None
+    created_at: str
+
+
+class CreditHistoryResponse(BaseModel):
+    """Response model for credit history."""
+    transactions: list[CreditTransactionResponse]
+    total_count: int
+    limit: int
+    offset: int
 
 
 @router.get("/me", response_model=UserProfileResponse)
@@ -137,4 +169,54 @@ async def update_current_user_profile(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user profile"
+        )
+
+
+@router.get("/credits", response_model=CreditStatusResponse)
+async def get_user_credits(
+    current_user: UserResponse = Depends(get_current_active_user),
+    db: Session = Depends(get_db_dependency)
+) -> CreditStatusResponse:
+    """Get the current user's credit status."""
+    try:
+        credit_status = CreditService.get_user_credit_status(db, current_user.id)
+        return CreditStatusResponse(**credit_status)
+        
+    except Exception as e:
+        logger.error(f"Error getting credit status for user {current_user.email}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get credit status"
+        )
+
+
+@router.get("/credit-history", response_model=CreditHistoryResponse)
+async def get_user_credit_history(
+    current_user: UserResponse = Depends(get_current_active_user),
+    db: Session = Depends(get_db_dependency),
+    limit: int = Query(default=20, ge=1, le=100, description="Number of transactions to return"),
+    offset: int = Query(default=0, ge=0, description="Number of transactions to skip")
+) -> CreditHistoryResponse:
+    """Get the current user's credit transaction history."""
+    try:
+        history_data = CreditService.get_credit_history(db, current_user.id, limit, offset)
+        
+        # Convert transaction data to response models
+        transactions = [
+            CreditTransactionResponse(**transaction)
+            for transaction in history_data["transactions"]
+        ]
+        
+        return CreditHistoryResponse(
+            transactions=transactions,
+            total_count=history_data["total_count"],
+            limit=history_data["limit"],
+            offset=history_data["offset"]
+        )
+        
+    except Exception as e:
+        logger.error(f"Error getting credit history for user {current_user.email}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get credit history"
         )
