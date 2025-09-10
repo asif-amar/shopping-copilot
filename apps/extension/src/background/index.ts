@@ -8,11 +8,6 @@ console.log("🚀 Shopping assistant background script loaded");
 // Listen for ALL Rami Levy requests first to debug
 chrome.webRequest.onBeforeSendHeaders.addListener(
   (details) => {
-    console.log("🌐 Request intercepted:", {
-      url: details.url,
-      method: details.method,
-      type: details.type,
-    });
 
     // Capture from specific catalog API endpoint
     if (
@@ -22,12 +17,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
       console.log("🎯 Target API request detected!");
       const headers = details.requestHeaders || [];
 
-      console.log("DETAILS\n", details, "\n");
 
-      console.log(
-        "📋 All request headers:",
-        headers.map((h) => `${h.name}: ${h.value?.substring(0, 50)}...`)
-      );
 
       // Extract the required headers (try various possible names)
       const authHeader = headers.find(
@@ -36,9 +26,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
           h.name.toLowerCase() === "auth" ||
           h.name.toLowerCase() === "bearer"
       );
-      const cookieHeader = headers.find(
-        (h) => h.name.toLowerCase() === "cookie"
-      );
       const ecomtokenHeader = headers.find(
         (h) =>
           h.name.toLowerCase() === "ecomtoken" ||
@@ -46,15 +33,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
           h.name.toLowerCase() === "x-ecom-token"
       );
 
-      console.log("🔍 Found headers:", {
-        auth: authHeader
-          ? `${authHeader.name}: ${authHeader.value?.substring(0, 20)}...`
-          : "not found",
-        cookie: cookieHeader ? "found" : "not found",
-        ecomtoken: ecomtokenHeader
-          ? `${ecomtokenHeader.name}: ${ecomtokenHeader.value?.substring(0, 20)}...`
-          : "not found",
-      });
 
       // Always capture credentials when we detect the target API call
       console.log("💾 Capturing credentials for target API call...");
@@ -64,12 +42,10 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
       // Get headers from the request (auth/ecomtoken only, cookies are filtered out)
       if (authHeader) {
         credentials.authorization = authHeader.value;
-        console.log("🔑 Found authorization header");
       }
 
       if (ecomtokenHeader) {
         credentials.ecomtoken = ecomtokenHeader.value;
-        console.log("🎫 Found ecomtoken header");
       }
 
       // Always get cookies via Chrome cookies API for the exact domain
@@ -78,34 +54,16 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
           url: details.url, // Use the exact URL to get cookies that would be sent
         })
         .then((cookies) => {
-          console.log("🍪 Retrieved cookies via Chrome API for URL:", cookies.length);
-          console.log("🔗 Target URL:", details.url);
-
-          // Debug all cookies found
-          cookies.forEach((cookie, index) => {
-            console.log(`🍪 Cookie ${index + 1}:`, {
-              name: cookie.name,
-              domain: cookie.domain,
-              path: cookie.path,
-              secure: cookie.secure,
-              httpOnly: cookie.httpOnly,
-              sameSite: cookie.sameSite,
-              value: cookie.value.substring(0, 50) + (cookie.value.length > 50 ? "..." : "")
-            });
-          });
+          console.log("🍪 Retrieved", cookies.length, "cookies via Chrome API for URL:", details.url);
 
           if (cookies.length > 0) {
             const url = new URL(details.url);
-            console.log(`🔍 Filtering cookies for hostname: ${url.hostname}`);
-            
             const filteredCookies = cookies.filter(cookie => {
               const matches = (
                 cookie.domain === url.hostname ||
                 cookie.domain === '.' + url.hostname ||
                 url.hostname.endsWith(cookie.domain.replace('.', ''))
               );
-              
-              console.log(`🔍 Cookie ${cookie.name} (domain: ${cookie.domain}) matches ${url.hostname}:`, matches);
               return matches;
             });
             
@@ -118,11 +76,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 
             if (cookieHeader) {
               credentials.cookie = cookieHeader;
-              console.log(
-                "🍪 Cookie header constructed:",
-                cookieHeader.substring(0, 150) + (cookieHeader.length > 150 ? "..." : "")
-              );
-              console.log("🍪 Full cookie header length:", cookieHeader.length);
             } else {
               console.log("⚠️ No cookie header constructed (empty after filtering)");
             }
@@ -155,8 +108,8 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
           // Verify storage
           return chrome.storage.local.get("rami-levy-captured-headers");
         })
-        .then((result) => {
-          console.log("✅ Verification - stored data:", result);
+        .then((_result) => {
+          // console.log("✅ Verification - stored data:", _result); // Keep this commented out for debugging
         })
         .catch((error) => {
           console.error(
