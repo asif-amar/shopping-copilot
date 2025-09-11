@@ -59,8 +59,6 @@ const SidePanelContent: React.FC = () => {
         display: "flex",
         flexDirection: "column",
         background: "#ffffff",
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
       <Header

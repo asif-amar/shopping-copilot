@@ -47,8 +47,8 @@ const translations: Translations = {
     // Quick Actions
     quick_basic_items: "🥛 מצא מוצרי יסוד",
     quick_basic_items_desc: "חלב, לחם, ביצים",
-    quick_vegetables_sale: "🥦 תראה לי ירקות במבצע",
-    quick_recipe_suggestion: "🛒 הצע מתכון וקנה מרכיבים",
+    quick_vegetables_salad: "הוסף לסל קילו בננה טרייה",
+    quick_recipe_suggestion: "🛒 הצע מתכון לפנקייק וקנה מרכיבים",
 
     // Preferences
     preferences: "העדפות",
@@ -164,7 +164,7 @@ const translations: Translations = {
     // Quick Actions
     quick_basic_items: "🥛 Find basic items",
     quick_basic_items_desc: "milk, bread, eggs",
-    quick_vegetables_sale: "🥦 Show me vegetables on sale",
+    quick_vegetables_salad: "Find me vegetables to make a salad",
     quick_recipe_suggestion: "🛒 Suggest a recipe and buy ingredients",
 
     // Preferences

@@ -64,6 +64,7 @@ class CartItem:
     brand: Optional[str] = None
     category: Optional[str] = None
     url: Optional[str] = None
+    availability: Optional[bool] = None
 
 
 @dataclass

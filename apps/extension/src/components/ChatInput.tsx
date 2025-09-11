@@ -111,7 +111,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <div
-      className="p-4 bg-white border-t border-slate-200 shrink-0"
+      className="p-3 bg-white border-t border-slate-200 shrink-0"
       style={{ direction: isRTL ? "rtl" : "ltr" }}
     >
       {/* Credit Warning Banner */}

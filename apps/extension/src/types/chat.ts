@@ -11,31 +11,54 @@ export interface Product {
   product_id: string;
 }
 
+export interface CartItem {
+  name: string;
+  price: string;
+  total_price: string;
+  quantity: number;
+  availability: boolean;
+  image: string;
+  brand?: string;
+  category?: string;
+  description?: string;
+  cart_item_id: string;
+}
+
 export interface MessagePart {
-  type: 'text' | 'tool-call' | 'products';
+  type: "text" | "tool-call" | "products" | "cart-items";
   id: string;
 }
 
 export interface TextPart extends MessagePart {
-  type: 'text';
+  type: "text";
   content: string;
 }
 
 export interface ToolCallPart extends MessagePart {
-  type: 'tool-call';
+  type: "tool-call";
   toolName: string;
   displayName: string;
-  state: 'started' | 'completed' | 'error';
+  state: "started" | "completed" | "error";
   errorText?: string;
 }
 
 export interface ProductsPart extends MessagePart {
-  type: 'products';
+  type: "products";
   products: Product[];
   isLoading?: boolean;
 }
 
-export type MessagePartType = TextPart | ToolCallPart | ProductsPart;
+export interface CartItemsPart extends MessagePart {
+  type: "cart-items";
+  items: CartItem[];
+  isLoading?: boolean;
+}
+
+export type MessagePartType =
+  | TextPart
+  | ToolCallPart
+  | ProductsPart
+  | CartItemsPart;
 
 export interface ChatMessage {
   id: string;
@@ -51,12 +74,12 @@ export interface ChatState {
   currentHostname: string;
 }
 
-export type MessageType = 
-  | 'GET_CONVERSATION'
-  | 'SAVE_MESSAGE'
-  | 'CLEAR_CONVERSATION'
-  | 'GET_CURRENT_HOSTNAME'
-  | 'HOSTNAME_CHANGED';
+export type MessageType =
+  | "GET_CONVERSATION"
+  | "SAVE_MESSAGE"
+  | "CLEAR_CONVERSATION"
+  | "GET_CURRENT_HOSTNAME"
+  | "HOSTNAME_CHANGED";
 
 export interface ChromeMessage<T = any> {
   type: MessageType;

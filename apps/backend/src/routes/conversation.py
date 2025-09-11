@@ -105,14 +105,14 @@ def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[Us
             "IMPORTANT: Never expose inside errors to the user!",
             "CRITICAL: Whenever the user asks to search, show, or add specific products, you must ALWAYS use the search_products tool to fetch real product data. Never invent, summarize, or output products without using the tool first, since product availability and details may change.",
             "CRITICAL: When tool responses include images (markdown format like ![alt](url) or HTML img tags), ALWAYS preserve them exactly in your response. Do not summarize or rewrite responses that contain images - show them as-is.",
-            "CRITICAL: Never expose dev related things to the user. For example necer ask the user for a product_id, or any other dev related things.",
+            "CRITICAL: Never expose dev related things to the user. For example NEVER ask the user for a product_id, NEVER tell them about product_id, or any other dev related things.",
             "When displaying product search results, always include the original formatted output from the search tool, including any images, links, and formatting.",
             f"BEHAVIOR STYLE: {style_instruction}",
             """
             ## SEARCH_PRODUCTS Tool Instructions
             ### Search Strategy:
             1. **Language**: Always search in Hebrew for Israeli websites (e.g., "milk" → "חלב", "bread" → "לחם")
-            2. **Singular/Plural**: Start with singular form (e.g., if asked for "מסטיקים" search for "מסטיק"), then try plural if no results where found
+            2. **Singular/Plural**: Start with singular form (e.g., if asked for "מסטיקים" search for "מסטיק", if asked for "מלפפונים" search for "מלפפון"), then try plural if no results where found
             3. **Alternative terms**: Try different Hebrew terms if initial search fails (e.g., "חלב" → "חלב טרי" → "מוצרי חלב")
             4. **Multiple products**: For multiple items, search each separately to get comprehensive results
             5. **No unrelated products**: Never show unrelated products in the search results. If user asks for ״שעועית״, and the search tool returns products like ״קישוא״ - do not show it.
@@ -151,6 +151,31 @@ def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[Us
             ## Cart Operations Tool Instructions:
             All of the cart operation tools has a built in get_cart_contents tool call.
             You need to use the get_cart_contents yourself if you want to get the cart contents with the product_ids.
+            """,
+            """
+            # Multi-step thinking
+            When assigned any multi-step job, decompose it into clear subtasks, validate results at each step, and keep the user informed.
+
+            General rules:
+            - Always use the product search tool for any product-related lookup.
+            - Ask for clarification only when strictly necessary; otherwise make a reasonable default choice.
+
+            Shopping workflow (example: recipe → add ingredients):
+            1. Discover
+                a. Search for the recipe and extract a canonical ingredient list.
+                b. Return the recipe and ingredient list to the user and ask whether to add ingredients to cart, or whether they want manual confirmation per item.
+            2. Prepare to add
+                a. If user requests automatic add: proceed; if user requests per-item confirmation: ask before each add.
+            3. Add loop (repeat per ingredient, sequentially):
+                a. Search for the best matching product (prefer exact match, in-stock, same brand if specified).
+                b. If multiple matches are equally good, pick the top result — or ask the user if per-item confirmation was requested.
+                c. Attempt to add to cart. Confirm the add succeeded.
+                d. If add failed (out of stock, error), propose up to 2 substitutes with a short justification (brand/size/price) and ask whether to add a substitute or skip.
+                e. Only after confirming the add succeeded, continue to the next ingredient.
+            4. Finalize
+                a. Present a concise cart summary: items added, items skipped, substitutions made.
+
+            Tone: be concise and actionable in progress updates (e.g., "Added 3/8 — sugar (1kg)"). If the user asked for "auto-add", proceed automatically; otherwise ask before making cart changes.
             """
         ],
         markdown=True,
@@ -372,10 +397,10 @@ async def get_conversation(
                             }
                         
                         
-                        # Process content to extract products while preserving order
+                        # Process content to extract products and cart items while preserving order
                         if content:
-                            # Split content by product tags to preserve order
-                            parts = re.split(r'(<product>.*?</product>)', content, flags=re.DOTALL)
+                            # Split content by both product and cart-item tags to preserve order
+                            parts = re.split(r'(<product>.*?</product>|<cart-item>.*?</cart-item>)', content, flags=re.DOTALL)
                             
                             for part in parts:
                                 part = part.strip()
@@ -407,6 +432,33 @@ async def get_conversation(
                                             # If both attempts fail, treat as text
                                             print(f"PRODUCT JSON ERROR: {e}")
                                             print(f"Original JSON: {product_json}")
+                                            print(f"Cleaned JSON: {cleaned_json}")
+                                
+                                elif part.startswith('<cart-item>') and part.endswith('</cart-item>'):
+                                    # Extract cart item JSON
+                                    cart_item_json = part[11:-12]  # Remove <cart-item> and </cart-item>
+                                    try:
+                                        # Handle escaped quotes that might be double-escaped
+                                        cleaned_json = cart_item_json.replace('\\"', '"').replace('\\\'', '\'')
+                                        cart_item_data = json.loads(cleaned_json)
+                                        buffer["content"].append({
+                                            "type": "cart-item",
+                                            "cart_item": cart_item_data,
+                                            "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                                        })
+                                    except json.JSONDecodeError as e:
+                                        # If JSON parsing still fails, try with original string
+                                        try:
+                                            cart_item_data = json.loads(cart_item_json)
+                                            buffer["content"].append({
+                                                "type": "cart-item",
+                                                "cart_item": cart_item_data,
+                                                "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                                            })
+                                        except json.JSONDecodeError:
+                                            # If both attempts fail, treat as text
+                                            print(f"CART ITEM JSON ERROR: {e}")
+                                            print(f"Original JSON: {cart_item_json}")
                                             print(f"Cleaned JSON: {cleaned_json}")
 
                                 else:

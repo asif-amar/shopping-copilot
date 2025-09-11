@@ -6,11 +6,13 @@ import {
   TextPart,
   ToolCallPart,
   ProductsPart,
+  CartItemsPart,
 } from "@/types/chat";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ToolCall } from "./ToolCall";
 import { ProductGrid } from "./ProductGrid";
+import { CartItemList } from "./CartItemList";
 import { useLanguage } from "@/hooks/useLanguage";
 
 interface MessageBubbleProps {
@@ -30,6 +32,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         return (part as TextPart).content?.trim();
       } else if (part.type === "products") {
         return (part as ProductsPart).products.length > 0;
+      } else if (part.type === "cart-items") {
+        return (part as CartItemsPart).items.length > 0;
       } else if (part.type === "tool-call") {
         return true; // Tool calls are always visible
       }
@@ -245,6 +249,29 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             >
               <ProductGrid
                 products={productsPart.products}
+                isLoading={false}
+              />
+            </div>
+          );
+        } else if (part.type === "cart-items") {
+          const cartItemsPart = part as CartItemsPart;
+          console.log(
+            "🛒 Rendering CartItemList with",
+            cartItemsPart.items.length,
+            "items:",
+            cartItemsPart.items
+          );
+          return (
+            <div
+              key={part.id}
+              style={{
+                width: "100%",
+                maxWidth: "none",
+                marginBottom: index < message.parts.length - 1 ? "16px" : "0",
+              }}
+            >
+              <CartItemList
+                items={cartItemsPart.items}
                 isLoading={false}
               />
             </div>

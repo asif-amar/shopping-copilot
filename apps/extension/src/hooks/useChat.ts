@@ -5,7 +5,9 @@ import {
   TextPart,
   ToolCallPart,
   ProductsPart,
+  CartItemsPart,
   Product,
+  CartItem,
 } from "@/types/chat";
 import { ApiService } from "@/services/api";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -35,8 +37,6 @@ class StreamContentParser {
    */
   processChunk(content: string): MessagePartType[] {
     this.textBuffer += content;
-    console.log("🔍 Processing chunk:", content);
-    console.log("📦 Current buffer:", this.textBuffer);
     return this._parseBuffer();
   }
 
@@ -44,7 +44,6 @@ class StreamContentParser {
    * Get the final parts after processing all content
    */
   getfinalParts(): MessagePartType[] {
-    console.log("🏁 Finalizing with buffer:", this.textBuffer);
 
     // Flush any remaining text
     if (this.textBuffer.trim()) {
@@ -76,9 +75,6 @@ class StreamContentParser {
       hasChanges = false;
       iterations++;
 
-      console.log(
-        `🔄 Parse iteration ${iterations}, buffer length: ${this.textBuffer.length}`
-      );
 
       // Look for complete individual product tags
       const productTagMatch = this.textBuffer.match(
@@ -86,7 +82,6 @@ class StreamContentParser {
       );
 
       if (productTagMatch) {
-        console.log("✅ Found complete product tag");
         const [fullMatch, productContent] = productTagMatch;
         const beforeTag = this.textBuffer.substring(
           0,
@@ -98,16 +93,46 @@ class StreamContentParser {
 
         // Add text before the tag if any
         if (beforeTag.trim()) {
+          this._addTextPart(beforeTag);
+        }
+
+        // Parse and add individual product
+        this._handleIndividualProduct(productContent);
+
+        // Continue with remaining content
+        this.textBuffer = afterTag;
+        hasChanges = true;
+        continue;
+      }
+
+      // Look for complete individual cart item tags
+      const cartItemTagMatch = this.textBuffer.match(
+        /<cart-item>(.*?)<\/cart-item>/s
+      );
+
+      if (cartItemTagMatch) {
+        console.log("✅ Found complete cart-item tag");
+        const [fullMatch, cartItemContent] = cartItemTagMatch;
+        const beforeTag = this.textBuffer.substring(
+          0,
+          this.textBuffer.indexOf(fullMatch)
+        );
+        const afterTag = this.textBuffer.substring(
+          this.textBuffer.indexOf(fullMatch) + fullMatch.length
+        );
+
+        // Add text before the tag if any
+        if (beforeTag.trim()) {
           console.log(
-            "📝 Adding text before product tag:",
+            "📝 Adding text before cart-item tag:",
             beforeTag.substring(0, 50) + "..."
           );
           this._addTextPart(beforeTag);
         }
 
-        // Parse and add individual product
-        console.log("📦 Processing individual product");
-        this._handleIndividualProduct(productContent);
+        // Parse and add individual cart item
+        console.log("🛒 Processing individual cart item");
+        this._handleIndividualCartItem(cartItemContent);
 
         // Continue with remaining content
         this.textBuffer = afterTag;
@@ -121,10 +146,6 @@ class StreamContentParser {
 
       if (openProductIndex !== -1 && closeProductIndex === -1) {
         // We have an opening product tag but no closing tag - keep everything from the opening tag
-        console.log(
-          "⏸️ Found incomplete product tag, keeping in buffer from position:",
-          openProductIndex
-        );
         const beforeIncomplete = this.textBuffer.substring(0, openProductIndex);
         if (beforeIncomplete.trim()) {
           this._addTextPart(beforeIncomplete);
@@ -133,12 +154,26 @@ class StreamContentParser {
         break; // Wait for more content
       }
 
+      // Check for incomplete cart-item tags - keep them in buffer
+      const openCartItemIndex = this.textBuffer.lastIndexOf("<cart-item>");
+      const closeCartItemIndex = this.textBuffer.indexOf("</cart-item>");
+
+      if (openCartItemIndex !== -1 && closeCartItemIndex === -1) {
+        console.log(
+          "⏸️ Found incomplete cart-item tag, keeping in buffer from position:",
+          openCartItemIndex
+        );
+        const beforeIncomplete = this.textBuffer.substring(0, openCartItemIndex);
+        if (beforeIncomplete.trim()) {
+          this._addTextPart(beforeIncomplete);
+        }
+        this.textBuffer = this.textBuffer.substring(openCartItemIndex);
+        break; // Wait for more content
+      }
+
       // Check if we might have a partial opening product tag at the end
       const potentialProductStart = this.textBuffer.match(/<product?$/);
       if (potentialProductStart) {
-        console.log(
-          "⏸️ Found potential partial product tag start, keeping in buffer"
-        );
         const beforePotential = this.textBuffer.substring(
           0,
           potentialProductStart.index
@@ -152,14 +187,30 @@ class StreamContentParser {
         break; // Wait for more content
       }
 
+      // Check if we might have a partial opening cart-item tag at the end
+      const potentialCartItemStart = this.textBuffer.match(/<cart-item?$/);
+      if (potentialCartItemStart) {
+        console.log(
+          "⏸️ Found potential partial cart-item tag start, keeping in buffer"
+        );
+        const beforePotential = this.textBuffer.substring(
+          0,
+          potentialCartItemStart.index
+        );
+        if (beforePotential.trim()) {
+          this._addTextPart(beforePotential);
+        }
+        this.textBuffer = this.textBuffer.substring(
+          potentialCartItemStart.index!
+        );
+        break; // Wait for more content
+      }
+
       // Legacy support: Look for complete product_search_results wrapper (optional)
       const wrapperTagMatch = this.textBuffer.match(
         /<product_search_results>(.*?)<\/product_search_results>/s
       );
       if (wrapperTagMatch) {
-        console.log(
-          "✅ Found legacy product_search_results wrapper, extracting products"
-        );
         const [fullMatch, wrapperContent] = wrapperTagMatch;
         const beforeTag = this.textBuffer.substring(
           0,
@@ -190,10 +241,6 @@ class StreamContentParser {
 
       // No product tags found, process as regular text
       if (this.textBuffer.trim()) {
-        console.log(
-          "📝 Adding remaining text:",
-          this.textBuffer.substring(0, 50) + "..."
-        );
         this._addTextPart(this.textBuffer);
         this.textBuffer = "";
       }
@@ -224,10 +271,6 @@ class StreamContentParser {
 
   private _handleIndividualProduct(productContent: string): void {
     try {
-      console.log(
-        "📦 Parsing individual product JSON:",
-        productContent.substring(0, 100) + "..."
-      );
       const product: Product = JSON.parse(productContent);
       console.log("✅ Successfully parsed product:", product.name);
 
@@ -245,7 +288,6 @@ class StreamContentParser {
           isLoading: false, // Always false - show products immediately
         };
         this.currentParts.push(productsPart);
-        console.log("🆕 Created new products part");
       }
 
       // Add product to existing array (create new array for React to detect change)
@@ -257,6 +299,44 @@ class StreamContentParser {
     } catch (error) {
       console.error("❌ Failed to parse individual product JSON:", error);
       console.error("❌ Problem JSON:", productContent);
+    }
+  }
+
+  private _handleIndividualCartItem(cartItemContent: string): void {
+    try {
+      console.log(
+        "🛒 Parsing individual cart item JSON:",
+        cartItemContent.substring(0, 100) + "..."
+      );
+      const cartItem: CartItem = JSON.parse(cartItemContent);
+      console.log("✅ Successfully parsed cart item:", cartItem.name);
+
+      // Find existing cart items part or create new one
+      let cartItemsPart = this.currentParts.find(
+        (part) => part.type === "cart-items"
+      ) as CartItemsPart | undefined;
+
+      if (!cartItemsPart) {
+        // Create new cart items part - no loading state, show items immediately
+        cartItemsPart = {
+          type: "cart-items",
+          id: `cart-items_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+          items: [],
+          isLoading: false, // Always false - show items immediately
+        };
+        this.currentParts.push(cartItemsPart);
+        console.log("🆕 Created new cart items part");
+      }
+
+      // Add cart item to existing array (create new array for React to detect change)
+      cartItemsPart.items = [...cartItemsPart.items, cartItem];
+      console.log(
+        "✅ Added cart item to part, total items:",
+        cartItemsPart.items.length
+      );
+    } catch (error) {
+      console.error("❌ Failed to parse individual cart item JSON:", error);
+      console.error("❌ Problem JSON:", cartItemContent);
     }
   }
 
@@ -360,11 +440,12 @@ export function useChat(): UseChatReturn {
                 
                 // Process content array to preserve order
                 let currentProducts: any[] = [];
+                let currentCartItems: any[] = [];
                 
                 msg.content.forEach((contentItem: any, index: number) => {
                   switch (contentItem.type) {
                     case "text":
-                      // If we have accumulated products, add them first
+                      // If we have accumulated products or cart items, add them first
                       if (currentProducts.length > 0) {
                         parts.push({
                           type: "products",
@@ -373,6 +454,15 @@ export function useChat(): UseChatReturn {
                           isLoading: false
                         });
                         currentProducts = [];
+                      }
+                      if (currentCartItems.length > 0) {
+                        parts.push({
+                          type: "cart-items",
+                          id: `cart-items_${msg.id}_${parts.length}`,
+                          items: currentCartItems,
+                          isLoading: false
+                        });
+                        currentCartItems = [];
                       }
                       
                       // Add text part
@@ -386,7 +476,7 @@ export function useChat(): UseChatReturn {
                       break;
                       
                     case "tool":
-                      // If we have accumulated products, add them first
+                      // If we have accumulated products or cart items, add them first
                       if (currentProducts.length > 0) {
                         parts.push({
                           type: "products",
@@ -395,6 +485,15 @@ export function useChat(): UseChatReturn {
                           isLoading: false
                         });
                         currentProducts = [];
+                      }
+                      if (currentCartItems.length > 0) {
+                        parts.push({
+                          type: "cart-items",
+                          id: `cart-items_${msg.id}_${parts.length}`,
+                          items: currentCartItems,
+                          isLoading: false
+                        });
+                        currentCartItems = [];
                       }
                       
                       // Add tool call part
@@ -414,17 +513,32 @@ export function useChat(): UseChatReturn {
                       }
                       break;
                       
+                    case "cart-item":
+                      // Accumulate cart items to group them together
+                      if (contentItem.cart_item) {
+                        currentCartItems.push(contentItem.cart_item);
+                      }
+                      break;
+                      
                     default:
                       console.warn("Unknown content type:", contentItem.type);
                   }
                 });
                 
-                // Add any remaining accumulated products
+                // Add any remaining accumulated products and cart items
                 if (currentProducts.length > 0) {
                   parts.push({
                     type: "products",
                     id: `products_${msg.id}_${parts.length}`,
                     products: currentProducts,
+                    isLoading: false
+                  });
+                }
+                if (currentCartItems.length > 0) {
+                  parts.push({
+                    type: "cart-items",
+                    id: `cart-items_${msg.id}_${parts.length}`,
+                    items: currentCartItems,
                     isLoading: false
                   });
                 }
@@ -513,7 +627,6 @@ export function useChat(): UseChatReturn {
 
           if (!parsedEvent) continue;
 
-          console.log("📨 Stream event:", parsedEvent.type, parsedEvent);
 
           switch (parsedEvent.type) {
             case "conversation_info":
@@ -708,11 +821,12 @@ export function useChat(): UseChatReturn {
           
           // Process content array to preserve order
           let currentProducts: any[] = [];
+          let currentCartItems: any[] = [];
           
           msg.content.forEach((contentItem: any, index: number) => {
             switch (contentItem.type) {
               case "text":
-                // If we have accumulated products, add them first
+                // If we have accumulated products or cart items, add them first
                 if (currentProducts.length > 0) {
                   parts.push({
                     type: "products",
@@ -721,6 +835,15 @@ export function useChat(): UseChatReturn {
                     isLoading: false
                   });
                   currentProducts = [];
+                }
+                if (currentCartItems.length > 0) {
+                  parts.push({
+                    type: "cart-items",
+                    id: `cart-items_${msg.id}_${parts.length}`,
+                    items: currentCartItems,
+                    isLoading: false
+                  });
+                  currentCartItems = [];
                 }
                 
                 // Add text part
@@ -734,7 +857,7 @@ export function useChat(): UseChatReturn {
                 break;
                 
               case "tool":
-                // If we have accumulated products, add them first
+                // If we have accumulated products or cart items, add them first
                 if (currentProducts.length > 0) {
                   parts.push({
                     type: "products",
@@ -743,6 +866,15 @@ export function useChat(): UseChatReturn {
                     isLoading: false
                   });
                   currentProducts = [];
+                }
+                if (currentCartItems.length > 0) {
+                  parts.push({
+                    type: "cart-items",
+                    id: `cart-items_${msg.id}_${parts.length}`,
+                    items: currentCartItems,
+                    isLoading: false
+                  });
+                  currentCartItems = [];
                 }
                 
                 // Add tool call part
@@ -762,17 +894,32 @@ export function useChat(): UseChatReturn {
                 }
                 break;
                 
+              case "cart-item":
+                // Accumulate cart items to group them together
+                if (contentItem.cart_item) {
+                  currentCartItems.push(contentItem.cart_item);
+                }
+                break;
+                
               default:
                 console.warn("Unknown content type:", contentItem.type);
             }
           });
           
-          // Add any remaining accumulated products
+          // Add any remaining accumulated products and cart items
           if (currentProducts.length > 0) {
             parts.push({
               type: "products",
               id: `products_${msg.id}_${parts.length}`,
               products: currentProducts,
+              isLoading: false
+            });
+          }
+          if (currentCartItems.length > 0) {
+            parts.push({
+              type: "cart-items",
+              id: `cart-items_${msg.id}_${parts.length}`,
+              items: currentCartItems,
               isLoading: false
             });
           }
