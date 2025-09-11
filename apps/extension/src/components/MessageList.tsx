@@ -23,9 +23,8 @@ export const MessageList: React.FC<MessageListProps> = ({
   };
 
   useEffect(() => {
-    // Only scroll down if the last message is from the user or the assistant is done responding.
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage && (lastMessage.isUser || lastMessage.isComplete)) {
+    // Auto-scroll for new messages or when messages are updated (including streaming)
+    if (messages.length > 0) {
       scrollToBottom();
     }
   }, [messages]);
