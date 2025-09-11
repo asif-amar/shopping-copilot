@@ -440,11 +440,12 @@ export function useChat(): UseChatReturn {
                 
                 // Process content array to preserve order
                 let currentProducts: any[] = [];
+                let currentCartItems: any[] = [];
                 
                 msg.content.forEach((contentItem: any, index: number) => {
                   switch (contentItem.type) {
                     case "text":
-                      // If we have accumulated products, add them first
+                      // If we have accumulated products or cart items, add them first
                       if (currentProducts.length > 0) {
                         parts.push({
                           type: "products",
@@ -453,6 +454,15 @@ export function useChat(): UseChatReturn {
                           isLoading: false
                         });
                         currentProducts = [];
+                      }
+                      if (currentCartItems.length > 0) {
+                        parts.push({
+                          type: "cart-items",
+                          id: `cart-items_${msg.id}_${parts.length}`,
+                          items: currentCartItems,
+                          isLoading: false
+                        });
+                        currentCartItems = [];
                       }
                       
                       // Add text part
@@ -466,7 +476,7 @@ export function useChat(): UseChatReturn {
                       break;
                       
                     case "tool":
-                      // If we have accumulated products, add them first
+                      // If we have accumulated products or cart items, add them first
                       if (currentProducts.length > 0) {
                         parts.push({
                           type: "products",
@@ -475,6 +485,15 @@ export function useChat(): UseChatReturn {
                           isLoading: false
                         });
                         currentProducts = [];
+                      }
+                      if (currentCartItems.length > 0) {
+                        parts.push({
+                          type: "cart-items",
+                          id: `cart-items_${msg.id}_${parts.length}`,
+                          items: currentCartItems,
+                          isLoading: false
+                        });
+                        currentCartItems = [];
                       }
                       
                       // Add tool call part
@@ -494,17 +513,32 @@ export function useChat(): UseChatReturn {
                       }
                       break;
                       
+                    case "cart-item":
+                      // Accumulate cart items to group them together
+                      if (contentItem.cart_item) {
+                        currentCartItems.push(contentItem.cart_item);
+                      }
+                      break;
+                      
                     default:
                       console.warn("Unknown content type:", contentItem.type);
                   }
                 });
                 
-                // Add any remaining accumulated products
+                // Add any remaining accumulated products and cart items
                 if (currentProducts.length > 0) {
                   parts.push({
                     type: "products",
                     id: `products_${msg.id}_${parts.length}`,
                     products: currentProducts,
+                    isLoading: false
+                  });
+                }
+                if (currentCartItems.length > 0) {
+                  parts.push({
+                    type: "cart-items",
+                    id: `cart-items_${msg.id}_${parts.length}`,
+                    items: currentCartItems,
                     isLoading: false
                   });
                 }
@@ -787,11 +821,12 @@ export function useChat(): UseChatReturn {
           
           // Process content array to preserve order
           let currentProducts: any[] = [];
+          let currentCartItems: any[] = [];
           
           msg.content.forEach((contentItem: any, index: number) => {
             switch (contentItem.type) {
               case "text":
-                // If we have accumulated products, add them first
+                // If we have accumulated products or cart items, add them first
                 if (currentProducts.length > 0) {
                   parts.push({
                     type: "products",
@@ -800,6 +835,15 @@ export function useChat(): UseChatReturn {
                     isLoading: false
                   });
                   currentProducts = [];
+                }
+                if (currentCartItems.length > 0) {
+                  parts.push({
+                    type: "cart-items",
+                    id: `cart-items_${msg.id}_${parts.length}`,
+                    items: currentCartItems,
+                    isLoading: false
+                  });
+                  currentCartItems = [];
                 }
                 
                 // Add text part
@@ -813,7 +857,7 @@ export function useChat(): UseChatReturn {
                 break;
                 
               case "tool":
-                // If we have accumulated products, add them first
+                // If we have accumulated products or cart items, add them first
                 if (currentProducts.length > 0) {
                   parts.push({
                     type: "products",
@@ -822,6 +866,15 @@ export function useChat(): UseChatReturn {
                     isLoading: false
                   });
                   currentProducts = [];
+                }
+                if (currentCartItems.length > 0) {
+                  parts.push({
+                    type: "cart-items",
+                    id: `cart-items_${msg.id}_${parts.length}`,
+                    items: currentCartItems,
+                    isLoading: false
+                  });
+                  currentCartItems = [];
                 }
                 
                 // Add tool call part
@@ -841,17 +894,32 @@ export function useChat(): UseChatReturn {
                 }
                 break;
                 
+              case "cart-item":
+                // Accumulate cart items to group them together
+                if (contentItem.cart_item) {
+                  currentCartItems.push(contentItem.cart_item);
+                }
+                break;
+                
               default:
                 console.warn("Unknown content type:", contentItem.type);
             }
           });
           
-          // Add any remaining accumulated products
+          // Add any remaining accumulated products and cart items
           if (currentProducts.length > 0) {
             parts.push({
               type: "products",
               id: `products_${msg.id}_${parts.length}`,
               products: currentProducts,
+              isLoading: false
+            });
+          }
+          if (currentCartItems.length > 0) {
+            parts.push({
+              type: "cart-items",
+              id: `cart-items_${msg.id}_${parts.length}`,
+              items: currentCartItems,
               isLoading: false
             });
           }

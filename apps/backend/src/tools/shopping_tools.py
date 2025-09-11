@@ -429,7 +429,7 @@ class ShoppingTools(Toolkit):
                     "price": unit_price_formatted,
                     "total_price": total_price_formatted,
                     "quantity": item.quantity,
-                    "availability": "זמין במלאי",  # Assume available if in cart
+                    "availability": item.availability,
                     "image": item.image_url or "",
                     "brand": item.brand or "",
                     "category": item.category or "",

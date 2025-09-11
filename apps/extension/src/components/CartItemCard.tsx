@@ -20,17 +20,19 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
   const { language } = useLanguage();
 
   // Check if item is available
-  const isAvailable =
-    item.availability?.includes("זמין") ||
-    item.availability?.toLowerCase().includes("in stock");
+  const isAvailable = item.availability === true;
 
   // Get localized text for units
   const unitsText = language === "he" ? "יחידות" : "Units";
-  
+
   // Get localized text for availability
-  const availabilityText = isAvailable 
-    ? (language === "he" ? "זמין" : "Available")
-    : (language === "he" ? "לא זמין" : "Unavailable");
+  const availabilityText = isAvailable
+    ? language === "he"
+      ? "זמין"
+      : "Available"
+    : language === "he"
+      ? "לא זמין"
+      : "Unavailable";
 
   return (
     <motion.div
@@ -104,8 +106,9 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 2,
+            zIndex: 20,
             boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            position: "relative",
           }}
         >
           {isAvailable ? (
@@ -114,7 +117,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
             <AlertCircle size={10} color="white" />
           )}
         </motion.div>
-        
+
         {/* Tooltip */}
         <div
           style={{
@@ -199,7 +202,6 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
             📦
           </div>
         )}
-
       </div>
 
       {/* Item Info */}

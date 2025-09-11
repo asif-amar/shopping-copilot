@@ -397,10 +397,10 @@ async def get_conversation(
                             }
                         
                         
-                        # Process content to extract products while preserving order
+                        # Process content to extract products and cart items while preserving order
                         if content:
-                            # Split content by product tags to preserve order
-                            parts = re.split(r'(<product>.*?</product>)', content, flags=re.DOTALL)
+                            # Split content by both product and cart-item tags to preserve order
+                            parts = re.split(r'(<product>.*?</product>|<cart-item>.*?</cart-item>)', content, flags=re.DOTALL)
                             
                             for part in parts:
                                 part = part.strip()
@@ -432,6 +432,33 @@ async def get_conversation(
                                             # If both attempts fail, treat as text
                                             print(f"PRODUCT JSON ERROR: {e}")
                                             print(f"Original JSON: {product_json}")
+                                            print(f"Cleaned JSON: {cleaned_json}")
+                                
+                                elif part.startswith('<cart-item>') and part.endswith('</cart-item>'):
+                                    # Extract cart item JSON
+                                    cart_item_json = part[11:-12]  # Remove <cart-item> and </cart-item>
+                                    try:
+                                        # Handle escaped quotes that might be double-escaped
+                                        cleaned_json = cart_item_json.replace('\\"', '"').replace('\\\'', '\'')
+                                        cart_item_data = json.loads(cleaned_json)
+                                        buffer["content"].append({
+                                            "type": "cart-item",
+                                            "cart_item": cart_item_data,
+                                            "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                                        })
+                                    except json.JSONDecodeError as e:
+                                        # If JSON parsing still fails, try with original string
+                                        try:
+                                            cart_item_data = json.loads(cart_item_json)
+                                            buffer["content"].append({
+                                                "type": "cart-item",
+                                                "cart_item": cart_item_data,
+                                                "timestamp": datetime.fromtimestamp(timestamp).isoformat()
+                                            })
+                                        except json.JSONDecodeError:
+                                            # If both attempts fail, treat as text
+                                            print(f"CART ITEM JSON ERROR: {e}")
+                                            print(f"Original JSON: {cart_item_json}")
                                             print(f"Cleaned JSON: {cleaned_json}")
 
                                 else:
