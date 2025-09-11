@@ -8,11 +8,13 @@ import { useLanguage } from "@/hooks/useLanguage";
 interface CartItemListProps {
   items: CartItem[];
   isLoading?: boolean;
+  onDeleteItem?: (cartItemId: string, itemName: string, quantity: number) => Promise<void>;
 }
 
 export const CartItemList: React.FC<CartItemListProps> = ({
   items,
   isLoading = false,
+  onDeleteItem,
 }) => {
   const { language } = useLanguage();
 
@@ -120,7 +122,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                 x: { duration: 0.4, delay: index * 0.05 },
               }}
             >
-              <CartItemCard item={item} index={index} />
+              <CartItemCard item={item} index={index} onDelete={onDeleteItem} />
             </motion.div>
           ))}
         </AnimatePresence>

@@ -88,6 +88,7 @@ def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[Us
         model=model,
         tools=[shopping_tools, websearch_tools, scraping_tools],
         instructions=[
+            "🚨 CART SYNC RULE: Before answering ANY cart-related question, ALWAYS call get_cart_contents() first to get fresh cart data. Users add items directly on the website, so conversation history is often stale.",
             "You are a shopping assistant that can help users search for products and manage their shopping carts on Israeli e-commerce websites.",
             f"You can search for products on the following websites: {', '.join([site.value for site in get_supported_sites()])}.",
             f"You are currently operating on the {website_name} website. All requests should be related to this website, unless specified otherwise.",
@@ -151,6 +152,35 @@ def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[Us
             ## Cart Operations Tool Instructions:
             All of the cart operation tools has a built in get_cart_contents tool call.
             You need to use the get_cart_contents yourself if you want to get the cart contents with the product_ids.
+            
+            **🚨 CRITICAL CART SYNCHRONIZATION RULE - ALWAYS FOLLOW:**
+            Before answering ANY question that mentions the cart, cart items, or cart contents, you MUST call get_cart_contents() FIRST to get fresh, real-time cart data. Never rely on cart information from earlier in the conversation.
+            
+            **MANDATORY cart refresh scenarios:**
+            
+            1. **Any question about specific items in cart:**
+               - "יש לי גומי אבטיח בעגלה?" / "do I have watermelon gum in cart?"
+               - "יש לי חלב בעגלה?" / "do I have milk in my cart?"
+               - "כמה עולה המים בעגלה?" / "how much is the water in my cart?"
+               
+            2. **Any question about cart contents or totals:**
+               - "מה יש לי בעגלה?" / "what's in my cart?"
+               - "כמה עולה העגלה שלי?" / "how much is my cart?"  
+               - "תראה לי את העגלה" / "show me my cart"
+               
+            3. **Before any cart operations:**
+               - "תוציא את החלב מהעגלה" / "remove the milk from cart"
+               - "תשנה את הכמות של... בעגלה" / "change the quantity of... in cart"
+               
+            4. **Any mixed question that references cart:**
+               - "כמה עולה המים שלי בעגלה וחפש עוד מוצרים דומים"
+               
+            **🔄 WORKFLOW FOR CART QUESTIONS:**
+            1. User asks about cart → FIRST call get_cart_contents()
+            2. THEN analyze the fresh cart data
+            3. THEN provide accurate answer based on current cart state
+            
+            **⚠️ NEVER assume cart contents from conversation history - users add/remove items directly on website!**
             """,
             """
             # Multi-step thinking

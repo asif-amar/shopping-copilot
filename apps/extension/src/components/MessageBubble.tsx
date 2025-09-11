@@ -17,9 +17,10 @@ import { useLanguage } from "@/hooks/useLanguage";
 
 interface MessageBubbleProps {
   message: ChatMessage;
+  onSendMessage?: (message: string) => Promise<void>;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMessage }) => {
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
@@ -97,6 +98,26 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     setDisliked(!disliked);
     if (liked) setLiked(false); // Clear like if set
     console.log("Message disliked:", message.id);
+  };
+
+  // Handle cart item deletion
+  const handleDeleteCartItem = async (cartItemId: string, itemName: string, quantity: number) => {
+    if (!onSendMessage) return;
+    
+    // Create delete message in the appropriate language using product name
+    const deleteMessage = language === "he" 
+      ? `הסר את "${itemName}" מהעגלה`
+      : `Remove "${itemName}" from cart`;
+    
+    // Send the delete message through the chat system
+    await onSendMessage(deleteMessage);
+    
+    // Show user feedback about the deletion
+    const feedbackMessage = language === "he" 
+      ? `מוחק ${quantity} של ${itemName} מהעגלה`
+      : `Deleting ${quantity} of ${itemName} from cart`;
+    
+    console.log(feedbackMessage);
   };
 
   if (message.isUser) {
@@ -273,6 +294,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
               <CartItemList
                 items={cartItemsPart.items}
                 isLoading={false}
+                onDeleteItem={onSendMessage ? handleDeleteCartItem : undefined}
               />
             </div>
           );

@@ -41,11 +41,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: "40px 24px",
+        padding: "24px 20px",
         textAlign: "center",
         direction: isRTL ? "rtl" : "ltr",
         width: "100%",
-        maxWidth: "400px",
+        maxWidth: "350px",
+        flex: 1,
+        maxHeight: "100%",
       }}
     >
       {/* Icon */}
@@ -54,18 +56,18 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
         animate={{ scale: 1 }}
         transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
         style={{
-          width: "80px",
-          height: "80px",
+          width: "64px",
+          height: "64px",
           background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-          borderRadius: "20px",
+          borderRadius: "16px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          marginBottom: "24px",
-          boxShadow: "0 8px 32px rgba(59, 130, 246, 0.3)",
+          marginBottom: "16px",
+          boxShadow: "0 6px 24px rgba(59, 130, 246, 0.3)",
         }}
       >
-        <ShoppingCart size={36} color="white" />
+        <ShoppingCart size={30} color="white" />
       </motion.div>
 
       {/* Welcome Message */}
@@ -74,10 +76,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
         style={{
-          fontSize: "18px",
+          fontSize: "16px",
           fontWeight: "600",
           color: "#1e293b",
-          margin: "0 0 12px 0",
+          margin: "0 0 8px 0",
           lineHeight: "1.4",
         }}
       >
@@ -90,9 +92,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
         style={{
-          fontSize: "14px",
+          fontSize: "13px",
           color: "#64748b",
-          margin: "0 0 32px 0",
+          margin: "0 0 20px 0",
           lineHeight: "1.5",
         }}
       >
@@ -107,7 +109,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: "8px",
+          gap: "6px",
           width: "100%",
           maxWidth: "280px",
         }}
@@ -126,8 +128,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "12px",
-                padding: "12px 16px",
+                gap: "10px",
+                padding: "10px 14px",
                 background: "#f8fafc",
                 border: "1px solid #e2e8f0",
                 borderRadius: "12px",
@@ -194,9 +196,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.9 }}
         style={{
-          fontSize: "13px",
+          fontSize: "12px",
           color: "#9ca3af",
-          margin: "24px 0 0 0",
+          margin: "16px 0 0 0",
           fontStyle: "italic",
         }}
       >
