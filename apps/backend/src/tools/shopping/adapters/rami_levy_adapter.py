@@ -208,7 +208,7 @@ class RamiLevyAdapter(BaseShoppingAdapter):
                     'price': item.get('price', {}).get('price', 0),
                     'currency': 'ILS',
                     'image_url': image_url,
-                    'availability': len(item.get('available_in', [])) > 0,
+                    'availability': 331 in (item.get('available_in') or []),
                     'category': item.get('department', {}).get('name'),
                     'brand': brand_name,
                     'url': f"https://www.rami-levy.co.il/he/online/search?item={item.get('barcode', '')}"
@@ -272,7 +272,7 @@ class RamiLevyAdapter(BaseShoppingAdapter):
                 # id can be missing; coerce to str for mapping
                 item_id = item.get('id', '')
                 item_id_str = str(item_id)
-                
+
                 logger.info(f"Processing product with ID: {item_id_str}")
 
                 # Simple quantity lookup - the cart items dict has string keys
@@ -323,7 +323,7 @@ class RamiLevyAdapter(BaseShoppingAdapter):
                     'price': (item.get('price') or {}).get('price', 0),
                     'currency': 'ILS',
                     'image_url': image_url,
-                    'availability': len(item.get('available_in', []) or []) > 0,
+                    'availability': 331 in (item.get('available_in') or []),
                     'category': (item.get('department') or {}).get('name'),
                     'brand': brand_name,
                     'url': f"https://www.rami-levy.co.il/he/online/search?item={item.get('barcode', '')}",
@@ -511,6 +511,7 @@ class RamiLevyAdapter(BaseShoppingAdapter):
         """Get current cart contents"""
         try:
             current_cart = await self._get_current_cart(credentials)
+
             data = current_cart.data or ProductSearchResult(products=[], total_count=0, website="rami-levy")
             products = data.products        
 
@@ -529,6 +530,7 @@ class RamiLevyAdapter(BaseShoppingAdapter):
                     brand=product.brand,
                     category=product.category,
                     url=product.url,
+                    availability=product.availability,
                 )
                 items.append(item)
 
