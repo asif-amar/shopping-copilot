@@ -98,17 +98,17 @@ export const Header: React.FC<HeaderProps> = ({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="px-6 py-5 bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex-shrink-0"
+      className="px-4 py-3 bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex-shrink-0"
       style={{ direction: isRTL ? "rtl" : "ltr" }}
     >
       <div className="flex items-center justify-between">
         {/* Left side - Logo and title */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-            <ShoppingBag size={18} color="white" />
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30">
+            <ShoppingBag size={16} color="white" />
           </div>
           <div className="flex-1">
-            <h1 className="m-0 text-xl font-bold text-slate-800 tracking-tight">
+            <h1 className="m-0 text-base font-bold text-slate-800 tracking-tight">
               {t("shopping_assistant")}
             </h1>
             <div className="mt-1 text-xs text-slate-500 flex items-center gap-2">
@@ -131,8 +131,8 @@ export const Header: React.FC<HeaderProps> = ({
               tooltip={t("conversations") || "Conversations"}
               onClick={onOpenConversations}
               buttonStyle={{
-                width: "36px",
-                height: "36px",
+                width: "32px",
+                height: "32px",
                 background: "#f1f5f9",
                 border: "1px solid #e2e8f0",
                 color: "#64748b",
@@ -166,8 +166,8 @@ export const Header: React.FC<HeaderProps> = ({
             tooltip={t("new_chat")}
             onClick={onNewConversation}
             buttonStyle={{
-              width: "36px",
-              height: "36px",
+              width: "32px",
+              height: "32px",
               background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
               border: "none",
               color: "white",
@@ -198,7 +198,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Dropdown Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-9 h-9 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg flex items-center justify-center transition-all duration-200 border border-slate-300 cursor-pointer">
+              <button className="w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg flex items-center justify-center transition-all duration-200 border border-slate-300 cursor-pointer">
                 <Menu size={16} />
               </button>
             </DropdownMenuTrigger>

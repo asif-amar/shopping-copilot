@@ -396,41 +396,49 @@ class ShoppingTools(Toolkit):
             cart = result.data
             
             if len(cart.items) == 0:
-                total_price_text = f"\n**Total Price:** {cart.currency} {cart.total_price:.2f}" if cart.total_price is not None else ""
                 return (
-                    f"**Shopping Cart**\n\n"
-                    f"**Website:** {website.upper()}\n"
-                    f"**Status:** Empty\n"
-                    f"**Total Items:** 0{total_price_text}"
+                    f"**העגלה ריקה**\n\n"
+                    f"**אתר:** {website.upper()}\n"
+                    f"**סטטוס:** העגלה ריקה\n"
+                    f"**סה\"כ פריטים:** 0"
                 )
-            
+
+            # Build text summary
             response_lines = [
-                "**Shopping Cart**",
-                f"**Website:** {website.upper()}",
-                f"**Total Items:** {cart.total_items}",
+                f"**עגלת קניות - {website.upper()}**",
+                f"**סה\"כ פריטים:** {cart.total_items}",
             ]
             
             if cart.total_price is not None:
-                response_lines.append(f"**Total Price:** {cart.currency} {cart.total_price:.2f}")
+                currency_symbol = "ש״ח" if cart.currency.upper() in ["ILS", "NIS"] else cart.currency
+                response_lines.append(f"**סה\"כ מחיר:** {cart.total_price:.2f} {currency_symbol}")
             
-            response_lines.extend(["", "**Items:**"])
+            response_lines.append("")
             
-            for i, item in enumerate(cart.items, 1):
-                item_lines = [f"{i}. **{item.product_title or item.title or item.description or ''}**", f"   - Quantity: {item.quantity}"]
+            # Add cart items as structured XML for frontend parsing
+            for item in cart.items:
+                # Format prices with proper currency symbols
+                currency_symbol = "ש״ח" if cart.currency.upper() in ["ILS", "NIS"] else cart.currency
                 
-                if item.unit_price is not None:
-                    item_lines.append(f"   - Unit Price: {cart.currency} {item.unit_price:.2f}")
+                unit_price_formatted = f"{item.unit_price:.2f} {currency_symbol}" if item.unit_price is not None else "לא זמין"
+                total_price_formatted = f"{item.total_price:.2f} {currency_symbol}" if item.total_price is not None else "לא זמין"
                 
-                if item.total_price is not None:
-                    item_lines.append(f"   - Total: {cart.currency} {item.total_price:.2f}")
+                # Create cart item object for frontend
+                cart_item_obj = {
+                    "name": item.product_title or "פריט לא זמין",
+                    "price": unit_price_formatted,
+                    "total_price": total_price_formatted,
+                    "quantity": item.quantity,
+                    "availability": "זמין במלאי",  # Assume available if in cart
+                    "image": item.image_url or "",
+                    "brand": item.brand or "",
+                    "category": item.category or "",
+                    "description": item.description or "",
+                    "cart_item_id": item.id
+                }
                 
-                item_lines.append(f"   - Cart Item ID: {item.id}")
-                
-                if item.variant:
-                    item_lines.append(f"   - Variant: {item.variant}")
-                
-                response_lines.extend(item_lines)
-                response_lines.append("")  # Empty line between items
+                import json
+                response_lines.append(f"<cart-item>{json.dumps(cart_item_obj, ensure_ascii=False)}</cart-item>")
             
             return "\n".join(response_lines)
             

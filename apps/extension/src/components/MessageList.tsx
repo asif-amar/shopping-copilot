@@ -23,7 +23,11 @@ export const MessageList: React.FC<MessageListProps> = ({
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Only scroll down if the last message is from the user or the assistant is done responding.
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && (lastMessage.isUser || lastMessage.isComplete)) {
+      scrollToBottom();
+    }
   }, [messages]);
 
   return (
@@ -31,7 +35,7 @@ export const MessageList: React.FC<MessageListProps> = ({
       style={{
         flex: 1,
         overflow: "auto",
-        padding: messages.length === 0 && !isLoading ? "0" : "20px",
+        padding: messages.length === 0 && !isLoading ? "0" : "1rem",
         display: "flex",
         flexDirection: "column",
         justifyContent:

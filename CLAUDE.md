@@ -13,6 +13,8 @@ This is a shopping assistant project with two main applications that work togeth
 1. **Backend** (`apps/backend/`) - Python FastAPI server with Agno integration for shopping tools
 2. **Chrome Extension** (`apps/extension/`) - React-based Chrome extension with side panel for shopping assistance
 
+Note: The root package.json references a third workspace `apps/mcp-server` for Model Context Protocol functionality, but this component is not currently implemented.
+
 ## Key Commands
 
 ### Monorepo Commands (Root Level)
@@ -32,7 +34,7 @@ npm run dev:extension   # Start extension with watch mode
 npm run build
 
 # Build individual projects
-npm run build:backend   # Build backend TypeScript to JavaScript (if applicable)
+npm run build:backend   # No build step for Python backend (just dependency install)
 npm run build:extension # Build extension for Chrome store
 
 # Type checking across all projects
