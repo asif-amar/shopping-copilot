@@ -147,16 +147,8 @@ export class ApiService {
       const credentials =
         await CredentialExtractor.extractCredentialsForSite(siteAdapter);
 
-      console.log("credentialscredentials", credentials);
 
       if (credentials) {
-        // Debug the mapping process
-        console.log("🔍 Debug mapping:", {
-          siteAdapter,
-          credentials,
-          credentialKeys: Object.keys(credentials),
-        });
-
         // Convert credentials to the format expected by mapCredentialsToHeaders
         // The shared package expects lowercase keys but our credentials have uppercase keys
         let normalizedCredentials: any = {};
@@ -182,14 +174,12 @@ export class ApiService {
           };
         }
 
-        console.log("🔧 Normalized credentials:", normalizedCredentials);
 
         // Use the scalable mapping function
         const mappedHeaders = mapCredentialsToHeaders(
           siteAdapter,
           normalizedCredentials
         );
-        console.log("mappedHeaders", mappedHeaders);
 
         Object.assign(headers, mappedHeaders);
       }
@@ -211,7 +201,6 @@ export class ApiService {
   ): Promise<ReadableStreamDefaultReader<Uint8Array>> {
     const headers = await this.getHeaders(hostname);
 
-    console.log("headers", headers);
 
     const response = await fetch(`${this.BASE_URL}/conversation`, {
       method: "POST",
@@ -313,7 +302,6 @@ export class ApiService {
           return;
         }
 
-        console.log("Google token received:", googleToken);
 
         try {
           // Send the token to the backend

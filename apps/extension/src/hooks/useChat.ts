@@ -37,8 +37,6 @@ class StreamContentParser {
    */
   processChunk(content: string): MessagePartType[] {
     this.textBuffer += content;
-    console.log("🔍 Processing chunk:", content);
-    console.log("📦 Current buffer:", this.textBuffer);
     return this._parseBuffer();
   }
 
@@ -46,7 +44,6 @@ class StreamContentParser {
    * Get the final parts after processing all content
    */
   getfinalParts(): MessagePartType[] {
-    console.log("🏁 Finalizing with buffer:", this.textBuffer);
 
     // Flush any remaining text
     if (this.textBuffer.trim()) {
@@ -78,9 +75,6 @@ class StreamContentParser {
       hasChanges = false;
       iterations++;
 
-      console.log(
-        `🔄 Parse iteration ${iterations}, buffer length: ${this.textBuffer.length}`
-      );
 
       // Look for complete individual product tags
       const productTagMatch = this.textBuffer.match(
@@ -88,7 +82,6 @@ class StreamContentParser {
       );
 
       if (productTagMatch) {
-        console.log("✅ Found complete product tag");
         const [fullMatch, productContent] = productTagMatch;
         const beforeTag = this.textBuffer.substring(
           0,
@@ -100,15 +93,10 @@ class StreamContentParser {
 
         // Add text before the tag if any
         if (beforeTag.trim()) {
-          console.log(
-            "📝 Adding text before product tag:",
-            beforeTag.substring(0, 50) + "..."
-          );
           this._addTextPart(beforeTag);
         }
 
         // Parse and add individual product
-        console.log("📦 Processing individual product");
         this._handleIndividualProduct(productContent);
 
         // Continue with remaining content
@@ -158,10 +146,6 @@ class StreamContentParser {
 
       if (openProductIndex !== -1 && closeProductIndex === -1) {
         // We have an opening product tag but no closing tag - keep everything from the opening tag
-        console.log(
-          "⏸️ Found incomplete product tag, keeping in buffer from position:",
-          openProductIndex
-        );
         const beforeIncomplete = this.textBuffer.substring(0, openProductIndex);
         if (beforeIncomplete.trim()) {
           this._addTextPart(beforeIncomplete);
@@ -190,9 +174,6 @@ class StreamContentParser {
       // Check if we might have a partial opening product tag at the end
       const potentialProductStart = this.textBuffer.match(/<product?$/);
       if (potentialProductStart) {
-        console.log(
-          "⏸️ Found potential partial product tag start, keeping in buffer"
-        );
         const beforePotential = this.textBuffer.substring(
           0,
           potentialProductStart.index
@@ -230,9 +211,6 @@ class StreamContentParser {
         /<product_search_results>(.*?)<\/product_search_results>/s
       );
       if (wrapperTagMatch) {
-        console.log(
-          "✅ Found legacy product_search_results wrapper, extracting products"
-        );
         const [fullMatch, wrapperContent] = wrapperTagMatch;
         const beforeTag = this.textBuffer.substring(
           0,
@@ -263,10 +241,6 @@ class StreamContentParser {
 
       // No product tags found, process as regular text
       if (this.textBuffer.trim()) {
-        console.log(
-          "📝 Adding remaining text:",
-          this.textBuffer.substring(0, 50) + "..."
-        );
         this._addTextPart(this.textBuffer);
         this.textBuffer = "";
       }
@@ -297,10 +271,6 @@ class StreamContentParser {
 
   private _handleIndividualProduct(productContent: string): void {
     try {
-      console.log(
-        "📦 Parsing individual product JSON:",
-        productContent.substring(0, 100) + "..."
-      );
       const product: Product = JSON.parse(productContent);
       console.log("✅ Successfully parsed product:", product.name);
 
@@ -318,7 +288,6 @@ class StreamContentParser {
           isLoading: false, // Always false - show products immediately
         };
         this.currentParts.push(productsPart);
-        console.log("🆕 Created new products part");
       }
 
       // Add product to existing array (create new array for React to detect change)
@@ -624,7 +593,6 @@ export function useChat(): UseChatReturn {
 
           if (!parsedEvent) continue;
 
-          console.log("📨 Stream event:", parsedEvent.type, parsedEvent);
 
           switch (parsedEvent.type) {
             case "conversation_info":

@@ -35,7 +35,6 @@ export class CredentialExtractor {
         console.log(
           "✅ Using Rami Levy credentials from network interception fallback"
         );
-        console.log("capturedCredentials", capturedCredentials);
         return capturedCredentials;
       }
 
@@ -71,15 +70,6 @@ export class CredentialExtractor {
         return null;
       }
 
-      console.log(
-        "📡 Using captured Rami Levy headers from network interception:",
-        {
-          hasAuth: !!captured.authorization,
-          hasCookie: !!captured.cookie,
-          hasEcomToken: !!captured.ecomtoken,
-          capturedAt: new Date(captured.capturedAt).toLocaleTimeString(),
-        }
-      );
 
       return {
         AUTHORIZATION: captured.authorization || "",
