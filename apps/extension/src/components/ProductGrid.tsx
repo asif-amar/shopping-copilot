@@ -7,11 +7,13 @@ import { useLanguage } from "@/hooks/useLanguage";
 interface ProductGridProps {
   products: Product[];
   isLoading?: boolean;
+  onAddToCart?: (productName: string) => Promise<void>;
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({
   products,
   isLoading = false,
+  onAddToCart,
 }) => {
   const { language } = useLanguage();
 
@@ -120,7 +122,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
                 scale: { duration: 0.4, delay: index * 0.05 },
               }}
             >
-              <ProductCard product={product} index={index} />
+              <ProductCard product={product} index={index} onAddToCart={onAddToCart} />
             </motion.div>
           ))}
         </AnimatePresence>

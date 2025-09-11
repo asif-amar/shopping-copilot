@@ -120,6 +120,17 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMes
     console.log(feedbackMessage);
   };
 
+  // Handle add to cart
+  const handleAddToCart = async (productName: string): Promise<void> => {
+    if (!onSendMessage) return;
+    
+    const addMessage = language === "he" 
+      ? `הוסף את "${productName}" לעגלה`
+      : `Add "${productName}" to cart`;
+    
+    await onSendMessage(addMessage);
+  };
+
   if (message.isUser) {
     return (
       <motion.div
@@ -271,6 +282,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMes
               <ProductGrid
                 products={productsPart.products}
                 isLoading={false}
+                onAddToCart={onSendMessage ? handleAddToCart : undefined}
               />
             </div>
           );
