@@ -35,7 +35,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { language, isRTL, t } = useLanguage();
+  const { isRTL, t } = useLanguage();
   const [feedbackType, setFeedbackType] = useState<FeedbackType>("general");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");

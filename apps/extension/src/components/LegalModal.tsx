@@ -1,6 +1,3 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { X } from "lucide-react";
 import { useLanguage } from "../hooks/useLanguage";
 import { TermsOfUse } from "./TermsOfUse";
 import { PrivacyPolicy } from "./PrivacyPolicy";

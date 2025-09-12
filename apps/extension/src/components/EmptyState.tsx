@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ShoppingCart, Milk, Banana, ChefHat, Carrot } from "lucide-react";
+import { ShoppingCart, Milk, Banana, ChefHat } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 
 interface EmptyStateProps {

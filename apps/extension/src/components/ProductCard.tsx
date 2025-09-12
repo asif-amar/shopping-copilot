@@ -39,10 +39,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     product.availability?.includes("זמין") ||
     product.availability?.toLowerCase().includes("in stock");
 
-  // Parse rating if available
-  const rating = product.rating
-    ? parseFloat(product.rating.split("/")[0])
-    : null;
+  // Parse rating if available TODO
+
 
   // Get localized text for unavailable tooltip
   const unavailableText = language === "he" ? "אזל מהמלאי" : "Unavailable";

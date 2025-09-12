@@ -98,7 +98,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMes
   };
 
   // Handle cart item deletion
-  const handleDeleteCartItem = async (_cartItemId: string, itemName: string, quantity: number) => {
+  const handleDeleteCartItem = async (_cartItemId: string, itemName: string, _quantity: number) => {
     if (!onSendMessage) return;
     
     // Create delete message in the appropriate language using product name
@@ -108,11 +108,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMes
     
     // Send the delete message through the chat system
     await onSendMessage(deleteMessage);
-    
-    // Show user feedback about the deletion
-    const _feedbackMessage = language === "he" 
-      ? `מוחק ${quantity} של ${itemName} מהעגלה`
-      : `Deleting ${quantity} of ${itemName} from cart`;
   };
 
   // Handle add to cart
