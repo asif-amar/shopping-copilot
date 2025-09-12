@@ -180,12 +180,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align={isRTL ? "end" : "start"}
-                  className="w-56 bg-white border border-slate-200 shadow-lg max-h-[80vh] overflow-y-auto"
+                  className="w-56 bg-white border border-slate-200 shadow-lg max-h-[70vh] overflow-y-auto"
                   side="top"
-                  sideOffset={8}
+                  sideOffset={12}
                   style={{ direction: isRTL ? "rtl" : "ltr" }}
                   avoidCollisions={true}
-                  collisionPadding={8}
+                  collisionPadding={16}
+                  alignOffset={isRTL ? 8 : -8}
                 >
                   <DropdownMenuLabel className="text-slate-700 font-medium">
                     {t("preferences")}
@@ -214,10 +215,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       </span>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent
-                      className="w-72 max-w-[90vw] bg-white border border-slate-200 shadow-lg max-h-[70vh] overflow-y-auto"
+                      className="w-56 max-w-[80vw] bg-white border border-slate-200 shadow-lg max-h-[50vh] overflow-y-auto"
                       style={{ direction: isRTL ? "rtl" : "ltr" }}
                       avoidCollisions={true}
-                      collisionPadding={8}
+                      collisionPadding={12}
+                      alignOffset={isRTL ? -80 : 80}
+                      sideOffset={4}
                     >
                       <DropdownMenuLabel className="text-slate-700 font-medium">
                         {t("ai_behavior_style")}

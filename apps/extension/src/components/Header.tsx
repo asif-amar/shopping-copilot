@@ -204,8 +204,13 @@ export const Header: React.FC<HeaderProps> = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align={isRTL ? "start" : "end"}
-              className={cn("w-56", isRTL ? "text-right" : "text-left")}
+              side="bottom"
+              className={cn("w-56 bg-white border border-slate-200 shadow-lg max-h-[70vh] overflow-y-auto", isRTL ? "text-right" : "text-left")}
               style={{ direction: isRTL ? "rtl" : "ltr" }}
+              sideOffset={4}
+              alignOffset={isRTL ? 0 : 0}
+              avoidCollisions={true}
+              collisionPadding={8}
             >
               {/* User section */}
               {isAuthenticated && userEmail && (
@@ -231,7 +236,12 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent
+                  className="w-32 bg-white border border-slate-200 shadow-lg max-h-[60vh] overflow-y-auto"
                   style={{ direction: isRTL ? "rtl" : "ltr" }}
+                  avoidCollisions={true}
+                  collisionPadding={12}
+                  alignOffset={isRTL ? -100 : 100}
+                  sideOffset={4}
                 >
                   <DropdownMenuItem
                     onClick={() => handleLanguageChange("en")}

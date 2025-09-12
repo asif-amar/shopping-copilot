@@ -40,6 +40,8 @@ export const MessageList: React.FC<MessageListProps> = ({
         justifyContent:
           messages.length === 0 && !isLoading ? "center" : "flex-start",
         alignItems: messages.length === 0 && !isLoading ? "center" : "stretch",
+        minHeight: 0, // Allow flex shrinking
+        maxHeight: "100%", // Prevent overflow
       }}
     >
       <AnimatePresence>
@@ -47,7 +49,7 @@ export const MessageList: React.FC<MessageListProps> = ({
           <EmptyState onQuickAction={onSendMessage} />
         ) : (
           messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+            <MessageBubble key={message.id} message={message} onSendMessage={onSendMessage} />
           ))
         )}
 

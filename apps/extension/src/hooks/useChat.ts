@@ -105,37 +105,37 @@ class StreamContentParser {
         continue;
       }
 
-      // Look for complete individual cart item tags
-      const cartItemTagMatch = this.textBuffer.match(
-        /<cart-item>(.*?)<\/cart-item>/s
-      );
+      // Look for complete individual cart item tags - process ALL in current buffer
+      const cartItemMatches = Array.from(this.textBuffer.matchAll(/<cart-item>(.*?)<\/cart-item>/gs));
 
-      if (cartItemTagMatch) {
-        console.log("✅ Found complete cart-item tag");
-        const [fullMatch, cartItemContent] = cartItemTagMatch;
-        const beforeTag = this.textBuffer.substring(
-          0,
-          this.textBuffer.indexOf(fullMatch)
-        );
-        const afterTag = this.textBuffer.substring(
-          this.textBuffer.indexOf(fullMatch) + fullMatch.length
-        );
+      if (cartItemMatches.length > 0) {
+        console.log(`✅ Found ${cartItemMatches.length} complete cart-item tag(s)`);
+        
+        let lastEndIndex = 0;
+        
+        cartItemMatches.forEach((match, index) => {
+          const [fullMatch, cartItemContent] = match;
+          const matchStartIndex = match.index!;
+          
+          // Add any text before this cart item
+          const beforeTag = this.textBuffer.substring(lastEndIndex, matchStartIndex);
+          if (beforeTag.trim()) {
+            console.log(
+              `📝 Adding text before cart-item ${index + 1}:`,
+              beforeTag.substring(0, 50) + "..."
+            );
+            this._addTextPart(beforeTag);
+          }
 
-        // Add text before the tag if any
-        if (beforeTag.trim()) {
-          console.log(
-            "📝 Adding text before cart-item tag:",
-            beforeTag.substring(0, 50) + "..."
-          );
-          this._addTextPart(beforeTag);
-        }
+          // Parse and add individual cart item
+          console.log(`🛒 Processing individual cart item ${index + 1}`);
+          this._handleIndividualCartItem(cartItemContent);
+          
+          lastEndIndex = matchStartIndex + fullMatch.length;
+        });
 
-        // Parse and add individual cart item
-        console.log("🛒 Processing individual cart item");
-        this._handleIndividualCartItem(cartItemContent);
-
-        // Continue with remaining content
-        this.textBuffer = afterTag;
+        // Continue with remaining content after all cart items
+        this.textBuffer = this.textBuffer.substring(lastEndIndex);
         hasChanges = true;
         continue;
       }
