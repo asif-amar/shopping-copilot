@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Star, CheckCircle, AlertCircle } from "lucide-react";
+import { AlertCircle, Plus } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export interface Product {
   name: string;
@@ -18,29 +19,50 @@ export interface Product {
 interface ProductCardProps {
   product: Product;
   index?: number;
+  onAddToCart?: (productName: string) => Promise<void>;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   index = 0,
+  onAddToCart,
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [showUnavailableTooltip, setShowUnavailableTooltip] = useState(false);
+  const { language } = useLanguage();
 
   // Check if product is available
   const isAvailable =
     product.availability?.includes("זמין") ||
     product.availability?.toLowerCase().includes("in stock");
 
-  // Parse rating if available
-  const rating = product.rating
-    ? parseFloat(product.rating.split("/")[0])
-    : null;
+  // Parse rating if available TODO
+
+
+  // Get localized text for unavailable tooltip
+  const unavailableText = language === "he" ? "אזל מהמלאי" : "Unavailable";
+
 
   const handleOpenProduct = () => {
     if (product.url) {
       chrome.tabs.update({ url: product.url });
+    }
+  };
+
+  // Handle add to cart action
+  const handleAddToCart = async (): Promise<void> => {
+    if (!onAddToCart || !isAvailable || isAdding) return;
+    
+    setIsAdding(true);
+    try {
+      await onAddToCart(product.name);
+    } catch (error) {
+      console.error("Failed to add item to cart:", error);
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -147,33 +169,118 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
 
-        {/* Availability Badge */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-          style={{
-            position: "absolute",
-            top: "8px",
-            right: "8px",
-            padding: "4px 8px",
-            borderRadius: "20px",
-            fontSize: "11px",
-            fontWeight: "600",
-            backdropFilter: "blur(8px)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            background: isAvailable
-              ? "rgba(34, 197, 94, 0.9)"
-              : "rgba(239, 68, 68, 0.9)",
-            color: "white",
-            display: "flex",
-            alignItems: "center",
-            gap: "3px",
-          }}
-        >
-          {isAvailable ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
-          {isAvailable ? "זמין" : "אזל"}
-        </motion.div>
+        {/* Top Left Corner Icon - Uses existing availability logic */}
+        {isAvailable && onAddToCart ? (
+          /* Green + icon for available items */
+          <motion.button
+            type="button"
+            disabled={isAdding}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddToCart();
+            }}
+            whileHover={!isAdding ? { scale: 1.1 } : {}}
+            whileTap={!isAdding ? { scale: 0.9 } : {}}
+            style={{
+              position: "absolute",
+              top: "6px",
+              left: "6px",
+              zIndex: 30,
+              width: "24px",
+              height: "24px",
+              borderRadius: "50%",
+              border: "none",
+              background: isAdding ? "rgba(34, 197, 94, 0.7)" : "rgba(34, 197, 94, 0.9)",
+              cursor: isAdding ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+              backdropFilter: "blur(8px)",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              if (!isAdding) {
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(22, 163, 74, 0.9)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isAdding) {
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(34, 197, 94, 0.9)";
+              }
+            }}
+          >
+            <Plus size={12} color="white" />
+          </motion.button>
+        ) : !isAvailable ? (
+          /* Red unavailable icon for out-of-stock items */
+          <>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              onMouseEnter={() => setShowUnavailableTooltip(true)}
+              onMouseLeave={() => setShowUnavailableTooltip(false)}
+              style={{
+                position: "absolute",
+                top: "6px",
+                left: "6px",
+                zIndex: 30,
+                width: "24px",
+                height: "24px",
+                borderRadius: "50%",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                background: "rgba(239, 68, 68, 0.9)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+                backdropFilter: "blur(8px)",
+                cursor: "default",
+              }}
+            >
+              <AlertCircle size={14} color="white" />
+            </motion.div>
+            
+            {/* Unavailable Tooltip */}
+            {showUnavailableTooltip && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "44px",
+                  left: "22px",
+                  backgroundColor: "#1e293b",
+                  color: "white",
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  fontSize: "11px",
+                  fontWeight: "500",
+                  whiteSpace: "nowrap",
+                  zIndex: 999999,
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.25)",
+                  pointerEvents: "none",
+                  transform: "translateX(-50%)",
+                }}
+              >
+                {unavailableText}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "-4px",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: "0",
+                    height: "0",
+                    borderLeft: "4px solid transparent",
+                    borderRight: "4px solid transparent",
+                    borderBottom: "4px solid #1e293b",
+                  }}
+                />
+              </div>
+            )}
+          </>
+        ) : null}
+
       </div>
 
       {/* Product Info */}
@@ -362,6 +469,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </motion.button>
         </motion.div> */}
       </div>
+
     </motion.div>
   );
 };

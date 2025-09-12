@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, Zap, Calendar } from "lucide-react";
+import { AlertTriangle, Zap } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
 

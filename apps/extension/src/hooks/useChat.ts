@@ -56,11 +56,6 @@ class StreamContentParser {
       (part) => part.type === "products"
     ) as ProductsPart | undefined;
     if (productsPart) {
-      console.log(
-        "✅ Stream complete with",
-        productsPart.products.length,
-        "total products"
-      );
     }
 
     return this.currentParts;
@@ -109,26 +104,20 @@ class StreamContentParser {
       const cartItemMatches = Array.from(this.textBuffer.matchAll(/<cart-item>(.*?)<\/cart-item>/gs));
 
       if (cartItemMatches.length > 0) {
-        console.log(`✅ Found ${cartItemMatches.length} complete cart-item tag(s)`);
         
         let lastEndIndex = 0;
         
-        cartItemMatches.forEach((match, index) => {
+        cartItemMatches.forEach((match) => {
           const [fullMatch, cartItemContent] = match;
           const matchStartIndex = match.index!;
           
           // Add any text before this cart item
           const beforeTag = this.textBuffer.substring(lastEndIndex, matchStartIndex);
           if (beforeTag.trim()) {
-            console.log(
-              `📝 Adding text before cart-item ${index + 1}:`,
-              beforeTag.substring(0, 50) + "..."
-            );
             this._addTextPart(beforeTag);
           }
 
           // Parse and add individual cart item
-          console.log(`🛒 Processing individual cart item ${index + 1}`);
           this._handleIndividualCartItem(cartItemContent);
           
           lastEndIndex = matchStartIndex + fullMatch.length;
@@ -159,10 +148,6 @@ class StreamContentParser {
       const closeCartItemIndex = this.textBuffer.indexOf("</cart-item>");
 
       if (openCartItemIndex !== -1 && closeCartItemIndex === -1) {
-        console.log(
-          "⏸️ Found incomplete cart-item tag, keeping in buffer from position:",
-          openCartItemIndex
-        );
         const beforeIncomplete = this.textBuffer.substring(0, openCartItemIndex);
         if (beforeIncomplete.trim()) {
           this._addTextPart(beforeIncomplete);
@@ -190,9 +175,6 @@ class StreamContentParser {
       // Check if we might have a partial opening cart-item tag at the end
       const potentialCartItemStart = this.textBuffer.match(/<cart-item?$/);
       if (potentialCartItemStart) {
-        console.log(
-          "⏸️ Found potential partial cart-item tag start, keeping in buffer"
-        );
         const beforePotential = this.textBuffer.substring(
           0,
           potentialCartItemStart.index
@@ -272,7 +254,6 @@ class StreamContentParser {
   private _handleIndividualProduct(productContent: string): void {
     try {
       const product: Product = JSON.parse(productContent);
-      console.log("✅ Successfully parsed product:", product.name);
 
       // Find existing products part or create new one
       let productsPart = this.currentParts.find(
@@ -292,10 +273,6 @@ class StreamContentParser {
 
       // Add product to existing array (create new array for React to detect change)
       productsPart.products = [...productsPart.products, product];
-      console.log(
-        "✅ Added product to part, total products:",
-        productsPart.products.length
-      );
     } catch (error) {
       console.error("❌ Failed to parse individual product JSON:", error);
       console.error("❌ Problem JSON:", productContent);
@@ -304,12 +281,7 @@ class StreamContentParser {
 
   private _handleIndividualCartItem(cartItemContent: string): void {
     try {
-      console.log(
-        "🛒 Parsing individual cart item JSON:",
-        cartItemContent.substring(0, 100) + "..."
-      );
       const cartItem: CartItem = JSON.parse(cartItemContent);
-      console.log("✅ Successfully parsed cart item:", cartItem.name);
 
       // Find existing cart items part or create new one
       let cartItemsPart = this.currentParts.find(
@@ -325,15 +297,10 @@ class StreamContentParser {
           isLoading: false, // Always false - show items immediately
         };
         this.currentParts.push(cartItemsPart);
-        console.log("🆕 Created new cart items part");
       }
 
       // Add cart item to existing array (create new array for React to detect change)
       cartItemsPart.items = [...cartItemsPart.items, cartItem];
-      console.log(
-        "✅ Added cart item to part, total items:",
-        cartItemsPart.items.length
-      );
     } catch (error) {
       console.error("❌ Failed to parse individual cart item JSON:", error);
       console.error("❌ Problem JSON:", cartItemContent);
@@ -696,8 +663,7 @@ export function useChat(): UseChatReturn {
               break;
 
             case "thinking":
-              // Log thinking steps but don't display them
-              console.log("💭", parsedEvent.content);
+              // Skip thinking steps display
               break;
 
             case "message":
@@ -730,7 +696,6 @@ export function useChat(): UseChatReturn {
                     : msg
                 )
               );
-              console.log("✅ Stream completed");
               break;
 
             case "error":
@@ -942,7 +907,6 @@ export function useChat(): UseChatReturn {
       
       // Update messages
       setMessages(loadedMessages);
-      console.log("✅ Conversation loaded successfully with", loadedMessages.length, "messages");
       
     } catch (error) {
       console.error("Failed to load conversation:", error);

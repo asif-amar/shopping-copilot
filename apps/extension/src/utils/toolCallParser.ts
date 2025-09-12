@@ -14,12 +14,6 @@ export function parseToolCallFromText(text: string): {
   toolCall: ToolCallState | null;
   cleanText: string;
 } {
-  console.log("🔍 Raw input text:", JSON.stringify(text));
-  console.log("🔍 Text length:", text.length);
-  console.log(
-    "🔍 Text preview:",
-    text.substring(0, 100) + (text.length > 100 ? "..." : "")
-  );
 
   let cleanText = text;
 
@@ -34,14 +28,12 @@ export function parseToolCallFromText(text: string): {
   if (completedMatch) {
     toolName = completedMatch[1];
     status = "completed";
-    console.log("🔍 Found completed match:", completedMatch);
   } else {
     // Look for started
     const startedMatch = text.match(/([a-zA-Z_]+)_started/);
     if (startedMatch) {
       toolName = startedMatch[1];
       status = "running";
-      console.log("🔍 Found started match:", startedMatch);
     }
   }
 
@@ -62,7 +54,6 @@ export function parseToolCallFromText(text: string): {
       if (match) {
         toolName = match[1];
         status = "running";
-        console.log("🔍 Found MCP-style tool call:", match);
         break;
       }
     }
@@ -74,20 +65,17 @@ export function parseToolCallFromText(text: string): {
     toolName &&
     (toolName.includes("started") || toolName.includes("completed"))
   ) {
-    console.log("🔧 Tool name contains started/completed, fixing:", toolName);
     // Extract the part before "_started"
     const cleanMatch = toolName.match(
       /^([a-zA-Z_]+?)(?:_started|_completed|started|completed)/
     );
     if (cleanMatch) {
       toolName = cleanMatch[1];
-      console.log("🔧 Cleaned tool name:", toolName);
     }
   }
 
   const matches = toolName ? [[`${toolName}_${status}`, toolName, status]] : [];
 
-  console.log("🔍 All matches found:", matches);
 
   if (matches.length === 0) {
     // Pattern: Thinking process - "💭 ..."
@@ -115,7 +103,6 @@ export function parseToolCallFromText(text: string): {
   const finalToolName = matches[0][1];
   const finalStatus = matches[0][2];
 
-  console.log("🎯 Selected tool:", finalToolName, "status:", finalStatus);
 
   // Remove ALL tool call patterns from text, regardless of which one we're displaying
   // Use a more aggressive approach to remove concatenated patterns
@@ -126,8 +113,6 @@ export function parseToolCallFromText(text: string): {
   // Clean up extra whitespace and normalize
   cleanText = cleanText.replace(/\s+/g, " ").trim();
 
-  console.log("🧹 Clean text result:", JSON.stringify(cleanText));
-  console.log("🏷️ Tool display name:", getToolDisplayName(finalToolName));
 
   return {
     toolCall: {

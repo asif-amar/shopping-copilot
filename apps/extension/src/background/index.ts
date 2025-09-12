@@ -2,7 +2,6 @@
 
 let currentHostname: string | null = null;
 
-// Debug: Log when background script starts
 console.log("🚀 Shopping assistant background script loaded");
 
 // Listen for ALL Rami Levy requests first to debug
@@ -14,7 +13,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
       details.url.includes("rami-levy.co.il/api/catalog") &&
       details.method === "POST"
     ) {
-      console.log("🎯 Target API request detected!");
       const headers = details.requestHeaders || [];
 
 
@@ -35,7 +33,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 
 
       // Always capture credentials when we detect the target API call
-      console.log("💾 Capturing credentials for target API call...");
       
       const credentials: any = {};
 
@@ -54,33 +51,31 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
           url: details.url, // Use the exact URL to get cookies that would be sent
         })
         .then((cookies) => {
-          console.log("🍪 Retrieved", cookies.length, "cookies via Chrome API for URL:", details.url);
 
           if (cookies.length > 0) {
-            const url = new URL(details.url);
-            const filteredCookies = cookies.filter(cookie => {
-              const matches = (
-                cookie.domain === url.hostname ||
-                cookie.domain === '.' + url.hostname ||
-                url.hostname.endsWith(cookie.domain.replace('.', ''))
-              );
-              return matches;
-            });
-            
-            console.log(`🍪 ${filteredCookies.length} cookies match the request domain`);
-            
-            // Convert cookies to cookie header format, matching what the browser would send
-            const cookieHeader = filteredCookies
-              .map((cookie) => `${cookie.name}=${cookie.value}`)
-              .join("; ");
+              const url = new URL(details.url);
+              const filteredCookies = cookies.filter(cookie => {
+                const matches = (
+                  cookie.domain === url.hostname ||
+                  cookie.domain === '.' + url.hostname ||
+                  url.hostname.endsWith(cookie.domain.replace('.', ''))
+                );
+                return matches;
+              });
+              
+              
+              // Convert cookies to cookie header format, matching what the browser would send
+              const cookieHeader = filteredCookies
+                .map((cookie) => `${cookie.name}=${cookie.value}`)
+                .join("; ");
 
-            if (cookieHeader) {
-              credentials.cookie = cookieHeader;
+              if (cookieHeader) {
+                credentials.cookie = cookieHeader;
             } else {
-              console.log("⚠️ No cookie header constructed (empty after filtering)");
+              console.error("No cookie header constructed (empty after filtering)");
             }
           } else {
-            console.log("⚠️ No cookies found for this URL");
+            console.error("Failed to find cookies for this URL");
           }
 
           // Store the captured credentials
@@ -94,22 +89,12 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
           });
         })
         .then(() => {
-          console.log(
-            "✅ Rami Levy credentials captured from network request:",
-            {
-              hasAuth: !!credentials.authorization,
-              hasCookie: !!credentials.cookie,
-              hasEcomToken: !!credentials.ecomtoken,
-              cookieLength: credentials.cookie?.length || 0,
-              capturedAt: new Date().toLocaleTimeString(),
-            }
-          );
 
           // Verify storage
           return chrome.storage.local.get("rami-levy-captured-headers");
         })
         .then((_result) => {
-          // console.log("✅ Verification - stored data:", _result); // Keep this commented out for debugging
+          // Verification completed
         })
         .catch((error) => {
           console.error(
@@ -129,108 +114,53 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 );
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("shopAI extension installed");
-
-  // Test storage access
-  setTimeout(() => {
-    chrome.storage.local.get(null).then((all) => {
-      console.log("📦 All stored data:", all);
-    });
-  }, 1000);
+  // Extension installed
 });
 
-// Add a test function to manually check storage
+// Test storage function (debug only)
 const testStorage = async () => {
-  console.log("🧪 Testing storage...");
-
-  // Test write
   await chrome.storage.local.set({
     "test-key": { value: "test-value", timestamp: Date.now() },
   });
-  console.log("✅ Test write completed");
-
-  // Test read
-  const result = await chrome.storage.local.get("test-key");
-  console.log("✅ Test read result:", result);
-
-  // Check for Rami Levy data
-  const ramiData = await chrome.storage.local.get("rami-levy-captured-headers");
-  console.log("🛒 Rami Levy data:", ramiData);
+  await chrome.storage.local.get("test-key");
+  await chrome.storage.local.get("rami-levy-captured-headers");
 };
 
 // Make test function available
 (globalThis as any).testStorage = testStorage;
 
-// Add a function to test captured credentials
+// Test captured credentials function (debug only)
 const testCapturedCredentials = async () => {
-  console.log("🧪 Testing captured credentials...");
-  
   try {
     const result = await chrome.storage.local.get("rami-levy-captured-headers");
-    const captured = result["rami-levy-captured-headers"];
-    
-    if (captured) {
-      console.log("✅ Captured credentials found:", {
-        hasAuth: !!captured.authorization,
-        hasEcomToken: !!captured.ecomtoken,
-        hasCookie: !!captured.cookie,
-        cookieLength: captured.cookie?.length || 0,
-        capturedAt: new Date(captured.capturedAt).toLocaleTimeString(),
-        source: captured.source,
-        url: captured.url
-      });
-      
-      if (captured.cookie) {
-        console.log("🍪 Cookie preview:", captured.cookie.substring(0, 200) + (captured.cookie.length > 200 ? "..." : ""));
-      }
-      
-      if (captured.authorization) {
-        console.log("🔑 Authorization preview:", captured.authorization.substring(0, 50) + "...");
-      }
-      
-      if (captured.ecomtoken) {
-        console.log("🎫 Ecom token preview:", captured.ecomtoken.substring(0, 50) + "...");
-      }
-    } else {
-      console.log("❌ No captured credentials found");
-    }
+    // Credentials tested - check console for detailed logs if needed
+    return result["rami-levy-captured-headers"];
   } catch (error) {
-    console.error("❌ Failed to test captured credentials:", error);
+    console.error("Failed to test captured credentials:", error);
   }
 };
 
-// Add a function to manually test cookie retrieval
+// Test cookie retrieval function (debug only)
 const testCookies = async () => {
-  console.log("🧪 Testing cookie retrieval...");
-
   try {
     const cookies = await chrome.cookies.getAll({
       domain: "rami-levy.co.il",
     });
-
-    console.log("🍪 Retrieved cookies:", cookies.length);
 
     if (cookies.length > 0) {
       const cookieHeader = cookies
         .map((cookie) => `${cookie.name}=${cookie.value}`)
         .join("; ");
 
-      console.log("🍪 Cookie header:", cookieHeader.substring(0, 200) + "...");
-
-      // Store as test
       await chrome.storage.local.set({
         "test-cookies": {
           cookie: cookieHeader,
           capturedAt: Date.now(),
         },
       });
-
-      console.log("✅ Test cookies stored");
-    } else {
-      console.log("❌ No cookies found for rami-levy.co.il");
     }
   } catch (error) {
-    console.error("❌ Cookie test failed:", error);
+    console.error("Cookie test failed:", error);
   }
 };
 
