@@ -77,7 +77,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMes
       const textToCopy = getTextContent();
       await navigator.clipboard.writeText(textToCopy);
       setCopied(true);
-      console.log("Text copied to clipboard");
 
       // Reset after 2 seconds
       setTimeout(() => {
@@ -91,17 +90,15 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMes
   const handleLike = () => {
     setLiked(!liked);
     if (disliked) setDisliked(false); // Clear dislike if set
-    console.log("Message liked:", message.id);
   };
 
   const handleDislike = () => {
     setDisliked(!disliked);
     if (liked) setLiked(false); // Clear like if set
-    console.log("Message disliked:", message.id);
   };
 
   // Handle cart item deletion
-  const handleDeleteCartItem = async (cartItemId: string, itemName: string, quantity: number) => {
+  const handleDeleteCartItem = async (_cartItemId: string, itemName: string, quantity: number) => {
     if (!onSendMessage) return;
     
     // Create delete message in the appropriate language using product name
@@ -113,11 +110,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMes
     await onSendMessage(deleteMessage);
     
     // Show user feedback about the deletion
-    const feedbackMessage = language === "he" 
+    const _feedbackMessage = language === "he" 
       ? `מוחק ${quantity} של ${itemName} מהעגלה`
       : `Deleting ${quantity} of ${itemName} from cart`;
-    
-    console.log(feedbackMessage);
   };
 
   // Handle add to cart
@@ -264,12 +259,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMes
           );
         } else if (part.type === "products") {
           const productsPart = part as ProductsPart;
-          console.log(
-            "🎨 Rendering ProductGrid with",
-            productsPart.products.length,
-            "products:",
-            productsPart.products
-          );
           return (
             <div
               key={part.id}
@@ -288,12 +277,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMes
           );
         } else if (part.type === "cart-items") {
           const cartItemsPart = part as CartItemsPart;
-          console.log(
-            "🛒 Rendering CartItemList with",
-            cartItemsPart.items.length,
-            "items:",
-            cartItemsPart.items
-          );
           return (
             <div
               key={part.id}

@@ -22,26 +22,16 @@ export class CredentialExtractor {
         pageCredentials &&
         (pageCredentials.AUTHORIZATION || pageCredentials.ECOM_TOKEN)
       ) {
-        console.log("✅ Using Rami Levy credentials from page extraction");
         return pageCredentials;
       }
 
       // Fallback: try to get captured headers from network interception
-      console.log(
-        "⚠️ Page extraction failed or incomplete, trying network captured headers fallback"
-      );
       const capturedCredentials = await this.getRamiLevyCapturedHeaders();
       if (capturedCredentials) {
-        console.log(
-          "✅ Using Rami Levy credentials from network interception fallback"
-        );
         return capturedCredentials;
       }
 
       // If both methods failed, return the page credentials (might be partial)
-      console.log(
-        "❌ Both page extraction and network fallback failed for Rami Levy credentials"
-      );
       return pageCredentials;
     } catch (error) {
       console.error("Error extracting Rami Levy credentials:", error);
@@ -66,7 +56,6 @@ export class CredentialExtractor {
       // Check if the captured headers are recent (within the last hour)
       const oneHourAgo = Date.now() - 60 * 60 * 1000;
       if (captured.capturedAt < oneHourAgo) {
-        console.log("Captured Rami Levy headers are too old, ignoring");
         return null;
       }
 
@@ -313,16 +302,13 @@ export class CredentialExtractor {
     console.log("🔍 Debugging Rami Levy credentials...");
 
     // Check page extraction
-    const pageCredentials = await this.extractRamiLevyCredentialsFromPage();
-    console.log("📄 Page extraction result:", pageCredentials);
+    await this.extractRamiLevyCredentialsFromPage();
 
     // Check captured headers
-    const capturedCredentials = await this.getRamiLevyCapturedHeaders();
-    console.log("📡 Network captured result:", capturedCredentials);
+    await this.getRamiLevyCapturedHeaders();
 
     // Check final result
-    const finalCredentials = await this.extractRamiLevyCredentials();
-    console.log("✨ Final credentials used:", finalCredentials);
+    await this.extractRamiLevyCredentials();
   }
   /**
    * Extract credentials based on site adapter

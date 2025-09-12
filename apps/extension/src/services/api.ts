@@ -334,16 +334,12 @@ export class ApiService {
   static async logoutFromBackend(): Promise<void> {
     try {
       const headers = await this.getHeaders();
-      const response = await fetch(`${this.BASE_URL}/auth/logout`, {
+      await fetch(`${this.BASE_URL}/auth/logout`, {
         method: "POST",
         headers
       });
       
-      if (response.ok) {
-        console.log("Backend logout successful");
-      } else {
-        console.warn("Backend logout failed, but continuing with client-side cleanup");
-      }
+      // Logout result handled silently
     } catch (error) {
       console.warn("Error calling backend logout:", error, "- continuing with client-side cleanup");
     }
@@ -376,10 +372,8 @@ export class ApiService {
           // Revoke the Google token using the correct accounts URL
           fetch(`https://accounts.google.com/o/oauth2/revoke?token=${currentToken}`)
             .then(() => {
-              console.log("Google token revoked successfully");
               // Remove the token from Chrome's cache
               chrome.identity.removeCachedAuthToken({ token: currentToken }, () => {
-                console.log("Google token cache cleared");
                 // Finally, remove our backend's token from storage
                 clearOurToken();
               });
@@ -388,7 +382,6 @@ export class ApiService {
               console.error("Error revoking Google token:", error);
               // Still try to remove from cache even if revocation fails
               chrome.identity.removeCachedAuthToken({ token: currentToken }, () => {
-                console.log("Google token cache cleared (after revocation error)");
                 clearOurToken();
               });
             });
