@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Plus,
-  ShoppingBag,
   User,
   LogOut,
   Settings,
@@ -119,7 +118,13 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Left side - Logo and title */}
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-gradient-to-br from-[#642BFE] to-[#732BFF] rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/30">
-            <ShoppingBag size={16} color="white" />
+            <img 
+              src="/icons/shopping_copilot_logo.svg" 
+              alt="Shopping Copilot Logo" 
+              width={16} 
+              height={16}
+              style={{ filter: 'brightness(0) invert(1)' }}
+            />
           </div>
           <div className="flex-1">
             <h1 className="m-0 text-base font-bold text-slate-800 tracking-tight">
