@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel
 from agno.agent import Agent
 from agno.models.google import Gemini
-from agno.storage.postgres import PostgresStorage
+from agno.db.postgres import PostgresDb
 from typing import Dict, List, Optional, Any
 from fastapi.responses import StreamingResponse
 import json
@@ -71,10 +71,10 @@ def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[Us
     current_style = preferences.aiStyle if preferences else "balanced"
     style_instruction = style_instructions.get(current_style, style_instructions["balanced"])
     
-    storage = PostgresStorage(
-        table_name="conversations",
+    db = PostgresDb(
+        session_table="conversations",
         db_url=config.DATABASE_URL,
-        auto_upgrade_schema=True
+        # auto_upgrade_schema=True
     )
 
     shopping_tools = ShoppingTools(request_headers)
@@ -209,7 +209,7 @@ def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[Us
             """
         ],
         markdown=True,
-        storage=storage,
+        db=db,
         session_state={"preferences": preferences.dict() if preferences else {"aiStyle": "balanced"}},
         add_datetime_to_instructions=True,
         add_history_to_messages=True,
@@ -372,14 +372,14 @@ async def get_conversation(
     try:
         logger.info(f"Retrieving conversation: {conversation_id} for user: {current_user.email}")
 
-        # Initialize PostgreSQL storage
-        storage = PostgresStorage(
-            table_name="conversations", 
-            db_url=config.DATABASE_URL
+        # Initialize PostgreSQL database
+        db = PostgresDb(
+            session_table="conversations",
+            db_url=config.DATABASE_URL,
         )
         
-        # Read the agent session directly from storage
-        agent_session = storage.read(session_id=conversation_id, user_id=str(current_user.id))
+        # Read the agent session directly from database
+        agent_session = db.read(session_id=conversation_id, user_id=str(current_user.id))
         
         if not agent_session:
             raise HTTPException(status_code=404, detail=f"Conversation {conversation_id} not found")
