@@ -1,4 +1,4 @@
-import { WebsiteConfig } from './types';
+import { WebsiteConfig, InterceptEndpoint } from './types';
 
 /**
  * Configuration for supported shopping websites
@@ -78,7 +78,7 @@ export function getAllUrlPatterns(): string[] {
 export function findWebsiteConfigByUrl(url: string): WebsiteConfig | null {
   for (const config of Object.values(WEBSITE_CONFIGS)) {
     // Check if URL matches any of the intercept endpoints
-    const matchesEndpoint = config.interceptEndpoints.some(endpoint => 
+    const matchesEndpoint = config.interceptEndpoints.some((endpoint: InterceptEndpoint) => 
       url.includes(endpoint.urlPattern)
     );
     
@@ -97,7 +97,7 @@ export function shouldInterceptRequest(url: string, method: string): WebsiteConf
   if (!config) return null;
 
   // Check if method matches
-  const matchesMethodAndEndpoint = config.interceptEndpoints.some(endpoint => 
+  const matchesMethodAndEndpoint = config.interceptEndpoints.some((endpoint: InterceptEndpoint) => 
     url.includes(endpoint.urlPattern) && endpoint.method.toLowerCase() === method.toLowerCase()
   );
 

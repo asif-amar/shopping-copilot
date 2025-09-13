@@ -34,9 +34,9 @@ export function Button({
 
   const variants = {
     default: {
-      background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)',
+      background: 'linear-gradient(135deg, #642BFE 0%, #9123FF 100%)',
       color: 'white',
-      boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)',
+      boxShadow: '0 2px 8px rgba(100, 43, 254, 0.3)',
     },
     secondary: {
       background: 'var(--background-secondary)',
@@ -89,11 +89,11 @@ export function Button({
     const target = e.currentTarget;
     if (variant === 'default') {
       target.style.transform = 'translateY(-1px)';
-      target.style.boxShadow = '0 4px 16px rgba(59, 130, 246, 0.4)';
+      target.style.boxShadow = '0 4px 16px rgba(100, 43, 254, 0.4)';
     } else if (variant === 'secondary') {
       target.style.backgroundColor = 'var(--border-light)';
     } else if (variant === 'outline') {
-      target.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+      target.style.backgroundColor = 'rgba(100, 43, 254, 0.1)';
     } else if (variant === 'ghost') {
       target.style.backgroundColor = 'var(--background-secondary)';
     }
@@ -105,7 +105,7 @@ export function Button({
     const target = e.currentTarget;
     if (variant === 'default') {
       target.style.transform = 'translateY(0)';
-      target.style.boxShadow = '0 2px 8px rgba(59, 130, 246, 0.3)';
+      target.style.boxShadow = '0 2px 8px rgba(100, 43, 254, 0.3)';
     } else if (variant === 'secondary') {
       target.style.backgroundColor = 'var(--background-secondary)';
     } else if (variant === 'outline') {

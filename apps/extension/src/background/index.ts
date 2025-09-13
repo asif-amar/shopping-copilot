@@ -113,8 +113,48 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
   ["requestHeaders"]
 );
 
-chrome.runtime.onInstalled.addListener(() => {
-  // Extension installed
+chrome.runtime.onInstalled.addListener(async (details) => {
+  console.log('Extension installed/updated:', details);
+  
+  // Handle version tracking for changelog functionality
+  const currentVersion = chrome.runtime.getManifest().version;
+  
+  try {
+    // Get existing version info
+    const result = await chrome.storage.local.get('versionInfo');
+    const existingVersionInfo = result.versionInfo;
+    
+    const now = new Date();
+    
+    if (details.reason === 'install') {
+      // First time install
+      const versionInfo = {
+        currentVersion,
+        installDate: now,
+        lastUpdateDate: now,
+        lastSeenChangelogVersion: currentVersion // Don't show changelog on first install
+      };
+      
+      await chrome.storage.local.set({ versionInfo });
+      console.log('New installation, version info saved:', versionInfo);
+    } else if (details.reason === 'update') {
+      // Extension updated
+      const versionInfo = {
+        currentVersion,
+        previousVersion: existingVersionInfo?.currentVersion || undefined,
+        installDate: existingVersionInfo?.installDate || now,
+        lastUpdateDate: now,
+        lastSeenChangelogVersion: existingVersionInfo?.lastSeenChangelogVersion
+      };
+      
+      await chrome.storage.local.set({ versionInfo });
+      console.log('Extension updated, version info updated:', versionInfo);
+      
+      // If this is a version change, the useChangelog hook will detect it and show changelog
+    }
+  } catch (error) {
+    console.error('Failed to handle version tracking:', error);
+  }
 });
 
 // Test storage function (debug only)

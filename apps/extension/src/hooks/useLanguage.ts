@@ -129,6 +129,13 @@ const translations: Translations = {
     credit_transaction_refund: "החזרה",
     credit_transaction_monthly_reset: "איפוס חודשי",
     credit_transaction_account_creation: "פתיחת חשבון",
+
+    // Changelog
+    changelog: "יומן שינויים",
+    whats_new: "מה חדש",
+    version_history: "היסטוריית גרסאות",
+    new_version_available: "גרסה חדשה זמינה!",
+    view_changelog: "צפה ביומן השינויים",
   },
   en: {
     // Header
@@ -248,6 +255,13 @@ const translations: Translations = {
     credit_transaction_refund: "Refund",
     credit_transaction_monthly_reset: "Monthly Reset",
     credit_transaction_account_creation: "Account Creation",
+
+    // Changelog
+    changelog: "Changelog",
+    whats_new: "What's New",
+    version_history: "Version History",
+    new_version_available: "New Version Available!",
+    view_changelog: "View Changelog",
   },
 };
 

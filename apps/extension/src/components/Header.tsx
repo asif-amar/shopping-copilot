@@ -10,6 +10,7 @@ import {
   Languages,
   MessageSquare,
   MessageCircle,
+  FileText,
 } from "lucide-react";
 import {
   getSiteAdapterFromHostname,
@@ -17,10 +18,12 @@ import {
   isShoppingSite,
 } from "@/services/websiteContext";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useChangelog } from "@/hooks/useChangelog";
 import { ApiService } from "@/services/api";
 import { AuthModal } from "./AuthModal";
 import { SettingsModal } from "./SettingsModal";
 import { FeedbackModal } from "./FeedbackModal";
+import { ChangelogModal } from "./ChangelogModal";
 import { TooltipButton } from "./TooltipButton";
 import {
   DropdownMenu,
@@ -57,6 +60,10 @@ export const Header: React.FC<HeaderProps> = ({
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [isChangelogModalOpen, setIsChangelogModalOpen] = useState(false);
+
+  const { hasUnreadChangelog, currentVersion, markChangelogAsRead } =
+    useChangelog();
 
   useEffect(() => {
     checkAuthStatus();
@@ -93,6 +100,13 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
+  const handleChangelogOpen = async () => {
+    setIsChangelogModalOpen(true);
+    if (hasUnreadChangelog) {
+      await markChangelogAsRead();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -104,7 +118,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center justify-between">
         {/* Left side - Logo and title */}
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30">
+          <div className="w-8 h-8 bg-gradient-to-br from-[#642BFE] to-[#732BFF] rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/30">
             <ShoppingBag size={16} color="white" />
           </div>
           <div className="flex-1">
@@ -145,21 +159,28 @@ export const Header: React.FC<HeaderProps> = ({
                 transition: "all 0.2s ease",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "#e2e8f0";
+                (e.currentTarget as HTMLButtonElement).style.background =
+                  "#e2e8f0";
                 (e.currentTarget as HTMLButtonElement).style.color = "#475569";
-                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.1)";
+                (e.currentTarget as HTMLButtonElement).style.transform =
+                  "translateY(-1px)";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                  "0 2px 4px rgba(0, 0, 0, 0.1)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "#f1f5f9";
+                (e.currentTarget as HTMLButtonElement).style.background =
+                  "#f1f5f9";
                 (e.currentTarget as HTMLButtonElement).style.color = "#64748b";
-                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 1px 2px rgba(0, 0, 0, 0.05)";
+                (e.currentTarget as HTMLButtonElement).style.transform =
+                  "translateY(0)";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                  "0 1px 2px rgba(0, 0, 0, 0.05)";
               }}
             >
               <MessageSquare size={14} />
             </TooltipButton>
           )}
+
 
           {/* New Chat Button */}
           <TooltipButton
@@ -168,7 +189,7 @@ export const Header: React.FC<HeaderProps> = ({
             buttonStyle={{
               width: "32px",
               height: "32px",
-              background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+              background: "linear-gradient(135deg, #642BFE 0%, #732BFF 100%)",
               border: "none",
               color: "white",
               borderRadius: "8px",
@@ -176,20 +197,20 @@ export const Header: React.FC<HeaderProps> = ({
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
-              boxShadow: "0 2px 6px rgba(59, 130, 246, 0.25)",
+              boxShadow: "0 2px 6px rgba(100, 43, 254, 0.25)",
               transition: "all 0.2s ease",
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.transform =
                 "translateY(-1px)";
               (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                "0 4px 12px rgba(59, 130, 246, 0.35)";
+                "0 4px 12px rgba(100, 43, 254, 0.35)";
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLButtonElement).style.transform =
                 "translateY(0)";
               (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                "0 2px 6px rgba(59, 130, 246, 0.25)";
+                "0 2px 6px rgba(100, 43, 254, 0.25)";
             }}
           >
             <Plus size={14} />
@@ -205,7 +226,10 @@ export const Header: React.FC<HeaderProps> = ({
             <DropdownMenuContent
               align={isRTL ? "start" : "end"}
               side="bottom"
-              className={cn("w-56 bg-white border border-slate-200 shadow-lg max-h-[70vh] overflow-y-auto", isRTL ? "text-right" : "text-left")}
+              className={cn(
+                "w-56 bg-white border border-slate-200 shadow-lg max-h-[70vh] overflow-y-auto",
+                isRTL ? "text-right" : "text-left"
+              )}
               style={{ direction: isRTL ? "rtl" : "ltr" }}
               sideOffset={4}
               alignOffset={isRTL ? 0 : 0}
@@ -265,6 +289,35 @@ export const Header: React.FC<HeaderProps> = ({
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
+
+              <DropdownMenuSeparator />
+
+              {/* Changelog */}
+              <DropdownMenuItem
+                onClick={handleChangelogOpen}
+                className={cn(
+                  "cursor-pointer flex items-center gap-2 relative",
+                  isRTL ? "flex-row" : "flex flex-row-reverse justify-end"
+                )}
+              >
+                {isRTL ? (
+                  <>
+                    <FileText size={16} />
+                    <span>{t("changelog")}</span>
+                    {hasUnreadChangelog && (
+                      <div className="w-2 h-2 bg-red-500 rounded-full mr-auto" />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <span>{t("changelog")}</span>
+                    <FileText size={16} />
+                    {hasUnreadChangelog && (
+                      <div className="w-2 h-2 bg-red-500 rounded-full ml-auto" />
+                    )}
+                  </>
+                )}
+              </DropdownMenuItem>
 
               <DropdownMenuSeparator />
 
@@ -374,6 +427,11 @@ export const Header: React.FC<HeaderProps> = ({
       <FeedbackModal
         isOpen={isFeedbackModalOpen}
         onClose={() => setIsFeedbackModalOpen(false)}
+      />
+      <ChangelogModal
+        isOpen={isChangelogModalOpen}
+        onClose={() => setIsChangelogModalOpen(false)}
+        highlightVersion={currentVersion}
       />
     </motion.div>
   );

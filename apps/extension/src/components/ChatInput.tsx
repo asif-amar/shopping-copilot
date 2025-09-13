@@ -91,7 +91,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           icon: Target,
           label: t("balanced"),
           description: t("balanced_desc"),
-          color: "text-blue-600",
+          color: "text-purple-600",
         };
       case "strict":
         return {
@@ -269,12 +269,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                           className={cn(
                             "flex flex-col items-start gap-1 py-3 px-3 rounded-md transition-colors cursor-pointer",
                             preferences.aiStyle === "balanced"
-                              ? "bg-blue-50"
+                              ? "bg-purple-50"
                               : "hover:bg-slate-50"
                           )}
                         >
                           <div className="flex items-center gap-2">
-                            <Target size={14} className="text-blue-600" />
+                            <Target size={14} className="text-purple-600" />
                             <span className="font-medium text-slate-700">
                               {t("balanced")}
                             </span>
@@ -375,7 +375,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               className={cn(
                 "w-8 h-8 rounded-full border-none transition-all duration-200 flex items-center justify-center shrink-0",
                 canSend
-                  ? "bg-blue-500 hover:bg-blue-600 text-white shadow-sm"
+                  ? "bg-purple-500 hover:bg-purple-600 text-white shadow-sm"
                   : "bg-slate-300 text-slate-500 cursor-not-allowed"
               )}
               title={

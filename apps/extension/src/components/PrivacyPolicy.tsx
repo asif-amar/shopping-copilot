@@ -340,8 +340,8 @@ We will respond to legitimate privacy requests within reasonable timeframes, sub
         ))}
       </div>
 
-      <div className="mt-12 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-800 font-medium">
+      <div className="mt-12 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+        <p className="text-sm text-purple-800 font-medium">
           {language === "he"
             ? "🔒 אנו מתחייבים להגן על הפרטיות שלך, אך זכור שזהו מוצר ניסיוני."
             : "🔒 We are committed to protecting your privacy, but remember this is an experimental product."}

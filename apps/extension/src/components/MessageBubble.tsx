@@ -20,7 +20,10 @@ interface MessageBubbleProps {
   onSendMessage?: (message: string) => Promise<void>;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMessage }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = ({
+  message,
+  onSendMessage,
+}) => {
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
@@ -28,7 +31,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMes
 
   // Check if message has any visible content
   const hasVisibleContent = () => {
-    return message.parts.some(part => {
+    return message.parts.some((part) => {
       if (part.type === "text") {
         return (part as TextPart).content?.trim();
       } else if (part.type === "products") {
@@ -98,14 +101,19 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMes
   };
 
   // Handle cart item deletion
-  const handleDeleteCartItem = async (_cartItemId: string, itemName: string, _quantity: number) => {
+  const handleDeleteCartItem = async (
+    _cartItemId: string,
+    itemName: string,
+    _quantity: number
+  ) => {
     if (!onSendMessage) return;
-    
+
     // Create delete message in the appropriate language using product name
-    const deleteMessage = language === "he" 
-      ? `הסר את "${itemName}" מהעגלה`
-      : `Remove "${itemName}" from cart`;
-    
+    const deleteMessage =
+      language === "he"
+        ? `הסר את "${itemName}" מהעגלה`
+        : `Remove "${itemName}" from cart`;
+
     // Send the delete message through the chat system
     await onSendMessage(deleteMessage);
   };
@@ -113,11 +121,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMes
   // Handle add to cart
   const handleAddToCart = async (productName: string): Promise<void> => {
     if (!onSendMessage) return;
-    
-    const addMessage = language === "he" 
-      ? `הוסף את "${productName}" לעגלה`
-      : `Add "${productName}" to cart`;
-    
+
+    const addMessage =
+      language === "he"
+        ? `הוסף את "${productName}" לעגלה`
+        : `Add "${productName}" to cart`;
+
     await onSendMessage(addMessage);
   };
 
@@ -136,7 +145,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onSendMes
         <div
           style={{
             maxWidth: "70%",
-            background: "#2563eb",
+            background: "#642BFE",
             color: "white",
             padding: "12px 16px",
             borderRadius: "18px",

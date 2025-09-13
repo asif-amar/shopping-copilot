@@ -217,7 +217,7 @@ export const TermsOfUse: React.FC = () => {
 
       <div className="space-y-8">
         {content.sections.map((section, index) => (
-          <div key={index} className="border-l-4 border-blue-500 pl-4">
+          <div key={index} className="border-l-4 border-purple-500 pl-4">
             <h2 className="text-xl font-semibold text-slate-700 mb-3">
               {section.title}
             </h2>

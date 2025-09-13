@@ -163,9 +163,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 overflow-y-auto">
-            {renderTabContent()}
-          </div>
+          <div className="flex-1 overflow-y-auto">{renderTabContent()}</div>
         </div>
       </DialogContent>
     </Dialog>
@@ -337,7 +335,7 @@ function AccountTab({ language }: { language: string }) {
                 ) : null}
                 <div
                   className={cn(
-                    "w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center",
+                    "w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center",
                     user.profile_picture_url ? "hidden" : ""
                   )}
                 >
@@ -372,7 +370,7 @@ function AccountTab({ language }: { language: string }) {
                     onClick={handleEditName}
                     disabled={updating}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors cursor-pointer",
+                      "flex items-center gap-2 px-3 py-1 text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-md transition-colors cursor-pointer",
                       isRTL ? "flex-row-reverse" : "flex-row"
                     )}
                   >
@@ -399,7 +397,7 @@ function AccountTab({ language }: { language: string }) {
                     onChange={(e) => setEditedName(e.target.value)}
                     onKeyDown={handleKeyPress}
                     className={cn(
-                      "w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                      "w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent",
                       isRTL ? "text-right" : "text-left"
                     )}
                     placeholder={
@@ -425,7 +423,7 @@ function AccountTab({ language }: { language: string }) {
                         updating || editedName.trim() === (user.full_name || "")
                       }
                       className={cn(
-                        "flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer",
+                        "flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer",
                         isRTL ? "flex-row-reverse" : "flex-row"
                       )}
                     >
@@ -514,7 +512,7 @@ function AccountTab({ language }: { language: string }) {
                   <div className="mt-4">
                     <div className="w-full bg-slate-100 rounded-full h-2 mb-2">
                       <div
-                        className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300"
+                        className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-300"
                         style={{
                           width: `${Math.min(100, (creditStatus.credits_remaining / creditStatus.credits_total_monthly) * 100)}%`,
                         }}
@@ -567,7 +565,7 @@ function AccountTab({ language }: { language: string }) {
                 </div>
                 <button
                   onClick={refreshCredits}
-                  className="text-blue-600 hover:text-blue-700 text-xs cursor-pointer"
+                  className="text-purple-600 hover:text-purple-700 text-xs cursor-pointer"
                 >
                   {language === "he" ? "נסה שוב" : "Try again"}
                 </button>

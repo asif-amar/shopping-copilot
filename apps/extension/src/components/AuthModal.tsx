@@ -84,7 +84,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
               animate="visible"
               className="relative"
             >
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center">
                 <ShieldCheck size={32} color="white" />
               </div>
               <motion.div
@@ -170,7 +170,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
           >
             <div
               className={cn(
-                "w-2 h-2 bg-blue-500 rounded-full flex-shrink-0",
+                "w-2 h-2 bg-purple-500 rounded-full flex-shrink-0",
                 isRTL ? "order-2" : "order-1"
               )}
             />
@@ -194,7 +194,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
           >
             <div
               className={cn(
-                "w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0",
+                "w-2 h-2 bg-purple-500 rounded-full flex-shrink-0",
                 isRTL ? "order-2" : "order-1"
               )}
             />
@@ -238,14 +238,14 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
             {t("auth_agree_terms")}{" "}
             <button
               onClick={() => setLegalModalType("terms")}
-              className="text-blue-600 hover:text-blue-800 underline"
+              className="text-purple-600 hover:text-purple-800 underline"
             >
               {t("auth_terms_of_use")}
             </button>{" "}
             {t("auth_and")}{" "}
             <button
               onClick={() => setLegalModalType("privacy")}
-              className="text-blue-600 hover:text-blue-800 underline"
+              className="text-purple-600 hover:text-purple-800 underline"
             >
               {t("auth_privacy_policy")}
             </button>

@@ -13,12 +13,21 @@ export interface Conversation {
   lastUpdated: Date;
 }
 
+export interface VersionInfo {
+  currentVersion: string;
+  previousVersion?: string;
+  lastSeenChangelogVersion?: string;
+  installDate: Date;
+  lastUpdateDate: Date;
+}
+
 export interface StorageData {
   conversations: Record<string, Conversation>;
   settings: {
     maxConversations: number;
     maxMessagesPerConversation: number;
   };
+  versionInfo?: VersionInfo;
 }
 
 export interface StorageEvent {

@@ -168,7 +168,7 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
               {isLoading && (
                 <div className="flex items-center justify-center py-12">
                   <div className="flex flex-col items-center gap-2 text-slate-500">
-                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
                     <span className="text-sm">
                       {t("loading") || "Loading..."}
                     </span>

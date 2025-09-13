@@ -58,13 +58,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
         style={{
           width: "64px",
           height: "64px",
-          background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+          background: "linear-gradient(135deg, #642BFE 0%, #732BFF 100%)",
           borderRadius: "16px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           marginBottom: "16px",
-          boxShadow: "0 6px 24px rgba(59, 130, 246, 0.3)",
+          boxShadow: "0 6px 24px rgba(100, 43, 254, 0.3)",
         }}
       >
         <ShoppingCart size={30} color="white" />
@@ -151,7 +151,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
                 style={{
                   width: "32px",
                   height: "32px",
-                  background: "rgba(59, 130, 246, 0.1)",
+                  background: "rgba(100, 43, 254, 0.1)",
                   borderRadius: "8px",
                   display: "flex",
                   alignItems: "center",
@@ -159,7 +159,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
                   flexShrink: 0,
                 }}
               >
-                <Icon size={16} color="#3b82f6" />
+                <Icon size={16} color="#642BFE" />
               </div>
               <div style={{ flex: 1 }}>
                 <div

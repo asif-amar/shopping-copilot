@@ -1,0 +1,74 @@
+{
+  "versions": [
+    {
+      "version": "1.0.0",
+      "releaseDate": "2025-09-13",
+      "features": {
+        "en": [
+          {
+            "type": "feature",
+            "title": "🚀 Shopping Copilot Launch",
+            "description": "Meet Shopping Copilot — your AI-powered shopping assistant."
+          },
+          {
+            "type": "feature",
+            "title": "🛒 Multi-Store Shopping",
+            "description": "Seamlessly shop from Rami Levy and Shufersal in one place."
+          },
+          {
+            "type": "feature",
+            "title": "🔎 Smart Search",
+            "description": "Find products faster with AI-based search and recommendations."
+          },
+          {
+            "type": "feature",
+            "title": "📦 Cart Management",
+            "description": "Add, remove, and update items in your cart effortlessly."
+          },
+          {
+            "type": "feature",
+            "title": "💬 Conversation History",
+            "description": "Continue your shopping conversations across sessions."
+          },
+          {
+            "type": "feature",
+            "title": "🌐 Multi-Language Support",
+            "description": "Available in English and Hebrew."
+          }
+        ],
+        "he": [
+          {
+            "type": "feature",
+            "title": "🚀 השקת Shopping Copilot",
+            "description": "הכירו את Shopping Copilot – עוזר הקניות החדש שלכם מבוסס בינה מלאכותית."
+          },
+          {
+            "type": "feature",
+            "title": "🛒 קניות במספר חנויות",
+            "description": "קנייה נוחה מרמי לוי ושופרסל במקום אחד."
+          },
+          {
+            "type": "feature",
+            "title": "🔎 חיפוש חכם",
+            "description": "מצאו מוצרים במהירות עם חיפוש והמלצות מבוססי בינה מלאכותית."
+          },
+          {
+            "type": "feature",
+            "title": "📦 ניהול עגלה",
+            "description": "הוספה, הסרה ועדכון פריטים בקלות."
+          },
+          {
+            "type": "feature",
+            "title": "💬 היסטוריית שיחות",
+            "description": "המשיכו את שיחות הקניות שלכם בין הפעלות."
+          },
+          {
+            "type": "feature",
+            "title": "🌐 תמיכה רב-לשונית",
+            "description": "זמין בעברית ובאנגלית."
+          }
+        ]
+      }
+    }
+  ]
+}

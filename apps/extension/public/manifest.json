@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "shopAI",
+  "name": "Shopping Copilot",
   "version": "1.0.0",
   "description": "Shopping assistant that helps you make better purchase decisions",
   "minimum_chrome_version": "114",
@@ -30,7 +30,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "shopAI Assistant"
+    "default_title": "Shopping Copilot Assistant"
   },
   "side_panel": {
     "default_path": "sidepanel.html"
