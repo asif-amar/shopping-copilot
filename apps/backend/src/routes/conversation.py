@@ -84,7 +84,6 @@ def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[Us
 
     agent = Agent(
         name="Shopping Copilot",
-        agent_id="shopping-copilot",
         model=model,
         tools=[shopping_tools, websearch_tools, scraping_tools],
         instructions=[
@@ -210,11 +209,7 @@ def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[Us
         ],
         markdown=True,
         db=db,
-        session_state={"preferences": preferences.dict() if preferences else {"aiStyle": "balanced"}},
-        add_datetime_to_instructions=True,
-        add_history_to_messages=True,
-        num_history_runs=5, # TODO: Find the magic number for us...
-        show_tool_calls=False,
+        session_state={"preferences": preferences.model_dump() if preferences else {"aiStyle": "balanced"}},
     )
     return agent
 
@@ -279,9 +274,9 @@ async def send_message(
                 yield f"data: {json.dumps({'type': 'conversation_info', 'conversation_id': conversation_id, 'hostname': request.hostname})}\n\n"
                 
                 # Stream response with intermediate steps
-                response_stream = await agent.arun(
-                    request.message, 
-                    user_id=str(current_user.id), 
+                response_stream = agent.arun(
+                    request.message,
+                    user_id=str(current_user.id),
                     session_id=conversation_id,
                     stream=True,
                     stream_intermediate_steps=True
@@ -299,13 +294,29 @@ async def send_message(
                         print(f"\nReasoning step: {event.content}\n")
                         yield f"data: {json.dumps({'type': 'thinking', 'content': f'💭 {event.content}'})}\n\n"
                     elif event.event == "RunResponseContent":
-                        # print(f"\nRun response content: {event.content}\n")
-                        print(event.content)
+                        print(f"\nRun response content: {event.content}\n")
                         # Capture response content for credit decision
                         full_response_content += event.content
                         # Stream content as-is without parsing
                         yield f"data: {json.dumps({'type': 'response', 'content': event.content})}\n\n"
+                    elif hasattr(event, 'content') and event.content:
+                        # Handle any other events with content
+                        print(f"\nOther event with content: {event.content}\n")
+                        full_response_content += str(event.content)
+                        yield f"data: {json.dumps({'type': 'response', 'content': str(event.content)})}\n\n"
                 
+                # If no content was streamed, try to get the final response
+                if not full_response_content:
+                    print("\nNo streamed content, trying to get final response\n")
+                    try:
+                        # Try getting the last run's response
+                        final_response = agent.last_run.response.content if agent.last_run and agent.last_run.response else None
+                        if final_response:
+                            full_response_content = final_response
+                            yield f"data: {json.dumps({'type': 'response', 'content': final_response})}\n\n"
+                    except Exception as e:
+                        print(f"Error getting final response: {e}")
+
                 # Mark successful response for credit deduction
                 should_deduct_credit = True
                 
@@ -379,7 +390,7 @@ async def get_conversation(
         )
         
         # Read the agent session directly from database
-        agent_session = db.read(session_id=conversation_id, user_id=str(current_user.id))
+        agent_session = db.get_session(session_id=conversation_id, user_id=str(current_user.id))
         
         if not agent_session:
             raise HTTPException(status_code=404, detail=f"Conversation {conversation_id} not found")
