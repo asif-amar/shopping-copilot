@@ -61,10 +61,16 @@ function chromeExtension() {
         mkdirSync(distDir, { recursive: true });
       }
 
-      // Copy manifest.json
+      // Copy manifest.json (use transformed version if available)
+      const manifestTempSrc = join(publicDir, "manifest.temp.json");
       const manifestSrc = join(publicDir, "manifest.json");
       const manifestDest = join(distDir, "manifest.json");
-      if (existsSync(manifestSrc)) {
+
+      if (existsSync(manifestTempSrc)) {
+        // Use transformed manifest from build script
+        copyFileSync(manifestTempSrc, manifestDest);
+      } else if (existsSync(manifestSrc)) {
+        // Fallback to original manifest
         copyFileSync(manifestSrc, manifestDest);
       }
 
@@ -97,8 +103,14 @@ export default defineConfig(({ mode }): UserConfig => {
     build: {
       outDir: "dist",
       emptyOutDir: true,
-      sourcemap: isDev,
+      sourcemap: false, // Never include source maps in production
       minify: isDev ? false : "terser",
+      terserOptions: {
+        compress: {
+          drop_console: !isDev, // Remove console.log in production
+          drop_debugger: !isDev,
+        },
+      },
       rollupOptions: {
         input: {
           background: resolve(__dirname, "src/background/index.ts"),
@@ -120,6 +132,31 @@ export default defineConfig(({ mode }): UserConfig => {
               return "assets/fonts/[name][extname]";
             }
             return "assets/[name][extname]";
+          },
+          manualChunks: (id) => {
+            // Separate vendor libraries into their own chunks
+            if (id.includes('node_modules')) {
+              if (id.includes('react') || id.includes('react-dom')) {
+                return 'react-vendor';
+              }
+              if (id.includes('@radix-ui')) {
+                return 'radix-vendor';
+              }
+              if (id.includes('framer-motion')) {
+                return 'animation-vendor';
+              }
+              if (id.includes('lucide-react')) {
+                return 'icons-vendor';
+              }
+              return 'vendor';
+            }
+            // Group related components
+            if (id.includes('/components/ui/')) {
+              return 'ui-components';
+            }
+            if (id.includes('/components/')) {
+              return 'components';
+            }
           },
         },
         onwarn(warning, warn) {

@@ -4,9 +4,13 @@
   "description": "Shopping assistant Chrome extension",
   "type": "module",
   "scripts": {
-    "dev": "vite build --watch --mode development",
-    "build": "vite build --mode production",
-    "build:dev": "vite build --mode development",
+    "dev": "MODE=dev npm run build:manifest && vite build --watch --mode development",
+    "build": "MODE=prod npm run build:manifest && vite build --mode production",
+    "build:dev": "MODE=dev npm run build:manifest && vite build --mode development",
+    "build:prod": "MODE=prod npm run build:manifest && vite build --mode production",
+    "build:manifest": "node scripts/build-manifest.mjs",
+    "zip": "npm run build:prod && node scripts/zip.mjs dist extension.zip",
+    "validate": "node scripts/ci-validate.mjs dist/manifest.json",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
@@ -14,7 +18,7 @@
     "preview": "vite preview",
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
-    "postbuild": "echo 'Build complete! Load the dist folder in Chrome extensions.'"
+    "postbuild": "rm -f public/manifest.temp.json && echo 'Build complete! Load the dist folder in Chrome extensions.'"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.7",

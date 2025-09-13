@@ -56,6 +56,7 @@ class StreamContentParser {
       (part) => part.type === "products"
     ) as ProductsPart | undefined;
     if (productsPart) {
+      // TODO: Handle products part
     }
 
     return this.currentParts;
@@ -585,6 +586,7 @@ export function useChat(): UseChatReturn {
         // Don't set isLoading(false) here - wait for actual content
 
         // Process stream
+        // eslint-disable-next-line no-constant-condition
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -686,7 +688,7 @@ export function useChat(): UseChatReturn {
               }
               break;
 
-            case "complete":
+            case "complete": {
               // Finalize the message
               const finalParts = parser.getfinalParts();
               setMessages((prev) =>
@@ -697,6 +699,7 @@ export function useChat(): UseChatReturn {
                 )
               );
               break;
+            }
 
             case "error":
               console.error("❌ Stream error:", parsedEvent.message);

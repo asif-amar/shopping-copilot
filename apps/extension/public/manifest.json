@@ -1,29 +1,26 @@
 {
   "manifest_version": 3,
   "name": "Shopping Copilot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shopping assistant that helps you make better purchase decisions",
   "minimum_chrome_version": "114",
   "permissions": [
     "storage",
-    "activeTab",
-    "tabs",
     "sidePanel",
     "scripting",
+    "identity",
     "webRequest",
-    "cookies",
-    "identity"
+    "cookies"
   ],
   "host_permissions": [
-    "http://localhost:8787/*",
-    "http://localhost:3001/*",
-    "http://127.0.0.1:8000/*",
+    "https://shopping-copilot-server.onrender.com/*"
+  ],
+  "optional_host_permissions": [
     "https://www.rami-levy.co.il/*",
     "https://rami-levy.co.il/*",
     "https://www.shufersal.co.il/*",
     "https://shufersal.co.il/*",
-    "https://online.shufersal.co.il/*",
-    "https://shopping-copilot-1.onrender.com/*"
+    "https://online.shufersal.co.il/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -46,7 +43,7 @@
     "128": "icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http://localhost:3001 http://localhost:8787 http://127.0.0.1:8000 https://shopping-copilot-1.onrender.com https://generativelanguage.googleapis.com https://accounts.google.com; img-src 'self' https://img.rami-levy.co.il https://www.rami-levy.co.il https://www.shufersal.co.il https://via.placeholder.com data:; frame-src 'none'; base-uri 'self';"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://shopping-copilot-server.onrender.com https://generativelanguage.googleapis.com https://accounts.google.com; img-src 'self' https://img.rami-levy.co.il https://www.rami-levy.co.il https://www.shufersal.co.il https://via.placeholder.com data:; frame-src 'none'; base-uri 'self';"
   },
   "oauth2": {
     "client_id": "1020047453999-73om7b5s6e41g8itr9afbe2pl5mt3um7.apps.googleusercontent.com",

@@ -2,17 +2,18 @@
 
 let currentHostname: string | null = null;
 
-console.log("🚀 Shopping assistant background script loaded");
+// Only set up webRequest listener if permission is available
+if (chrome.webRequest && chrome.webRequest.onBeforeSendHeaders) {
 
-// Listen for ALL Rami Levy requests first to debug
-chrome.webRequest.onBeforeSendHeaders.addListener(
-  (details) => {
+  // Listen for ALL Rami Levy requests first to debug
+  chrome.webRequest.onBeforeSendHeaders.addListener(
+    (details) => {
 
-    // Capture from specific catalog API endpoint
-    if (
-      details.url.includes("rami-levy.co.il/api/catalog") &&
-      details.method === "POST"
-    ) {
+      // Capture from specific catalog API endpoint
+      if (
+        details.url.includes("rami-levy.co.il/api/catalog") &&
+        details.method === "POST"
+      ) {
       const headers = details.requestHeaders || [];
 
 
@@ -45,12 +46,13 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
         credentials.ecomtoken = ecomtokenHeader.value;
       }
 
-      // Always get cookies via Chrome cookies API for the exact domain
-      chrome.cookies
-        .getAll({
-          url: details.url, // Use the exact URL to get cookies that would be sent
-        })
-        .then((cookies) => {
+      // Get cookies via Chrome cookies API for the exact domain (if permission available)
+      if (chrome.cookies && chrome.cookies.getAll) {
+        chrome.cookies
+          .getAll({
+            url: details.url, // Use the exact URL to get cookies that would be sent
+          })
+          .then((cookies) => {
 
           if (cookies.length > 0) {
               const url = new URL(details.url);
@@ -71,11 +73,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 
               if (cookieHeader) {
                 credentials.cookie = cookieHeader;
-            } else {
-              console.error("No cookie header constructed (empty after filtering)");
             }
-          } else {
-            console.error("Failed to find cookies for this URL");
           }
 
           // Store the captured credentials
@@ -93,15 +91,27 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
           // Verify storage
           return chrome.storage.local.get("rami-levy-captured-headers");
         })
-        .then((_result) => {
-          // Verification completed
-        })
         .catch((error) => {
-          console.error(
-            "❌ Failed to save captured Rami Levy credentials:",
-            error
-          );
+          // Failed to save credentials - log in development only
+          if (process.env.NODE_ENV === 'development') {
+            console.error("Failed to save captured Rami Levy credentials:", error);
+          }
         });
+      } else {
+        // No cookies permission - store incomplete credentials
+        chrome.storage.local.set({
+          "rami-levy-captured-headers": {
+            ...credentials,
+            capturedAt: Date.now(),
+            source: "network-intercepted-no-cookies",
+            url: details.url,
+            error: "MISSING_COOKIES_PERMISSION",
+            note: "Cookies not available - missing permission"
+          },
+        }).catch(() => {
+          // Failed to save - silent in production
+        });
+      }
     }
 
     return { requestHeaders: details.requestHeaders };
@@ -111,10 +121,10 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
     types: ["xmlhttprequest", "main_frame", "sub_frame"],
   },
   ["requestHeaders"]
-);
+  );
+}
 
 chrome.runtime.onInstalled.addListener(async (details) => {
-  console.log('Extension installed/updated:', details);
   
   // Handle version tracking for changelog functionality
   const currentVersion = chrome.runtime.getManifest().version;
@@ -183,18 +193,28 @@ const testCapturedCredentials = async () => {
 // Test cookie retrieval function (debug only)
 const testCookies = async () => {
   try {
-    const cookies = await chrome.cookies.getAll({
-      domain: "rami-levy.co.il",
-    });
+    if (chrome.cookies && chrome.cookies.getAll) {
+      const cookies = await chrome.cookies.getAll({
+        domain: "rami-levy.co.il",
+      });
 
-    if (cookies.length > 0) {
-      const cookieHeader = cookies
-        .map((cookie) => `${cookie.name}=${cookie.value}`)
-        .join("; ");
+      if (cookies.length > 0) {
+        const cookieHeader = cookies
+          .map((cookie) => `${cookie.name}=${cookie.value}`)
+          .join("; ");
 
+        await chrome.storage.local.set({
+          "test-cookies": {
+            cookie: cookieHeader,
+            capturedAt: Date.now(),
+          },
+        });
+      }
+    } else {
+      console.log("⚠️ Cookies API not available - missing permission");
       await chrome.storage.local.set({
         "test-cookies": {
-          cookie: cookieHeader,
+          error: "Cookies API not available",
           capturedAt: Date.now(),
         },
       });
@@ -287,10 +307,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       case "PING":
         return { success: true, message: "pong" };
 
-      case "GET_CURRENT_HOSTNAME":
+      case "GET_CURRENT_HOSTNAME": {
         const hostname = await getCurrentHostname();
         currentHostname = hostname;
         return { hostname };
+      }
 
       default:
         return { error: "Unknown message type" };

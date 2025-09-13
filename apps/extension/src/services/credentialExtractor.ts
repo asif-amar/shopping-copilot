@@ -50,12 +50,19 @@ export class CredentialExtractor {
       const captured = result["rami-levy-captured-headers"];
 
       if (!captured) {
+        console.error("❌ No captured Rami Levy credentials found in storage, make sure to visit rami-levy.co.il and trigger API calls");
         return null;
+      }
+
+      // Check for permission errors
+      if (captured.error === "MISSING_COOKIES_PERMISSION") {
+        console.error("❌ Missing cookies permission - shopping tools will fail");
       }
 
       // Check if the captured headers are recent (within the last hour)
       const oneHourAgo = Date.now() - 60 * 60 * 1000;
       if (captured.capturedAt < oneHourAgo) {
+        console.error("❌ Captured credentials expired (> 1 hour ago), refresh by visiting rami-levy.co.il");
         return null;
       }
 
