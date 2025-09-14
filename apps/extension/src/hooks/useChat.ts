@@ -369,7 +369,45 @@ export function useChat(): UseChatReturn {
       }
     };
 
+    const updateHostnameOnTabChange = async () => {
+      try {
+        const tabs = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
+        if (tabs[0]?.url) {
+          const url = new URL(tabs[0].url);
+          const hostname = url.hostname;
+          setCurrentHostname(hostname);
+        }
+      } catch (error) {
+        console.error("Failed to update hostname on tab change:", error);
+      }
+    };
+
+    // Listen for tab activation (switching between tabs)
+    const handleTabActivated = () => {
+      updateHostnameOnTabChange();
+    };
+
+    // Listen for tab updates (URL changes in current tab)
+    const handleTabUpdated = (tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
+      if (changeInfo.url && tab.active) {
+        updateHostnameOnTabChange();
+      }
+    };
+
     initializeHostname();
+
+    // Add Chrome API listeners
+    chrome.tabs.onActivated.addListener(handleTabActivated);
+    chrome.tabs.onUpdated.addListener(handleTabUpdated);
+
+    // Cleanup listeners on unmount
+    return () => {
+      chrome.tabs.onActivated.removeListener(handleTabActivated);
+      chrome.tabs.onUpdated.removeListener(handleTabUpdated);
+    };
   }, []);
 
   // Load stored conversation when hostname is available
@@ -377,6 +415,9 @@ export function useChat(): UseChatReturn {
     if (!currentHostname) return;
     
     const loadStoredConversation = async () => {
+      // Clear stored conversation on extension reopen to always start fresh
+      localStorage.removeItem(`conversation_${currentHostname}`);
+      
       const storedConversationId = localStorage.getItem(
         `conversation_${currentHostname}`
       );

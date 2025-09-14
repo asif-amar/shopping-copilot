@@ -10,6 +10,7 @@ import {
   MessageSquare,
   MessageCircle,
   FileText,
+  ShoppingBag,
 } from "lucide-react";
 import {
   getSiteAdapterFromHostname,
@@ -41,12 +42,14 @@ interface HeaderProps {
   currentHostname: string;
   onNewConversation: () => void;
   onOpenConversations?: () => void;
+  onSignOut?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   currentHostname,
   onNewConversation,
   onOpenConversations,
+  onSignOut,
 }) => {
   const { language, isRTL, toggleLanguage, t } = useLanguage();
   const siteAdapter = getSiteAdapterFromHostname(currentHostname);
@@ -88,6 +91,10 @@ export const Header: React.FC<HeaderProps> = ({
       console.log("User signed out successfully!");
       setIsAuthenticated(false);
       setUserEmail(null);
+      // Start a new conversation after sign out
+      if (onSignOut) {
+        onSignOut();
+      }
     } catch (error) {
       console.error("Sign-out failed:", error);
     }
@@ -118,13 +125,14 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Left side - Logo and title */}
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-gradient-to-br from-[#642BFE] to-[#732BFF] rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/30">
-            <img 
-              src="/icons/shopping_copilot_logo.svg" 
-              alt="Shopping Copilot Logo" 
-              width={16} 
+            {/* <img
+              src="/icons/shopping_copilot_logo.svg"
+              alt="Shopping Copilot Logo"
+              width={16}
               height={16}
-              style={{ filter: 'brightness(0) invert(1)' }}
-            />
+              style={{ filter: "brightness(0) invert(1)" }}
+            /> */}
+            <ShoppingBag size={16} color="white" />
           </div>
           <div className="flex-1">
             <h1 className="m-0 text-base font-bold text-slate-800 tracking-tight">
@@ -132,10 +140,15 @@ export const Header: React.FC<HeaderProps> = ({
             </h1>
             <div className="mt-1 text-xs text-slate-500 flex items-center gap-2">
               <span>{displayName || t("loading")}</span>
-              {isSupported && (
+              {isSupported ? (
                 <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1">
                   <div className="w-1.5 h-1.5 bg-green-600 rounded-full" />
                   {t("supported")}
+                </span>
+              ) : (
+                <span className="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-red-600 rounded-full" />
+                  {t("not_supported")}
                 </span>
               )}
             </div>
@@ -185,7 +198,6 @@ export const Header: React.FC<HeaderProps> = ({
               <MessageSquare size={14} />
             </TooltipButton>
           )}
-
 
           {/* New Chat Button */}
           <TooltipButton

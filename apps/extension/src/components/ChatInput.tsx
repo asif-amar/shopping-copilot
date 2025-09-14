@@ -13,6 +13,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useCredits } from "@/hooks/useCredits";
 import { cn } from "@/lib/utils";
 import { CreditWarningBanner } from "./CreditWarningBanner";
+import { isShoppingSite } from "@/services/websiteContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,11 +38,13 @@ interface ChatInputProps {
     preferences?: UserPreferences
   ) => Promise<void>;
   isLoading: boolean;
+  currentHostname: string;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
   onSendMessage,
   isLoading,
+  currentHostname,
 }) => {
   const { isRTL, t } = useLanguage();
   const { creditStatus, refreshCredits } = useCredits();
@@ -50,10 +53,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [preferences, setPreferences] =
     useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [showCreditWarning, setShowCreditWarning] = useState(true);
+  
+  const isSupported = isShoppingSite(currentHostname);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim() || isLoading) return;
+    if (!inputText.trim() || isLoading || !isSupported) return;
     
     // Check if credits are exhausted
     if (creditStatus?.credits_exhausted) {
@@ -75,7 +80,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const canSend = inputText.trim() && !isLoading && !creditStatus?.credits_exhausted;
+  const canSend = inputText.trim() && !isLoading && !creditStatus?.credits_exhausted && isSupported;
 
   const getAIStyleConfig = (style: AIStyle) => {
     switch (style) {
@@ -146,11 +151,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={
-              creditStatus?.credits_exhausted 
-                ? (isRTL ? "הקרדיטים אזלו - לא ניתן לשלוח הודעות" : "Credits exhausted - cannot send messages")
-                : t("type_message")
+              !isSupported
+                ? (isRTL ? "אתר לא נתמך - חזור לאתר קניות נתמך" : "Unsupported site - navigate to a supported shopping site")
+                : creditStatus?.credits_exhausted 
+                  ? (isRTL ? "הקרדיטים אזלו - לא ניתן לשלוח הודעות" : "Credits exhausted - cannot send messages")
+                  : t("type_message")
             }
-            disabled={isLoading || creditStatus?.credits_exhausted}
+            disabled={isLoading || creditStatus?.credits_exhausted || !isSupported}
             className={cn(
               "w-full min-h-[20px] max-h-[120px] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-3 pb-4 ring-0 border-none rounded-xl text-sm resize-none outline-none bg-transparent text-slate-700 leading-5 box-border placeholder:text-slate-400",
               isRTL ? "text-right" : "text-left"
@@ -166,9 +173,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 <DropdownMenuTrigger asChild>
                   <motion.button
                     type="button"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 transition-colors flex items-center justify-center text-slate-600 hover:text-slate-700"
+                    disabled={!isSupported}
+                    whileHover={isSupported ? { scale: 1.05 } : {}}
+                    whileTap={isSupported ? { scale: 0.95 } : {}}
+                    className={cn(
+                      "w-8 h-8 rounded-full transition-colors flex items-center justify-center",
+                      isSupported
+                        ? "bg-slate-200 hover:bg-slate-300 text-slate-600 hover:text-slate-700"
+                        : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    )}
                   >
                     <Hint
                       text={t("preferences") || "Preferences"}
@@ -379,11 +392,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   : "bg-slate-300 text-slate-500 cursor-not-allowed"
               )}
               title={
-                creditStatus?.credits_exhausted 
-                  ? (isRTL ? "הקרדיטים אזלו" : "Credits exhausted")
-                  : canSend 
-                    ? t("send_message") 
-                    : t("type_message")
+                !isSupported
+                  ? (isRTL ? "אתר לא נתמך" : "Unsupported site")
+                  : creditStatus?.credits_exhausted 
+                    ? (isRTL ? "הקרדיטים אזלו" : "Credits exhausted")
+                    : canSend 
+                      ? t("send_message") 
+                      : t("type_message")
               }
             >
               {isLoading ? (

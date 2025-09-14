@@ -67,7 +67,14 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
           boxShadow: "0 6px 24px rgba(100, 43, 254, 0.3)",
         }}
       >
-        <ShoppingCart size={30} color="white" />
+        {/* <ShoppingCart size={30} color="white" /> */}
+        <img
+          src="/icons/shopping_copilot_logo.svg"
+          alt="Shopping Copilot Logo"
+          width={30}
+          height={30}
+          style={{ filter: "brightness(0) invert(1)" }}
+        />
       </motion.div>
 
       {/* Welcome Message */}
