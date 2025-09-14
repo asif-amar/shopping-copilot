@@ -90,7 +90,7 @@ export class ApiService {
    */
   private static async getAuthToken(): Promise<string | null> {
     return new Promise((resolve) => {
-      chrome.storage.local.get(['authToken'], (result) => {
+      chrome.storage.local.get(["authToken"], (result) => {
         resolve(result.authToken || null);
       });
     });
@@ -147,7 +147,6 @@ export class ApiService {
       const credentials =
         await CredentialExtractor.extractCredentialsForSite(siteAdapter);
 
-
       if (credentials) {
         // Convert credentials to the format expected by mapCredentialsToHeaders
         // The shared package expects lowercase keys but our credentials have uppercase keys
@@ -174,7 +173,6 @@ export class ApiService {
           };
         }
 
-
         // Use the scalable mapping function
         const mappedHeaders = mapCredentialsToHeaders(
           siteAdapter,
@@ -200,7 +198,6 @@ export class ApiService {
     preferences?: UserPreferences
   ): Promise<ReadableStreamDefaultReader<Uint8Array>> {
     const headers = await this.getHeaders(hostname);
-
 
     const response = await fetch(`${this.BASE_URL}/conversation`, {
       method: "POST",
@@ -234,17 +231,20 @@ export class ApiService {
    */
   static async getConversation(conversationId: string) {
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.BASE_URL}/conversation/${conversationId}`, {
-      headers
-    });
-    
+    const response = await fetch(
+      `${this.BASE_URL}/conversation/${conversationId}`,
+      {
+        headers,
+      }
+    );
+
     if (!response.ok) {
       if (response.status === 401) {
         throw new Error("Authentication required. Please sign in again.");
       }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     return response.json();
   }
 
@@ -253,24 +253,29 @@ export class ApiService {
    */
   static async listConversations(limit: number = 50) {
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.BASE_URL}/conversations?limit=${limit}`, {
-      headers
-    });
-    
+    const response = await fetch(
+      `${this.BASE_URL}/conversations?limit=${limit}`,
+      {
+        headers,
+      }
+    );
+
     if (!response.ok) {
       if (response.status === 401) {
         throw new Error("Authentication required. Please sign in again.");
       }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     return response.json();
   }
 
   /**
    * Authenticate with Google OAuth token
    */
-  static async authenticateWithGoogle(googleToken: string): Promise<AuthResponse> {
+  static async authenticateWithGoogle(
+    googleToken: string
+  ): Promise<AuthResponse> {
     const response = await fetch(`${this.BASE_URL}/auth/google`, {
       method: "POST",
       headers: {
@@ -290,33 +295,110 @@ export class ApiService {
   }
 
   /**
+   * Clear cached Google tokens to force account selection
+   */
+  static async clearGoogleTokens(): Promise<void> {
+    return new Promise((resolve) => {
+      // Get any cached token without user interaction
+      chrome.identity.getAuthToken({ interactive: false }, (token) => {
+        if (token) {
+          console.log(
+            "Found cached token, removing it:",
+            token.substring(0, 20) + "..."
+          );
+          // Remove the cached token
+          chrome.identity.removeCachedAuthToken({ token }, () => {
+            if (chrome.runtime.lastError) {
+              console.warn(
+                "Error removing cached token:",
+                chrome.runtime.lastError
+              );
+            } else {
+              console.log("Cached Google token cleared");
+            }
+            // Also try to clear the profile info cache
+            chrome.identity.clearAllCachedAuthTokens(() => {
+              if (chrome.runtime.lastError) {
+                console.warn(
+                  "Error clearing all cached tokens:",
+                  chrome.runtime.lastError
+                );
+              } else {
+                console.log("All cached Google tokens cleared");
+              }
+              resolve();
+            });
+          });
+        } else {
+          // No token to clear, but still try to clear all cached tokens
+          chrome.identity.clearAllCachedAuthTokens(() => {
+            if (chrome.runtime.lastError) {
+              console.warn(
+                "Error clearing all cached tokens:",
+                chrome.runtime.lastError
+              );
+            } else {
+              console.log(
+                "All cached Google tokens cleared (no specific token found)"
+              );
+            }
+            resolve();
+          });
+        }
+      });
+    });
+  }
+
+  /**
    * Sign in with Google using Chrome Identity API
    */
   static async signInWithGoogle(): Promise<AuthResponse> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // First clear any cached tokens to force account selection
+        await this.clearGoogleTokens();
+      } catch (error) {
+        console.warn("Could not clear cached tokens:", error);
+        // Continue anyway
+      }
+
+      // Add a small delay to ensure token clearing takes effect
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       // Get Google Access Token from Chrome's Identity API
-      chrome.identity.getAuthToken({ interactive: true }, async (googleToken) => {
-        if (chrome.runtime.lastError || !googleToken) {
-          console.error("Could not get Google token:", chrome.runtime.lastError);
-          reject(new Error("Could not get Google token"));
-          return;
-        }
+      // Use getAuthToken with explicit account selection
+      chrome.identity.getAuthToken(
+        {
+          interactive: true,
+          account: { id: "" }, // Force account selection by using empty account ID
+        },
+        async (googleToken) => {
+          if (chrome.runtime.lastError || !googleToken) {
+            console.error(
+              "Could not get Google token:",
+              chrome.runtime.lastError
+            );
+            reject(new Error("Could not get Google token"));
+            return;
+          }
 
+          try {
+            // Send the token to the backend
+            const authResponse = await this.authenticateWithGoogle(googleToken);
 
-        try {
-          // Send the token to the backend
-          const authResponse = await this.authenticateWithGoogle(googleToken);
-          
-          // Store the backend's JWT securely
-          await chrome.storage.local.set({ authToken: authResponse.access_token });
-          console.log("Successfully logged in!");
-          
-          resolve(authResponse);
-        } catch (error) {
-          console.error("Error authenticating with backend:", error);
-          reject(error);
+            // Store the backend's JWT securely
+            await chrome.storage.local.set({
+              authToken: authResponse.access_token,
+            });
+            console.log("Successfully logged in!");
+
+            resolve(authResponse);
+          } catch (error) {
+            console.error("Error authenticating with backend:", error);
+            reject(error);
+          }
         }
-      });
+      );
     });
   }
 
@@ -336,12 +418,16 @@ export class ApiService {
       const headers = await this.getHeaders();
       await fetch(`${this.BASE_URL}/auth/logout`, {
         method: "POST",
-        headers
+        headers,
       });
-      
+
       // Logout result handled silently
     } catch (error) {
-      console.warn("Error calling backend logout:", error, "- continuing with client-side cleanup");
+      console.warn(
+        "Error calling backend logout:",
+        error,
+        "- continuing with client-side cleanup"
+      );
     }
   }
 
@@ -352,7 +438,7 @@ export class ApiService {
     return new Promise((resolve) => {
       // Helper function to clear our JWT token
       const clearOurToken = () => {
-        chrome.storage.local.remove(['authToken'], () => {
+        chrome.storage.local.remove(["authToken"], () => {
           console.log("User signed out - all tokens cleared");
           resolve();
         });
@@ -363,52 +449,62 @@ export class ApiService {
         // First, get the current Google access token
         chrome.identity.getAuthToken({ interactive: false }, (currentToken) => {
           if (chrome.runtime.lastError || !currentToken) {
-            console.error("Could not get current token to clear:", chrome.runtime.lastError);
+            console.error(
+              "Could not get current token to clear:",
+              chrome.runtime.lastError
+            );
             // Even if this fails, we should still clear our own token
             clearOurToken();
             return;
           }
 
           // Revoke the Google token using the correct accounts URL
-          fetch(`https://accounts.google.com/o/oauth2/revoke?token=${currentToken}`)
+          fetch(
+            `https://accounts.google.com/o/oauth2/revoke?token=${currentToken}`
+          )
             .then(() => {
               // Remove the token from Chrome's cache
-              chrome.identity.removeCachedAuthToken({ token: currentToken }, () => {
-                // Finally, remove our backend's token from storage
-                clearOurToken();
-              });
+              chrome.identity.removeCachedAuthToken(
+                { token: currentToken },
+                () => {
+                  // Finally, remove our backend's token from storage
+                  clearOurToken();
+                }
+              );
             })
             .catch((error) => {
               console.error("Error revoking Google token:", error);
               // Still try to remove from cache even if revocation fails
-              chrome.identity.removeCachedAuthToken({ token: currentToken }, () => {
-                clearOurToken();
-              });
+              chrome.identity.removeCachedAuthToken(
+                { token: currentToken },
+                () => {
+                  clearOurToken();
+                }
+              );
             });
         });
       };
 
       // First, try to logout from backend, then cleanup tokens
-      this.logoutFromBackend()
-        .finally(() => {
-          // Always cleanup Google tokens regardless of backend logout result
-          cleanupGoogleToken();
-        });
+      this.logoutFromBackend().finally(() => {
+        // Always cleanup Google tokens regardless of backend logout result
+        cleanupGoogleToken();
+      });
     });
   }
 
   /**
    * Get current user info from stored token (basic decode)
    */
-  static async getCurrentUserInfo(): Promise<{email: string} | null> {
+  static async getCurrentUserInfo(): Promise<{ email: string } | null> {
     const token = await this.getAuthToken();
     if (!token) return null;
 
     try {
       // Basic JWT decode (payload only, no verification)
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const payload = JSON.parse(atob(token.split(".")[1]));
       return {
-        email: payload.email || payload.sub
+        email: payload.email || payload.sub,
       };
     } catch (error) {
       console.error("Failed to decode token:", error);
@@ -423,7 +519,7 @@ export class ApiService {
     const headers = await this.getHeaders();
     const response = await fetch(`${this.BASE_URL}/user/me`, {
       method: "GET",
-      headers
+      headers,
     });
 
     if (!response.ok) {
@@ -442,7 +538,9 @@ export class ApiService {
   /**
    * Update user profile
    */
-  static async updateUserProfile(updates: UserProfileUpdate): Promise<UserProfile> {
+  static async updateUserProfile(
+    updates: UserProfileUpdate
+  ): Promise<UserProfile> {
     const headers = await this.getHeaders();
     const response = await fetch(`${this.BASE_URL}/user/me`, {
       method: "PUT",
@@ -456,7 +554,8 @@ export class ApiService {
       }
       const error = await response.json().catch(() => ({}));
       throw new Error(
-        error.detail || `Failed to update user profile! status: ${response.status}`
+        error.detail ||
+          `Failed to update user profile! status: ${response.status}`
       );
     }
 
@@ -466,7 +565,9 @@ export class ApiService {
   /**
    * Submit user feedback
    */
-  static async submitFeedback(feedback: FeedbackSubmission): Promise<FeedbackResponse> {
+  static async submitFeedback(
+    feedback: FeedbackSubmission
+  ): Promise<FeedbackResponse> {
     const headers = await this.getHeaders();
     const response = await fetch(`${this.BASE_URL}/feedback/`, {
       method: "POST",
@@ -494,7 +595,7 @@ export class ApiService {
     const headers = await this.getHeaders();
     const response = await fetch(`${this.BASE_URL}/user/credits`, {
       method: "GET",
-      headers
+      headers,
     });
 
     if (!response.ok) {
@@ -513,12 +614,18 @@ export class ApiService {
   /**
    * Get user credit history
    */
-  static async getCreditHistory(limit: number = 20, offset: number = 0): Promise<CreditHistory> {
+  static async getCreditHistory(
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<CreditHistory> {
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.BASE_URL}/user/credit-history?limit=${limit}&offset=${offset}`, {
-      method: "GET",
-      headers
-    });
+    const response = await fetch(
+      `${this.BASE_URL}/user/credit-history?limit=${limit}&offset=${offset}`,
+      {
+        method: "GET",
+        headers,
+      }
+    );
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -526,7 +633,8 @@ export class ApiService {
       }
       const error = await response.json().catch(() => ({}));
       throw new Error(
-        error.detail || `Failed to get credit history! status: ${response.status}`
+        error.detail ||
+          `Failed to get credit history! status: ${response.status}`
       );
     }
 
@@ -544,7 +652,13 @@ export class ApiService {
     | { type: "response"; content: string }
     | { type: "action"; data: ShoppingActionResponse }
     | { type: "conversation_info"; conversationId: string; hostname: string }
-    | { type: "complete"; conversationId: string; credits_remaining?: number; is_low_credits?: boolean; credits_exhausted?: boolean }
+    | {
+        type: "complete";
+        conversationId: string;
+        credits_remaining?: number;
+        is_low_credits?: boolean;
+        credits_exhausted?: boolean;
+      }
     | { type: "thinking"; content: string }
     | { type: "tool"; content: string }
     | { type: "product_start" }
@@ -565,20 +679,20 @@ export class ApiService {
 
           // Handle new backend streaming format
           if (parsed.type === "conversation_info") {
-            return { 
-              type: "conversation_info", 
+            return {
+              type: "conversation_info",
               conversationId: parsed.conversation_id,
-              hostname: parsed.hostname 
+              hostname: parsed.hostname,
             };
           }
 
           if (parsed.type === "complete") {
-            return { 
-              type: "complete", 
+            return {
+              type: "complete",
               conversationId: parsed.conversation_id,
               credits_remaining: parsed.credits_remaining,
               is_low_credits: parsed.is_low_credits,
-              credits_exhausted: parsed.credits_exhausted
+              credits_exhausted: parsed.credits_exhausted,
             };
           }
 

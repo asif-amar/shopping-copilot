@@ -52,6 +52,14 @@ const SidePanelContent: React.FC = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    await startNewConversation();
+    // Refresh conversations list after sign out
+    if (refreshConversations) {
+      await refreshConversations();
+    }
+  };
+
   return (
     <div
       style={{
@@ -65,6 +73,7 @@ const SidePanelContent: React.FC = () => {
         currentHostname={currentHostname}
         onNewConversation={handleNewConversation}
         onOpenConversations={() => setIsConversationsDrawerOpen(true)}
+        onSignOut={handleSignOut}
       />
 
       <MessageList
@@ -73,7 +82,7 @@ const SidePanelContent: React.FC = () => {
         onSendMessage={sendMessage}
       />
 
-      <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+      <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} currentHostname={currentHostname} />
 
       <AuthModal
         isOpen={isAuthModalOpen}
