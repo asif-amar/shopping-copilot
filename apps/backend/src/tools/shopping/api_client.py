@@ -122,6 +122,16 @@ class ApiClient:
     
     def _create_ssl_context(self):
         """Create SSL context - ISP proxy doesn't need special certificate"""
+        # Check if SSL verification should be disabled (for development)
+        disable_ssl_verify = os.getenv('DISABLE_SSL_VERIFY', 'false').lower() == 'true'
+        
+        if disable_ssl_verify:
+            logger.warning("SSL certificate verification DISABLED - for development only!")
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            return ssl_context
+        
         if self.use_proxy and self.proxy_url:
             # ISP proxy works with default SSL context
             logger.info("Using default SSL context for ISP proxy")

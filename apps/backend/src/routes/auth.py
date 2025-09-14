@@ -1,6 +1,7 @@
 """Authentication routes for Google OAuth integration."""
 
 import logging
+import ssl
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -43,16 +44,38 @@ async def auth_with_google(
     google_token = token_data.token
     
     try:
-        # Verify the Google token by sending it to Google's tokeninfo endpoint
-        async with aiohttp.ClientSession() as session:
+        # Verify the Google access token and get user info
+        logger.info("Verifying Google token and fetching user info...")
+        
+        # Create SSL context that can handle certificate verification
+        ssl_context = ssl.create_default_context()
+        # For development, we can be less strict about SSL verification
+        # In production, you should properly configure certificates
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        connector = aiohttp.TCPConnector(ssl=ssl_context)
+        async with aiohttp.ClientSession(connector=connector) as session:
+            # First verify the token
             async with session.get(
                 f"https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={google_token}"
-            ) as response:
-                if response.status != 200:
-                    logger.warning(f"Google token verification failed with status {response.status}")
+            ) as token_response:
+                if token_response.status != 200:
+                    response_text = await token_response.text()
+                    logger.warning(f"Google token verification failed with status {token_response.status}: {response_text}")
                     raise HTTPException(status_code=400, detail="Invalid Google token")
+            
+            # Then get user info using the access token
+            async with session.get(
+                f"https://www.googleapis.com/oauth2/v2/userinfo?access_token={google_token}"
+            ) as user_response:
+                if user_response.status != 200:
+                    response_text = await user_response.text()
+                    logger.warning(f"Failed to get user info from Google with status {user_response.status}: {response_text}")
+                    raise HTTPException(status_code=400, detail="Failed to get user info from Google")
                 
-                user_info = await response.json()
+                user_info = await user_response.json()
+                logger.info(f"Successfully retrieved user info from Google for email: {user_info.get('email', 'unknown')}")
     
     except aiohttp.ClientError as e:
         logger.error(f"Failed to verify Google token: {e}")

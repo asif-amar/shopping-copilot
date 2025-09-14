@@ -210,6 +210,9 @@ def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[Us
         markdown=True,
         db=db,
         session_state={"preferences": preferences.model_dump() if preferences else {"aiStyle": "balanced"}},
+        add_datetime_to_context=True,
+        add_history_to_context=True,
+        num_history_runs=5, # TODO: Find the magic number for us...
     )
     return agent
 
@@ -293,29 +296,12 @@ async def send_message(
                     elif event.event == "ReasoningStep":
                         print(f"\nReasoning step: {event.content}\n")
                         yield f"data: {json.dumps({'type': 'thinking', 'content': f'💭 {event.content}'})}\n\n"
-                    elif event.event == "RunResponseContent":
-                        print(f"\nRun response content: {event.content}\n")
+                    elif event.event == "RunContent":
+                        print(f"\nRun content: {event.content}\n")
                         # Capture response content for credit decision
                         full_response_content += event.content
                         # Stream content as-is without parsing
                         yield f"data: {json.dumps({'type': 'response', 'content': event.content})}\n\n"
-                    elif hasattr(event, 'content') and event.content:
-                        # Handle any other events with content
-                        print(f"\nOther event with content: {event.content}\n")
-                        full_response_content += str(event.content)
-                        yield f"data: {json.dumps({'type': 'response', 'content': str(event.content)})}\n\n"
-                
-                # If no content was streamed, try to get the final response
-                if not full_response_content:
-                    print("\nNo streamed content, trying to get final response\n")
-                    try:
-                        # Try getting the last run's response
-                        final_response = agent.last_run.response.content if agent.last_run and agent.last_run.response else None
-                        if final_response:
-                            full_response_content = final_response
-                            yield f"data: {json.dumps({'type': 'response', 'content': final_response})}\n\n"
-                    except Exception as e:
-                        print(f"Error getting final response: {e}")
 
                 # Mark successful response for credit deduction
                 should_deduct_credit = True
@@ -390,29 +376,27 @@ async def get_conversation(
         )
         
         # Read the agent session directly from database
-        agent_session = db.get_session(session_id=conversation_id, user_id=str(current_user.id))
+        agent_session = db.get_session(session_id=conversation_id, user_id=str(current_user.id), session_type="agent")
         
         if not agent_session:
             raise HTTPException(status_code=404, detail=f"Conversation {conversation_id} not found")
 
         # Extract and format messages from agent session
         result = []
-        
-        if agent_session.memory and 'runs' in agent_session.memory:
-            runs = agent_session.memory['runs']
-            
+        if agent_session.runs:
+            runs = agent_session.runs
             # Only process the last run since it contains the complete conversation
             if runs:
                 last_run = runs[-1]
-                messages = last_run.get('messages', [])
+                messages = last_run.messages
                 print("PROCESSING LAST RUN\n", len(messages), "messages\n")
                 buffer = None
-                
+
                 for message in messages:
-                    role = message.get('role', '')
-                    content = message.get('content', '')
-                    timestamp = message.get('created_at', datetime.now().timestamp())
-                    
+                    role = message.role
+                    content = message.content
+                    timestamp = message.created_at
+
                     if role == 'user':
                         # Finalize any ongoing assistant message first
                         if buffer:
@@ -428,6 +412,7 @@ async def get_conversation(
                         })
                     
                     elif role == 'assistant':
+
                         # If this is the first assistant message or we don't have a current one
                         if not buffer:
                             buffer = {
@@ -442,7 +427,7 @@ async def get_conversation(
                         if content:
                             # Split content by both product and cart-item tags to preserve order
                             parts = re.split(r'(<product>.*?</product>|<cart-item>.*?</cart-item>)', content, flags=re.DOTALL)
-                            
+
                             for part in parts:
                                 part = part.strip()
                                 if not part:
@@ -511,7 +496,7 @@ async def get_conversation(
                                     })
                     elif role == 'tool':
                         # Example: {'role': 'tool', 'content': ['**Added to Cart**\n**Website:** RAMI-LEVY\n**Product:** Product 3025\n**Quantity:** 5\n**Cart Item ID:** cart_3025'], 'metrics': {'time': 0.5974259579998034}, 'created_at': 1757405688, 'tool_calls': [{'content': '**Added to Cart**\n**Website:** RAMI-LEVY\n**Product:** Product 3025\n**Quantity:** 5\n**Cart Item ID:** cart_3025', 'tool_name': 'add_to_cart'}], 'from_history': False, 'stop_after_tool_call': False}
-                        tool_calls = message.get('tool_calls', [])
+                        tool_calls = message.tool_calls
                         if tool_calls:
                             for tool_call in tool_calls:
                                 buffer["content"].append({
@@ -523,7 +508,7 @@ async def get_conversation(
 
                     else:
                         continue
-                
+
                 # Finalize any remaining assistant message
                 if buffer:
                     result.append(buffer)
@@ -570,8 +555,8 @@ async def list_conversations(
                             agent_data,
                             created_at,
                             updated_at,
-                            memory,
-                            extra_data
+                            runs,
+                            metadata
                         FROM ai.conversations 
                         WHERE user_id = %s
                         ORDER BY updated_at DESC
@@ -581,50 +566,48 @@ async def list_conversations(
                     rows = cur.fetchall()
 
                     for row in rows:
-                        session_id, agent_data, created_at, updated_at, memory, extra_data = row
+                        session_id, agent_data, created_at, updated_at, runs, metadata = row
                         
                         # Extract hostname from session data
                         hostname = "Unknown"
                         if agent_data and 'session_data' in agent_data:
                             hostname = agent_data['session_data'].get('hostname', 'Unknown')
                         
-                        # Check if title already exists in extra_data
+                        # Check if title already exists in metadata
                         title = None
-                        if extra_data and isinstance(extra_data, dict):
-                            title = extra_data.get('title')
+                        if metadata and isinstance(metadata, dict):
+                            title = metadata.get('title')
                         
                         # Generate title from first user message if not exists
                         if not title:
-                            # Extract title from memory -> runs -> first run -> first user message
-                            if memory:
-                                runs = memory.get('runs', [])
-                                if runs and len(runs) > 0:
-                                    # Get the first run
-                                    first_run = runs[0]
-                                    messages = first_run.get('messages', [])
-                                    
-                                    # Find the first user message
-                                    for msg in messages:
-                                        if msg.get('role') == 'user' and msg.get('content'):
-                                            content = msg['content'].strip()
-                                            if content:
-                                                # Use first 40 chars as title
-                                                title = content[:40] + ("..." if len(content) > 40 else "")
-                                                break
+                            # Extract title from runs -> first run -> first user message
+                            if runs and len(runs) > 0:
+                                # Get the first run
+                                first_run = runs[0]
+                                messages = first_run.get('messages', [])
+                                
+                                # Find the first user message
+                                for msg in messages:
+                                    if msg.get('role') == 'user' and msg.get('content'):
+                                        content = msg['content'].strip()
+                                        if content:
+                                            # Use first 40 chars as title
+                                            title = content[:40] + ("..." if len(content) > 40 else "")
+                                            break
                             
-                            # Store the generated title in extra_data
+                            # Store the generated title in metadata
                             if title:
                                 try:
-                                    # Initialize extra_data as empty dict if None
-                                    updated_extra_data = extra_data or {}
-                                    updated_extra_data['title'] = title
+                                    # Initialize metadata as empty dict if None
+                                    updated_metadata = metadata or {}
+                                    updated_metadata['title'] = title
                                     
                                     # Update the database with the new title
                                     cur.execute("""
                                         UPDATE ai.conversations 
-                                        SET extra_data = %s 
+                                        SET metadata = %s 
                                         WHERE session_id = %s AND user_id = %s
-                                    """, (json.dumps(updated_extra_data), session_id, str(current_user.id)))
+                                    """, (json.dumps(updated_metadata), session_id, str(current_user.id)))
                                     
                                     logger.info(f"Generated and stored title for conversation {session_id}: {title}")
                                 except Exception as e:
@@ -634,15 +617,6 @@ async def list_conversations(
                         if not title:
                             title = f"Conversation on {hostname}"
                         
-                        # Extract messages for metadata (message count)
-                        messages = []
-                        if agent_data and 'memory' in agent_data and 'runs' in agent_data['memory']:
-                            runs = agent_data['memory']['runs']
-                            # Get messages from the latest run for count
-                            if runs and len(runs) > 0:
-                                latest_run = runs[-1]  # Last run has the most complete message list
-                                messages = latest_run.get('messages', [])
-                        
                         conversation_item = ConversationModel(
                             id=session_id,
                             title=title,
@@ -650,7 +624,7 @@ async def list_conversations(
                             messages=[],  # We'll populate this when specifically requested
                             created_at=created_at,
                             updated_at=updated_at,
-                            metadata={'message_count': len(messages)}
+                            metadata={}
                         )
                         conversations.append(conversation_item)
             
