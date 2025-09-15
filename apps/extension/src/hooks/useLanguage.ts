@@ -288,6 +288,22 @@ const translations: Translations = {
     onboarding_privacy_policy_link: "מדיניות פרטיות",
     onboarding_agreement_suffix:
       "שלנו. תוכלו לשנות את ההעדפות האלה בכל עת בהגדרות.",
+
+    // Settings - Preferences
+    settings_preferences: "העדפות",
+    settings_preferences_desc: "נהל את העדפות הקנייה שלך",
+    settings_household_size: "גודל משק בית",
+    settings_dietary_preferences: "העדפות תזונה",
+    settings_budget_preference: "העדפת תקציב",
+    settings_shopping_frequency: "תדירות קניות",
+    settings_preferred_sites: "אתרי קניות מועדפים",
+    settings_product_categories: "קטגוריות מוצרים מועדפות",
+    settings_brand_preferences: "העדפות מותג",
+    settings_save_changes: "שמור שינויים",
+    settings_saving: "שומר...",
+    settings_reset_to_default: "אפס לברירת מחדל",
+    settings_preferences_saved: "העדפות נשמרו בהצלחה",
+    settings_preferences_error: "שגיאה בשמירת העדפות",
   },
   en: {
     // Header
@@ -575,6 +591,22 @@ const translations: Translations = {
     onboarding_privacy_policy_link: "Privacy Policy",
     onboarding_agreement_suffix:
       ". You can change these preferences anytime in settings.",
+
+    // Settings - Preferences
+    settings_preferences: "Preferences",
+    settings_preferences_desc: "Manage your shopping preferences",
+    settings_household_size: "Household Size",
+    settings_dietary_preferences: "Dietary Preferences",
+    settings_budget_preference: "Budget Preference",
+    settings_shopping_frequency: "Shopping Frequency",
+    settings_preferred_sites: "Preferred Shopping Sites",
+    settings_product_categories: "Product Categories",
+    settings_brand_preferences: "Brand Preferences",
+    settings_save_changes: "Save Changes",
+    settings_saving: "Saving...",
+    settings_reset_to_default: "Reset to Default",
+    settings_preferences_saved: "Preferences saved successfully",
+    settings_preferences_error: "Error saving preferences",
   },
 };
 

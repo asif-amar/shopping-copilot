@@ -61,40 +61,11 @@ export function OnboardingModal({
     brand_preferences: [],
     special_considerations: [],
   });
-  const [customSiteInput, setCustomSiteInput] = useState("");
 
   const steps = getSteps(t);
 
-  const sanitizeInput = (input: string): string => {
-    // Remove HTML tags, SQL injection patterns, and dangerous characters
-    return input
-      .replace(/<[^>]*>/g, "") // Remove HTML tags
-      .replace(/['"`;\\]/g, "") // Remove quotes, semicolons, backticks, backslashes
-      .replace(
-        /\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b/gi,
-        ""
-      ) // Remove SQL keywords
-      .trim()
-      .substring(0, 50); // Limit length
-  };
-
   const updateData = (newData: Partial<OnboardingData>) => {
     setOnboardingData((prev) => ({ ...prev, ...newData }));
-  };
-
-  const handleCustomSiteAdd = () => {
-    if (customSiteInput.trim()) {
-      const sanitizedInput = sanitizeInput(customSiteInput);
-      if (sanitizedInput) {
-        const current = onboardingData.primary_sites || [];
-        if (!current.includes(`custom:${sanitizedInput}`)) {
-          updateData({
-            primary_sites: [...current, `custom:${sanitizedInput}`],
-          });
-        }
-        setCustomSiteInput("");
-      }
-    }
   };
 
   const nextStep = () => {
@@ -195,9 +166,6 @@ export function OnboardingModal({
                   data={onboardingData}
                   updateData={updateData}
                   t={t}
-                  customSiteInput={customSiteInput}
-                  setCustomSiteInput={setCustomSiteInput}
-                  handleCustomSiteAdd={handleCustomSiteAdd}
                 />
               )}
               {currentStep === 4 && <FeaturesStep t={t} />}
@@ -543,18 +511,40 @@ function PreferencesStep({
   data,
   updateData,
   t,
-  customSiteInput,
-  setCustomSiteInput,
-  handleCustomSiteAdd,
 }: {
   data: OnboardingData;
   updateData: (data: Partial<OnboardingData>) => void;
   t: (key: string) => string;
-  customSiteInput: string;
-  setCustomSiteInput: (value: string) => void;
-  handleCustomSiteAdd: () => void;
 }) {
   const { isRTL } = useLanguage();
+  const [customSiteInput, setCustomSiteInput] = useState("");
+
+  const sanitizeInput = (input: string): string => {
+    return input
+      .replace(/<[^>]*>/g, "")
+      .replace(/['"`;\\]/g, "")
+      .replace(
+        /\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b/gi,
+        ""
+      )
+      .trim()
+      .substring(0, 50);
+  };
+
+  const handleCustomSiteAdd = () => {
+    if (customSiteInput.trim()) {
+      const sanitizedInput = sanitizeInput(customSiteInput);
+      if (sanitizedInput) {
+        const current = data.primary_sites || [];
+        if (!current.includes(`custom:${sanitizedInput}`)) {
+          updateData({
+            primary_sites: [...current, `custom:${sanitizedInput}`],
+          });
+        }
+        setCustomSiteInput("");
+      }
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -649,6 +639,65 @@ function PreferencesStep({
           </div>
 
           {/* Other Option with Custom Input */}
+          {/* <div className="mt-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={customSiteInput}
+                onChange={(e) => setCustomSiteInput(e.target.value)}
+                placeholder={t("onboarding_other_placeholder")}
+                className={cn(
+                  "flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
+                  isRTL && "text-right"
+                )}
+                dir={isRTL ? "rtl" : "ltr"}
+                maxLength={50}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCustomSiteAdd();
+                  }
+                }}
+              />
+              <button
+                onClick={handleCustomSiteAdd}
+                disabled={!customSiteInput.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              >
+                {t("onboarding_other")}
+              </button>
+            </div>
+            
+            {(data.primary_sites || []).filter(site => site.startsWith('custom:')).length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {(data.primary_sites || [])
+                  .filter(site => site.startsWith('custom:'))
+                  .map((site) => {
+                    const siteName = site.replace('custom:', '');
+                    return (
+                      <span
+                        key={site}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 border border-green-500 rounded-md text-xs"
+                      >
+                        <span dir={isRTL ? "rtl" : "ltr"}>{siteName}</span>
+                        <button
+                          onClick={() => {
+                            const current = data.primary_sites || [];
+                            updateData({
+                              primary_sites: current.filter(item => item !== site)
+                            });
+                          }}
+                          className="text-green-600 hover:text-green-800"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    );
+                  })
+                }
+              </div>
+            )}
+          </div> */}
         </div>
 
         {/* Product Categories */}

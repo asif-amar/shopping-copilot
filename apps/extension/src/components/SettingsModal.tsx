@@ -15,6 +15,8 @@ import {
 import { useLanguage } from "../hooks/useLanguage";
 import { useUser } from "../hooks/useUser";
 import { useCredits } from "../hooks/useCredits";
+import { usePreferences } from "../hooks/usePreferences";
+import { UserPreferencesData } from "../services/api";
 import { Dialog, DialogContent } from "./ui/Dialog";
 import { cn } from "../lib/utils";
 
@@ -580,24 +582,337 @@ function AccountTab({ language }: { language: string }) {
 
 // AI Settings Tab Component
 function AISettingsTab({ language }: { language: string }) {
+  const { isRTL, t } = useLanguage();
+  const { preferences, loading, error, updating, updatePreferences } =
+    usePreferences();
+  const [customSiteInput, setCustomSiteInput] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Input sanitization function (same as in onboarding)
+  const sanitizeInput = (input: string): string => {
+    return input
+      .replace(/<[^>]*>/g, "")
+      .replace(/['"`;\\]/g, "")
+      .replace(
+        /\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b/gi,
+        ""
+      )
+      .trim()
+      .substring(0, 50);
+  };
+
+  const handleCustomSiteAdd = async () => {
+    if (customSiteInput.trim() && preferences) {
+      const sanitizedInput = sanitizeInput(customSiteInput);
+      if (sanitizedInput) {
+        const current = preferences.primary_sites || [];
+        if (!current.includes(`custom:${sanitizedInput}`)) {
+          await updatePreferences({
+            primary_sites: [...current, `custom:${sanitizedInput}`],
+          });
+          setCustomSiteInput("");
+        }
+      }
+    }
+  };
+
+  const handlePreferenceUpdate = async (
+    updates: Partial<UserPreferencesData>
+  ) => {
+    if (!preferences) return;
+
+    try {
+      await updatePreferences(updates);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      console.error("Failed to update preferences:", error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-64">
+        <div className="flex items-center gap-3 text-slate-600">
+          <Loader2 size={20} className="animate-spin" />
+          <span>{language === "he" ? "טוען..." : "Loading..."}</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="text-center text-red-600 bg-red-50 rounded-lg p-4">
+          <p className="font-medium mb-2">
+            {language === "he"
+              ? "שגיאה בטעינת העדפות"
+              : "Error loading preferences"}
+          </p>
+          <p className="text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6">
+    <div className="p-6 pb-8" style={{ direction: isRTL ? "rtl" : "ltr" }}>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800 mb-2">
-          {language === "he" ? "הגדרות AI" : "AI Settings"}
+          {t("settings_preferences")}
         </h1>
-        <p className="text-slate-600">
-          {language === "he"
-            ? "התאם את התנהגות העוזר הדיגיטלי"
-            : "Customize your AI assistant behavior"}
-        </p>
+        <p className="text-slate-600">{t("settings_preferences_desc")}</p>
+
+        {showSuccess && (
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+            {t("settings_preferences_saved")}
+          </div>
+        )}
       </div>
 
-      <div className="space-y-6">
-        <div className="text-center text-muted-foreground">
-          {language === "he"
-            ? "הגדרות AI יהיו זמינות בקרוב"
-            : "AI settings will be available soon"}
+      <div className="space-y-8">
+        {/* Household Size */}
+        <div>
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">
+            {t("settings_household_size")}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { value: "small", label: t("onboarding_household_1_2") },
+              { value: "medium", label: t("onboarding_household_3_4") },
+              { value: "large", label: t("onboarding_household_5_plus") },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() =>
+                  handlePreferenceUpdate({ household_size: option.value })
+                }
+                disabled={updating}
+                className={cn(
+                  "p-3 rounded-lg border transition-colors text-center",
+                  preferences?.household_size === option.value
+                    ? "border-purple-500 bg-purple-50 text-purple-700"
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                )}
+                dir={isRTL ? "rtl" : "ltr"}
+              >
+                <div className="text-sm font-medium">{option.label}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Budget Preference */}
+        <div>
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">
+            {t("settings_budget_preference")}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              {
+                value: "budget",
+                label: t("onboarding_budget_conscious"),
+                desc: t("onboarding_budget_conscious_desc"),
+              },
+              {
+                value: "moderate",
+                label: t("onboarding_moderate"),
+                desc: t("onboarding_moderate_desc"),
+              },
+              {
+                value: "premium",
+                label: t("onboarding_premium"),
+                desc: t("onboarding_premium_desc"),
+              },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() =>
+                  handlePreferenceUpdate({ budget_preference: option.value })
+                }
+                disabled={updating}
+                className={cn(
+                  "p-3 rounded-lg border transition-colors text-left",
+                  isRTL && "text-right",
+                  preferences?.budget_preference === option.value
+                    ? "border-purple-500 bg-purple-50 text-purple-700"
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                )}
+                dir={isRTL ? "rtl" : "ltr"}
+              >
+                <div className="text-sm font-medium mb-1">{option.label}</div>
+                <div className="text-xs text-gray-500">{option.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Shopping Frequency */}
+        <div>
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">
+            {t("settings_shopping_frequency")}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { value: "daily", label: t("onboarding_daily") },
+              { value: "weekly", label: t("onboarding_weekly") },
+              { value: "monthly", label: t("onboarding_monthly") },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() =>
+                  handlePreferenceUpdate({ shopping_frequency: option.value })
+                }
+                disabled={updating}
+                className={cn(
+                  "p-3 rounded-lg border transition-colors text-center",
+                  preferences?.shopping_frequency === option.value
+                    ? "border-purple-500 bg-purple-50 text-purple-700"
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                )}
+                dir={isRTL ? "rtl" : "ltr"}
+              >
+                <div className="text-sm font-medium">{option.label}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Preferred Sites */}
+        <div>
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">
+            {t("settings_preferred_sites")}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            {[
+              { value: "rami-levy", label: t("onboarding_rami_levy") },
+              { value: "shufersal", label: t("onboarding_shufersal") },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() => {
+                  const current = preferences?.primary_sites || [];
+                  const updated = current.includes(option.value)
+                    ? current.filter((item) => item !== option.value)
+                    : [...current, option.value];
+                  handlePreferenceUpdate({ primary_sites: updated });
+                }}
+                disabled={updating}
+                className={cn(
+                  "p-3 rounded-lg border transition-colors text-center",
+                  (preferences?.primary_sites || []).includes(option.value)
+                    ? "border-green-500 bg-green-50 text-green-700"
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                )}
+                dir={isRTL ? "rtl" : "ltr"}
+              >
+                <div className="text-sm font-medium">{option.label}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Custom Site Input */}
+          {/* <div className="mt-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={customSiteInput}
+                onChange={(e) => setCustomSiteInput(e.target.value)}
+                placeholder={t("onboarding_other_placeholder")}
+                className={cn(
+                  "flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500",
+                  isRTL && "text-right"
+                )}
+                dir={isRTL ? "rtl" : "ltr"}
+                maxLength={50}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCustomSiteAdd();
+                  }
+                }}
+              />
+              <button
+                onClick={handleCustomSiteAdd}
+                disabled={!customSiteInput.trim() || updating}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              >
+                {t("onboarding_other")}
+              </button>
+            </div>
+            
+            {(preferences?.primary_sites || []).filter(site => site.startsWith('custom:')).length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {(preferences?.primary_sites || [])
+                  .filter(site => site.startsWith('custom:'))
+                  .map((site) => {
+                    const siteName = site.replace('custom:', '');
+                    return (
+                      <span
+                        key={site}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 border border-green-500 rounded-md text-xs"
+                      >
+                        <span dir={isRTL ? "rtl" : "ltr"}>{siteName}</span>
+                        <button
+                          onClick={() => {
+                            const current = preferences?.primary_sites || [];
+                            handlePreferenceUpdate({
+                              primary_sites: current.filter(item => item !== site)
+                            });
+                          }}
+                          className="text-green-600 hover:text-green-800"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    );
+                  })
+                }
+              </div>
+            )}
+          </div> */}
+        </div>
+
+        {/* Dietary Preferences */}
+        <div>
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">
+            {t("settings_dietary_preferences")}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+            {[
+              { value: "kosher", label: t("onboarding_kosher") },
+              { value: "vegan", label: t("onboarding_vegan") },
+              { value: "vegetarian", label: t("onboarding_vegetarian") },
+              { value: "gluten-free", label: t("onboarding_gluten_free") },
+              { value: "dairy-free", label: t("onboarding_dairy_free") },
+              { value: "organic", label: t("onboarding_organic") },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() => {
+                  const current = preferences?.dietary_restrictions || [];
+                  const updated = current.includes(option.value)
+                    ? current.filter((item) => item !== option.value)
+                    : [...current, option.value];
+                  handlePreferenceUpdate({ dietary_restrictions: updated });
+                }}
+                disabled={updating}
+                className={cn(
+                  "p-2 rounded-lg border text-sm transition-colors",
+                  isRTL ? "text-right" : "text-left",
+                  (preferences?.dietary_restrictions || []).includes(
+                    option.value
+                  )
+                    ? "border-green-500 bg-green-50 text-green-700"
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                )}
+                dir={isRTL ? "rtl" : "ltr"}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
