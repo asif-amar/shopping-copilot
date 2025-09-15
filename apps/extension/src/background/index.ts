@@ -224,6 +224,72 @@ function extractHostname(url: string): string {
   }
 }
 
+// Track refresh attempts to prevent infinite loops
+const refreshAttempts = new Map<number, { count: number; lastAttempt: number }>();
+
+// Auto-check credentials when navigating to or refreshing Rami Levy pages
+async function checkAndRefreshForRamiLevyCredentials(tabId: number, url: string): Promise<void> {
+  const urlObj = new URL(url);
+  const isRamiLevy = urlObj.hostname === 'rami-levy.co.il' || urlObj.hostname === 'www.rami-levy.co.il';
+  
+  if (!isRamiLevy) return;
+
+  // Check refresh attempts for this tab
+  const now = Date.now();
+  const attemptData = refreshAttempts.get(tabId) || { count: 0, lastAttempt: 0 };
+  
+  // Reset attempts if more than 5 minutes have passed
+  if (now - attemptData.lastAttempt > 5 * 60 * 1000) {
+    attemptData.count = 0;
+  }
+  
+  // Don't refresh more than 2 times within 5 minutes
+  if (attemptData.count >= 2) {
+    console.log("🚫 Max refresh attempts reached for Rami Levy credentials");
+    return;
+  }
+
+  // Wait a moment for page to load before checking credentials
+  setTimeout(async () => {
+    try {
+      const result = await chrome.storage.local.get("rami-levy-captured-headers");
+      const captured = result["rami-levy-captured-headers"];
+      
+      // Check if credentials exist and are recent (within last 3 minutes)
+      const threeMinutesAgo = Date.now() - 3 * 60 * 1000;
+      const hasRecentCredentials = captured && 
+        captured.capturedAt && 
+        captured.capturedAt > threeMinutesAgo &&
+        (captured.authorization || captured.ecomtoken || captured.cookie);
+
+      if (!hasRecentCredentials) {
+        console.log("🔄 No recent Rami Levy credentials detected on page load. Refreshing to capture credentials...");
+        
+        // Update refresh attempts
+        attemptData.count += 1;
+        attemptData.lastAttempt = now;
+        refreshAttempts.set(tabId, attemptData);
+        
+        // Refresh the page to trigger credential capture
+        chrome.tabs.reload(tabId, {}, () => {
+          if (chrome.runtime.lastError) {
+            console.error("Failed to refresh tab for credentials:", chrome.runtime.lastError);
+          } else {
+            console.log("✅ Rami Levy page auto-refreshed to capture credentials");
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error checking credentials on page load:", error);
+    }
+  }, 2000); // Wait 2 seconds for page to load
+}
+
+// Clean up refresh attempts when tabs are closed
+chrome.tabs.onRemoved.addListener((tabId) => {
+  refreshAttempts.delete(tabId);
+});
+
 // Listen for tab changes
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   const tab = await chrome.tabs.get(activeInfo.tabId);
@@ -232,6 +298,9 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 
     if (hostname !== currentHostname) {
       currentHostname = hostname;
+
+      // Check for credentials when switching to Rami Levy tab
+      await checkAndRefreshForRamiLevyCredentials(activeInfo.tabId, tab.url);
 
       // Notify sidepanel about hostname change
       try {
@@ -247,12 +316,15 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 });
 
 // Listen for tab URL changes
-chrome.tabs.onUpdated.addListener(async (_tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.url && tab.active) {
     const hostname = extractHostname(changeInfo.url);
 
     if (hostname !== currentHostname) {
       currentHostname = hostname;
+
+      // Check for credentials when navigating to Rami Levy
+      await checkAndRefreshForRamiLevyCredentials(tabId, changeInfo.url);
 
       // Notify sidepanel about hostname change
       try {
@@ -264,6 +336,11 @@ chrome.tabs.onUpdated.addListener(async (_tabId, changeInfo, tab) => {
         // Sidepanel might not be open, that's okay
       }
     }
+  }
+
+  // Also check when page finishes loading (status becomes 'complete')
+  if (changeInfo.status === 'complete' && tab.url && tab.active) {
+    await checkAndRefreshForRamiLevyCredentials(tabId, tab.url);
   }
 });
 
@@ -280,6 +357,60 @@ async function getCurrentHostname(): Promise<string> {
   });
 }
 
+// Auto-refresh functionality for Rami Levy when no credentials found
+async function autoRefreshForCredentials(tabId: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    // Check if the tab is a Rami Levy site
+    chrome.tabs.get(tabId, async (tab) => {
+      if (!tab.url) {
+        resolve(false);
+        return;
+      }
+
+      const url = new URL(tab.url);
+      const isRamiLevy = url.hostname === 'rami-levy.co.il' || url.hostname === 'www.rami-levy.co.il';
+      
+      if (!isRamiLevy) {
+        resolve(false);
+        return;
+      }
+
+      // Check if we have recent credentials
+      try {
+        const result = await chrome.storage.local.get("rami-levy-captured-headers");
+        const captured = result["rami-levy-captured-headers"];
+        
+        // Check if credentials exist and are recent (within last 5 minutes)
+        const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+        const hasRecentCredentials = captured && 
+          captured.capturedAt && 
+          captured.capturedAt > fiveMinutesAgo &&
+          (captured.authorization || captured.ecomtoken || captured.cookie);
+
+        if (hasRecentCredentials) {
+          resolve(false); // No refresh needed
+          return;
+        }
+
+        // No recent credentials found, refresh the page
+        console.log("🔄 No recent Rami Levy credentials found, refreshing page to capture credentials...");
+        chrome.tabs.reload(tabId, {}, () => {
+          if (chrome.runtime.lastError) {
+            console.error("Failed to refresh tab:", chrome.runtime.lastError);
+            resolve(false);
+          } else {
+            console.log("✅ Rami Levy page refreshed successfully");
+            resolve(true);
+          }
+        });
+      } catch (error) {
+        console.error("Error checking credentials for auto-refresh:", error);
+        resolve(false);
+      }
+    });
+  });
+}
+
 // Simplified message handling (conversation management moved to backend)
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   const handleMessage = async () => {
@@ -291,6 +422,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         const hostname = await getCurrentHostname();
         currentHostname = hostname;
         return { hostname };
+
+      case "AUTO_REFRESH_FOR_CREDENTIALS":
+        if (message.tabId) {
+          const refreshed = await autoRefreshForCredentials(message.tabId);
+          return { refreshed };
+        }
+        return { error: "Tab ID required for auto-refresh" };
 
       default:
         return { error: "Unknown message type" };

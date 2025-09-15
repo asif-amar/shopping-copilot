@@ -296,6 +296,27 @@ export class CredentialExtractor {
   }
 
   /**
+   * Check if we have valid recent Rami Levy credentials (used for auto-refresh logic)
+   */
+  static async hasRecentRamiLevyCredentials(): Promise<boolean> {
+    try {
+      const result = await chrome.storage.local.get("rami-levy-captured-headers");
+      const captured = result["rami-levy-captured-headers"];
+      
+      if (!captured) {
+        return false;
+      }
+
+      // Check if credentials are recent (within last 5 minutes) and contain meaningful data
+      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+      return captured.capturedAt > fiveMinutesAgo && 
+             (captured.authorization || captured.ecomtoken || captured.cookie);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
    * Debug function to check all available Rami Levy credentials
    */
   static async debugRamiLevyCredentials(): Promise<void> {

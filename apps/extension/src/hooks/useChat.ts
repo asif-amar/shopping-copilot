@@ -391,7 +391,7 @@ export function useChat(): UseChatReturn {
     };
 
     // Listen for tab updates (URL changes in current tab)
-    const handleTabUpdated = (tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
+    const handleTabUpdated = (_tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
       if (changeInfo.url && tab.active) {
         updateHostnameOnTabChange();
       }
