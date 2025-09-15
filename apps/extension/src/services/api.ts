@@ -82,6 +82,42 @@ export interface CreditHistory {
   offset: number;
 }
 
+export interface UserPreferencesData {
+  id: string;
+  user_id: string;
+  household_size?: string;
+  dietary_restrictions: string[];
+  budget_preference?: string;
+  primary_sites: string[];
+  shopping_frequency?: string;
+  language_preference: string;
+  preferred_categories: string[];
+  brand_preferences: string[];
+  special_considerations: string[];
+  onboarding_completed: boolean;
+  onboarding_completed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OnboardingRequest {
+  household_size?: string;
+  dietary_restrictions?: string[];
+  budget_preference?: string;
+  primary_sites?: string[];
+  shopping_frequency?: string;
+  language_preference?: string;
+  preferred_categories?: string[];
+  brand_preferences?: string[];
+  special_considerations?: string[];
+}
+
+export interface OnboardingStatus {
+  onboarding_completed: boolean;
+  onboarding_completed_at?: string;
+  preferences_exist: boolean;
+}
+
 export class ApiService {
   private static readonly BASE_URL = BACKEND_URL;
 
@@ -747,5 +783,103 @@ export class ApiService {
       }
     }
     return null;
+  }
+
+  /**
+   * Get user preferences and onboarding data
+   */
+  static async getUserPreferences(): Promise<UserPreferencesData> {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/user/preferences`, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.detail || `Failed to get user preferences! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Update user preferences
+   */
+  static async updateUserPreferences(
+    preferences: Partial<OnboardingRequest>
+  ): Promise<UserPreferencesData> {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/user/preferences`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(preferences),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.detail || `Failed to update user preferences! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Complete user onboarding with collected data
+   */
+  static async completeOnboarding(
+    onboardingData: OnboardingRequest
+  ): Promise<UserPreferencesData> {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/user/onboarding`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(onboardingData),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.detail || `Failed to complete onboarding! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get user onboarding completion status
+   */
+  static async getOnboardingStatus(): Promise<OnboardingStatus> {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/user/onboarding-status`, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.detail || `Failed to get onboarding status! status: ${response.status}`
+      );
+    }
+
+    return response.json();
   }
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "@/styles/global.css";
 import { useChat } from "@/hooks/useChat";
 import { LanguageProvider } from "@/hooks/useLanguage";
-import { Header, MessageList, ChatInput } from "@/components";
+import { Header, MessageList, ChatInput, OnboardingModal } from "@/components";
 import { AuthModal } from "@/components/AuthModal";
 import { ConversationsDrawer } from "@/components/ConversationsDrawer";
 import { ApiService } from "@/services/api";
@@ -22,6 +22,7 @@ const SidePanelContent: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isConversationsDrawerOpen, setIsConversationsDrawerOpen] = useState(false);
   const [refreshConversations, setRefreshConversations] = useState<(() => Promise<void>) | null>(null);
+  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
 
   useEffect(() => {
     checkAuthStatus();
@@ -30,6 +31,24 @@ const SidePanelContent: React.FC = () => {
   const checkAuthStatus = async () => {
     const authenticated = await ApiService.isAuthenticated();
     setIsAuthenticated(authenticated);
+    
+    // Check onboarding status if authenticated
+    if (authenticated) {
+      await checkOnboardingStatus();
+    }
+  };
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const status = await ApiService.getOnboardingStatus();
+      
+      // Show onboarding modal if not completed
+      if (!status.onboarding_completed) {
+        setIsOnboardingModalOpen(true);
+      }
+    } catch (error) {
+      console.error("Failed to check onboarding status:", error);
+    }
   };
 
   const handleSendMessage = async (message: string, preferences?: UserPreferences) => {
@@ -42,6 +61,12 @@ const SidePanelContent: React.FC = () => {
 
   const handleAuthSuccess = async () => {
     await checkAuthStatus();
+  };
+
+  const handleOnboardingComplete = async () => {
+    // Refresh onboarding status after completion
+    await checkOnboardingStatus();
+    setIsOnboardingModalOpen(false);
   };
 
   const handleNewConversation = async () => {
@@ -96,6 +121,12 @@ const SidePanelContent: React.FC = () => {
         onLoadConversation={loadConversation}
         preloadConversations={isAuthenticated}
         onRefreshConversations={setRefreshConversations}
+      />
+
+      <OnboardingModal
+        isOpen={isOnboardingModalOpen}
+        onClose={() => setIsOnboardingModalOpen(false)}
+        onComplete={handleOnboardingComplete}
       />
     </div>
   );

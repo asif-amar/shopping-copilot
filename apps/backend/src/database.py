@@ -4,8 +4,8 @@ import logging
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, Text, Index
-from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, Text, Index, JSON, ForeignKey
+from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from sqlalchemy.sql import func
 
 from .config import config
@@ -52,6 +52,9 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False)
     last_login_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    preferences = relationship("UserPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}')>"
@@ -153,6 +156,46 @@ class UserCreditLog(Base):
     
     def __repr__(self):
         return f"<UserCreditLog(id={self.id}, user_email='{self.user_email}', change={self.credit_change}, reason='{self.reason}')>"
+
+
+class UserPreferences(Base):
+    """Model for storing user shopping preferences and onboarding data."""
+    __tablename__ = "user_preferences"
+    
+    id = Column(String(36), primary_key=True, index=True, default=lambda: str(uuid4()))
+    user_id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE'), unique=True, index=True, nullable=False)
+    
+    # Personal Shopping Profile
+    household_size = Column(String(10), nullable=True)  # small, medium, large
+    dietary_restrictions = Column(JSON, nullable=True, default=list)  # ["kosher", "vegan", "gluten-free"]
+    budget_preference = Column(String(10), nullable=True)  # budget, moderate, premium
+    primary_sites = Column(JSON, nullable=True, default=list)  # ["rami-levy", "shufersal"]
+    shopping_frequency = Column(String(10), nullable=True)  # daily, weekly, monthly
+    
+    # Shopping Preferences
+    language_preference = Column(String(5), default="en", nullable=False)  # en, he
+    preferred_categories = Column(JSON, nullable=True, default=list)  # ["fresh-produce", "packaged-goods"]
+    brand_preferences = Column(JSON, nullable=True, default=list)  # ["store-brands", "premium-brands"]
+    special_considerations = Column(JSON, nullable=True, default=list)  # ["organic-preferred", "bulk-buying"]
+    
+    # Metadata
+    onboarding_completed = Column(Boolean, default=False, nullable=False)
+    onboarding_completed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False)
+    
+    # Relationship to User
+    user = relationship("User", back_populates="preferences")
+    
+    # Indexes for efficient queries
+    __table_args__ = (
+        Index('idx_user_preferences_user_id', 'user_id'),
+        Index('idx_user_preferences_onboarding', 'onboarding_completed'),
+        Index('idx_user_preferences_updated', 'updated_at'),
+    )
+    
+    def __repr__(self):
+        return f"<UserPreferences(id={self.id}, user_id='{self.user_id}', onboarding_completed={self.onboarding_completed})>"
 
 
 def get_db() -> Session:

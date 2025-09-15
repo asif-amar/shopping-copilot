@@ -18,6 +18,7 @@ from ..tools.shopping_tools import ShoppingTools
 from ..tools.shopping.constants import get_supported_sites
 from ..auth import get_current_active_user, UserResponse
 from ..services.credit_service import CreditService, InsufficientCreditsError
+from ..services.preferences_service import PreferencesService
 from ..database import get_db_dependency
 from sqlalchemy.orm import Session
 
@@ -42,8 +43,21 @@ class ConversationModel(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
 
 class UserPreferences(BaseModel):
+    # AI Behavior
     aiStyle: Optional[str] = "balanced"
-    # Future preferences can be added here
+    
+    # Shopping Profile
+    household_size: Optional[str] = None
+    dietary_restrictions: Optional[List[str]] = []
+    budget_preference: Optional[str] = "moderate"
+    shopping_frequency: Optional[str] = None
+    
+    # Shopping Preferences  
+    language_preference: Optional[str] = "en"
+    primary_sites: Optional[List[str]] = []
+    preferred_categories: Optional[List[str]] = []
+    brand_preferences: Optional[List[str]] = []
+    special_considerations: Optional[List[str]] = []
     
 class SendMessageRequest(BaseModel):
     message: str
@@ -71,6 +85,54 @@ def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[Us
     current_style = preferences.aiStyle if preferences else "balanced"
     style_instruction = style_instructions.get(current_style, style_instructions["balanced"])
     
+    # Build personalized instructions based on user preferences
+    personalized_instructions = []
+    
+    if preferences:
+        # Language preference
+        # if preferences.language_preference == "he":
+        #     personalized_instructions.append("ALWAYS respond in Hebrew unless specifically asked to respond in English.")
+        # elif preferences.language_preference == "en":
+        #     personalized_instructions.append("ALWAYS respond in English unless specifically asked to respond in Hebrew.")
+        
+        # Dietary restrictions
+        if preferences.dietary_restrictions:
+            restrictions = ", ".join(preferences.dietary_restrictions)
+            personalized_instructions.append(f"USER DIETARY PREFERENCES: The user follows these dietary preferences: {restrictions}. When suggesting products, prioritize items that match these preferences and clearly mention if products don't meet their dietary needs. Example: If the user is vegetarian, suggest plant-based alternatives. If the user is gluten-free, suggest gluten-free alternatives. If the user prefers dairy-free products, suggest lactose-free alternatives. If the user is allergic to nuts, suggest nut-free alternatives.")
+        
+        # Budget preference
+        if preferences.budget_preference == "budget":
+            personalized_instructions.append("BUDGET PREFERENCE: The user is budget-conscious. Prioritize showing deals, discounts, store brands, and the most affordable options. Mention price comparisons when relevant.")
+        elif preferences.budget_preference == "premium":
+            personalized_instructions.append("BUDGET PREFERENCE: The user prefers premium quality products. Prioritize high-quality, premium brands, and organic options. Focus on quality over price.")
+        
+        # Household size context
+        if preferences.household_size == "small":
+            personalized_instructions.append("HOUSEHOLD SIZE: User has a small household (1-2 people). Suggest smaller package sizes and quantities appropriate for 1-2 people.")
+        elif preferences.household_size == "large":
+            personalized_instructions.append("HOUSEHOLD SIZE: User has a large household (5+ people). Suggest bulk sizes, family packs, and larger quantities that provide better value for families.")
+        
+        # Shopping frequency
+        if preferences.shopping_frequency == "weekly":
+            personalized_instructions.append("SHOPPING HABITS: User shops weekly. Suggest quantities and products suitable for weekly shopping trips.")
+        elif preferences.shopping_frequency == "monthly":
+            personalized_instructions.append("SHOPPING HABITS: User shops monthly. Prioritize non-perishable items, bulk purchases, and suggest appropriate quantities for monthly shopping.")
+        
+        # Brand preferences
+        if preferences.brand_preferences:
+            brands = ", ".join(preferences.brand_preferences)
+            personalized_instructions.append(f"BRAND PREFERENCES: User prefers {brands}. When showing products, prioritize these brand types when available.")
+        
+        # Special considerations
+        if preferences.special_considerations:
+            considerations = ", ".join(preferences.special_considerations)
+            personalized_instructions.append(f"SPECIAL CONSIDERATIONS: User has these shopping preferences: {considerations}. Take these into account when making product recommendations.")
+        
+        # Preferred categories
+        if preferences.preferred_categories:
+            categories = ", ".join(preferences.preferred_categories)
+            personalized_instructions.append(f"USER INTERESTS: User frequently shops for these categories: {categories}. You can proactively suggest products from these categories when relevant.")
+    
     db = PostgresDb(
         session_table="conversations",
         db_url=config.DATABASE_URL,
@@ -82,11 +144,7 @@ def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[Us
     scraping_tools = Newspaper4kTools()
     website_name = request_headers.get("x-site-name")
 
-    agent = Agent(
-        name="Shopping Copilot",
-        model=model,
-        tools=[shopping_tools, websearch_tools, scraping_tools],
-        instructions=[
+    base_instructions = [
             "🚨 CART SYNC RULE: Before answering ANY cart-related question, ALWAYS call get_cart_contents() first to get fresh cart data. Users add items directly on the website, so conversation history is often stale.",
             "You are a shopping assistant that can help users search for products and manage their shopping carts on Israeli e-commerce websites.",
             f"You can search for products on the following websites: {', '.join([site.value for site in get_supported_sites()])}.",
@@ -206,7 +264,16 @@ def create_basic_agent(request_headers: Dict[str, str], preferences: Optional[Us
 
             Tone: be concise and actionable in progress updates (e.g., "Added 3/8 — sugar (1kg)"). If the user asked for "auto-add", proceed automatically; otherwise ask before making cart changes.
             """
-        ],
+        ]
+    
+    # Combine base instructions with personalized instructions
+    all_instructions = base_instructions + personalized_instructions
+
+    agent = Agent(
+        name="Shopping Copilot",
+        model=model,
+        tools=[shopping_tools, websearch_tools, scraping_tools],
+        instructions=all_instructions,
         markdown=True,
         db=db,
         session_state={"preferences": preferences.model_dump() if preferences else {"aiStyle": "balanced"}},
@@ -262,8 +329,36 @@ async def send_message(
             # Create new conversation uuid that is a string
             conversation_id = str(uuid.uuid4())
         
-        # Create the agent
-        agent = create_basic_agent(request_headers, request.preferences)
+        # Load user preferences from database and merge with request preferences
+        user_preferences = None
+        try:
+            # Get user preferences for AI context
+            prefs_data = PreferencesService.get_preferences_for_ai_context(db, current_user.id)
+            
+            # Create UserPreferences object from database data
+            user_preferences = UserPreferences(
+                # Merge request preferences with database preferences
+                aiStyle=request.preferences.aiStyle if request.preferences else prefs_data.get('ai_style', 'balanced'),
+                household_size=prefs_data.get('household_size'),
+                dietary_restrictions=prefs_data.get('dietary_restrictions', []),
+                budget_preference=prefs_data.get('budget_preference', 'moderate'),
+                shopping_frequency=prefs_data.get('shopping_frequency'),
+                language_preference=prefs_data.get('language', 'en'),
+                primary_sites=prefs_data.get('primary_sites', []),
+                preferred_categories=prefs_data.get('preferred_categories', []),
+                brand_preferences=prefs_data.get('brand_preferences', []),
+                special_considerations=prefs_data.get('special_considerations', [])
+            )
+            
+            logger.info(f"Loaded user preferences for AI context: household_size={user_preferences.household_size}, language={user_preferences.language_preference}")
+            
+        except Exception as e:
+            logger.warning(f"Failed to load user preferences, using defaults: {e}")
+            # Fallback to request preferences or defaults
+            user_preferences = request.preferences or UserPreferences()
+        
+        # Create the agent with personalized preferences
+        agent = create_basic_agent(request_headers, user_preferences)
         
         # Track if we should deduct credit (will be set after successful response)
         should_deduct_credit = False

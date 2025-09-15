@@ -1,7 +1,7 @@
 """User profile routes for managing user information."""
 
 import logging
-from typing import Optional
+from typing import Optional, List, Any, Dict
 from fastapi import APIRouter, HTTPException, Depends, status, Query
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
@@ -11,6 +11,7 @@ from ..database import get_db_dependency
 from ..auth import get_current_active_user, UserResponse
 from ..services.user_service import UserService
 from ..services.credit_service import CreditService
+from ..services.preferences_service import PreferencesService
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +86,58 @@ class CreditHistoryResponse(BaseModel):
     total_count: int
     limit: int
     offset: int
+
+
+class UserPreferencesRequest(BaseModel):
+    """Request model for updating user preferences."""
+    household_size: Optional[str] = Field(None, pattern="^(small|medium|large)$")
+    dietary_restrictions: Optional[List[str]] = Field(None, max_length=10)
+    budget_preference: Optional[str] = Field(None, pattern="^(budget|moderate|premium)$")
+    primary_sites: Optional[List[str]] = Field(None, max_length=10)
+    shopping_frequency: Optional[str] = Field(None, pattern="^(daily|weekly|monthly)$")
+    language_preference: Optional[str] = Field(None, pattern="^(en|he)$")
+    preferred_categories: Optional[List[str]] = Field(None, max_length=20)
+    brand_preferences: Optional[List[str]] = Field(None, max_length=20)
+    special_considerations: Optional[List[str]] = Field(None, max_length=10)
+
+
+class OnboardingRequest(BaseModel):
+    """Request model for completing onboarding."""
+    household_size: Optional[str] = Field(None, pattern="^(small|medium|large)$")
+    dietary_restrictions: Optional[List[str]] = Field(default=[], max_length=10)
+    budget_preference: Optional[str] = Field(None, pattern="^(budget|moderate|premium)$")
+    primary_sites: Optional[List[str]] = Field(default=[], max_length=10)
+    shopping_frequency: Optional[str] = Field(None, pattern="^(daily|weekly|monthly)$")
+    language_preference: str = Field(default="en", pattern="^(en|he)$")
+    preferred_categories: Optional[List[str]] = Field(default=[], max_length=20)
+    brand_preferences: Optional[List[str]] = Field(default=[], max_length=20)
+    special_considerations: Optional[List[str]] = Field(default=[], max_length=10)
+
+
+class UserPreferencesResponse(BaseModel):
+    """Response model for user preferences."""
+    id: str
+    user_id: str
+    household_size: Optional[str]
+    dietary_restrictions: List[str]
+    budget_preference: Optional[str]
+    primary_sites: List[str]
+    shopping_frequency: Optional[str]
+    language_preference: str
+    preferred_categories: List[str]
+    brand_preferences: List[str]
+    special_considerations: List[str]
+    onboarding_completed: bool
+    onboarding_completed_at: Optional[str]
+    created_at: str
+    updated_at: str
+
+
+class OnboardingStatusResponse(BaseModel):
+    """Response model for onboarding status."""
+    onboarding_completed: bool
+    onboarding_completed_at: Optional[str]
+    preferences_exist: bool
 
 
 @router.get("/me", response_model=UserProfileResponse)
@@ -219,4 +272,163 @@ async def get_user_credit_history(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get credit history"
+        )
+
+
+@router.get("/preferences", response_model=UserPreferencesResponse)
+async def get_user_preferences(
+    current_user: UserResponse = Depends(get_current_active_user),
+    db: Session = Depends(get_db_dependency)
+) -> UserPreferencesResponse:
+    """Get the current user's preferences and onboarding data."""
+    try:
+        preferences = PreferencesService.get_or_create_preferences(db, current_user.id)
+        
+        return UserPreferencesResponse(
+            id=preferences.id,
+            user_id=preferences.user_id,
+            household_size=preferences.household_size,
+            dietary_restrictions=preferences.dietary_restrictions or [],
+            budget_preference=preferences.budget_preference,
+            primary_sites=preferences.primary_sites or [],
+            shopping_frequency=preferences.shopping_frequency,
+            language_preference=preferences.language_preference,
+            preferred_categories=preferences.preferred_categories or [],
+            brand_preferences=preferences.brand_preferences or [],
+            special_considerations=preferences.special_considerations or [],
+            onboarding_completed=preferences.onboarding_completed,
+            onboarding_completed_at=preferences.onboarding_completed_at.isoformat() if preferences.onboarding_completed_at else None,
+            created_at=preferences.created_at.isoformat(),
+            updated_at=preferences.updated_at.isoformat()
+        )
+        
+    except Exception as e:
+        logger.error(f"Error getting user preferences for {current_user.email}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get user preferences"
+        )
+
+
+@router.put("/preferences", response_model=UserPreferencesResponse)
+async def update_user_preferences(
+    preferences_update: UserPreferencesRequest,
+    current_user: UserResponse = Depends(get_current_active_user),
+    db: Session = Depends(get_db_dependency)
+) -> UserPreferencesResponse:
+    """Update the current user's preferences."""
+    try:
+        # Convert request to dict, excluding None values
+        preferences_data = preferences_update.dict(exclude_none=True)
+        
+        preferences = PreferencesService.update_preferences(
+            db, current_user.id, preferences_data
+        )
+        
+        if not preferences:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User preferences not found"
+            )
+        
+        logger.info(f"User preferences updated for {current_user.email}")
+        
+        return UserPreferencesResponse(
+            id=preferences.id,
+            user_id=preferences.user_id,
+            household_size=preferences.household_size,
+            dietary_restrictions=preferences.dietary_restrictions or [],
+            budget_preference=preferences.budget_preference,
+            primary_sites=preferences.primary_sites or [],
+            shopping_frequency=preferences.shopping_frequency,
+            language_preference=preferences.language_preference,
+            preferred_categories=preferences.preferred_categories or [],
+            brand_preferences=preferences.brand_preferences or [],
+            special_considerations=preferences.special_considerations or [],
+            onboarding_completed=preferences.onboarding_completed,
+            onboarding_completed_at=preferences.onboarding_completed_at.isoformat() if preferences.onboarding_completed_at else None,
+            created_at=preferences.created_at.isoformat(),
+            updated_at=preferences.updated_at.isoformat()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating user preferences for {current_user.email}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user preferences"
+        )
+
+
+@router.post("/onboarding", response_model=UserPreferencesResponse)
+async def complete_user_onboarding(
+    onboarding_data: OnboardingRequest,
+    current_user: UserResponse = Depends(get_current_active_user),
+    db: Session = Depends(get_db_dependency)
+) -> UserPreferencesResponse:
+    """Complete user onboarding with collected preferences data."""
+    try:
+        # Convert request to dict, excluding None values
+        preferences_data = onboarding_data.dict(exclude_none=True)
+        
+        preferences = PreferencesService.complete_onboarding(
+            db, current_user.id, preferences_data
+        )
+        
+        logger.info(f"Onboarding completed for user {current_user.email}")
+        
+        return UserPreferencesResponse(
+            id=preferences.id,
+            user_id=preferences.user_id,
+            household_size=preferences.household_size,
+            dietary_restrictions=preferences.dietary_restrictions or [],
+            budget_preference=preferences.budget_preference,
+            primary_sites=preferences.primary_sites or [],
+            shopping_frequency=preferences.shopping_frequency,
+            language_preference=preferences.language_preference,
+            preferred_categories=preferences.preferred_categories or [],
+            brand_preferences=preferences.brand_preferences or [],
+            special_considerations=preferences.special_considerations or [],
+            onboarding_completed=preferences.onboarding_completed,
+            onboarding_completed_at=preferences.onboarding_completed_at.isoformat() if preferences.onboarding_completed_at else None,
+            created_at=preferences.created_at.isoformat(),
+            updated_at=preferences.updated_at.isoformat()
+        )
+        
+    except Exception as e:
+        logger.error(f"Error completing onboarding for user {current_user.email}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to complete onboarding"
+        )
+
+
+@router.get("/onboarding-status", response_model=OnboardingStatusResponse)
+async def get_onboarding_status(
+    current_user: UserResponse = Depends(get_current_active_user),
+    db: Session = Depends(get_db_dependency)
+) -> OnboardingStatusResponse:
+    """Get the current user's onboarding completion status."""
+    try:
+        preferences = PreferencesService.get_user_preferences(db, current_user.id)
+        
+        if not preferences:
+            return OnboardingStatusResponse(
+                onboarding_completed=False,
+                onboarding_completed_at=None,
+                preferences_exist=False
+            )
+        
+        return OnboardingStatusResponse(
+            onboarding_completed=preferences.onboarding_completed,
+            onboarding_completed_at=preferences.onboarding_completed_at.isoformat() if preferences.onboarding_completed_at else None,
+            preferences_exist=True
+        )
+        
+    except Exception as e:
+        logger.error(f"Error getting onboarding status for user {current_user.email}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get onboarding status"
         )

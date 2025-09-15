@@ -10,3 +10,4 @@ export { ProductGrid } from './ProductGrid';
 export { CartItemCard } from './CartItemCard';
 export { CartItemList } from './CartItemList';
 export { ConversationsDrawer } from './ConversationsDrawer';
+export { OnboardingModal } from './OnboardingModal';

@@ -137,6 +137,157 @@ const translations: Translations = {
     version_history: "היסטוריית גרסאות",
     new_version_available: "גרסה חדשה זמינה!",
     view_changelog: "צפה ביומן השינויים",
+
+    // Onboarding
+    onboarding_title: "הגדרת עוזר הקניות",
+    onboarding_welcome: "ברוכים הבאים לעוזר הקניות!",
+    onboarding_welcome_desc: "העוזר החכם שלכם לקניות באתרי המכולת הישראליים",
+    onboarding_smart_search: "חיפוש חכם",
+    onboarding_smart_search_desc: "מוצא מוצרים במהירות ברמי לוי ושופרסל",
+    onboarding_cart_management: "ניהול עגלה",
+    onboarding_cart_management_desc: "הוסף, הסר וטפל בעגלת הקניות שלך",
+    onboarding_price_comparison: "השוואת מחירים",
+    onboarding_price_comparison_desc: "השווה מחירים ומצא את הטובים ביותר",
+    onboarding_personalize_desc:
+      "בוא נתאים את חווית הקניות שלך בכמה שלבים פשוטים",
+    onboarding_profile: "פרופיל אישי",
+    onboarding_profile_desc: "עזור לנו להבין את הצרכים שלך",
+    onboarding_preferences: "העדפות קניות",
+    onboarding_preferences_desc: "התאם את החוויה שלך",
+    onboarding_features: "תכונות מרכזיות",
+    onboarding_features_desc: "למד איך להפיק את המקסימום מהעוזר",
+    onboarding_privacy: "פרטיות ואבטחה",
+    onboarding_privacy_desc: "הפרטיות והאבטחה שלכם הם בעדיפות עליונה",
+    onboarding_household_size: "גודל משק בית",
+    onboarding_household_1_2: "1-2 אנשים",
+    onboarding_household_3_4: "3-4 אנשים",
+    onboarding_household_5_plus: "5+ אנשים",
+    onboarding_dietary_prefs: "העדפות תזונה (אופציונלי)",
+    onboarding_kosher: "כשר",
+    onboarding_vegan: "טבעוני",
+    onboarding_vegetarian: "צמחוני",
+    onboarding_gluten_free: "ללא גלוטן",
+    onboarding_dairy_free: "ללא לקטוז",
+    onboarding_organic: "העדפה אורגנית",
+    onboarding_budget_pref: "העדפת תקציב",
+    onboarding_budget_conscious: "חסכני",
+    onboarding_budget_conscious_desc: "התמקד בהנחות ומבצעים",
+    onboarding_moderate: "בינוני",
+    onboarding_moderate_desc: "איזון בין מחיר לאיכות",
+    onboarding_premium: "פרימיום",
+    onboarding_premium_desc: "איכות על פני מחיר",
+    onboarding_shopping_frequency: "תדירות קניות",
+    onboarding_daily: "יומי",
+    onboarding_weekly: "שבועי",
+    onboarding_monthly: "חודשי",
+    onboarding_language_pref: "העדפת שפה",
+    onboarding_hebrew: "עברית",
+    onboarding_english: "English",
+    onboarding_preferred_sites: "אתרים מועדפים",
+    onboarding_rami_levy: "רמי לוי",
+    onboarding_shufersal: "שופרסל",
+    onboarding_favorite_categories: "קטגוריות מועדפות (אופציונלי)",
+    onboarding_fresh_produce: "🥬 ירקות ופירות טריים",
+    onboarding_meat_fish: "🥩 בשר ודגים",
+    onboarding_dairy: "🧀 מוצרי חלב",
+    onboarding_bakery: "🍞 מאפייה",
+    onboarding_pantry: "🥫 מוצרי מזווה",
+    onboarding_frozen: "🧊 מזון קפוא",
+    onboarding_snacks: "🍿 חטיפים",
+    onboarding_beverages: "🥤 משקאות",
+    onboarding_household_items: "🧽 מוצרי בית",
+    onboarding_baby_products: "👶 מוצרי תינוקות",
+    onboarding_brand_prefs: "העדפות מותג (אופציונלי)",
+    onboarding_store_brands: "מותגי הרשת",
+    onboarding_national_brands: "מותגים לאומיים",
+    onboarding_premium_brands: "מותגי פרימיום",
+    onboarding_auto_credentials: "לכידת אישורים אוטומטית",
+    onboarding_auto_credentials_desc:
+      "אנו לוכדים אוטומטית את פרטי הכניסה כשאתם גולשים ברמי לוי או בשופרסל. אם הדף מתרענן, זה רק כדי ללכוד את הסשן שלכם לסיוע חלק בקניות.",
+    onboarding_smart_commands: "פקודות צ'אט חכמות",
+    onboarding_smart_commands_desc:
+      'נסו פקודות כמו: "מצא עגבניות אורגניות", "הוסף חלב לעגלה", "השווה מחירי לחם", או "הראה לי את העגלה". הבינה המלאכותית מבינה שפה טבעית!',
+    onboarding_credit_system: "מערכת קרדיטים",
+    onboarding_credit_system_desc:
+      "אתם מקבלים 50 קרדיטים בחינם מדי חודש. כל שיחה משתמשת בקרדיט אחד. עקבו אחר השימוש שלכם בכותרת וקבלו התראות כשהקרדיטים נגמרים.",
+    onboarding_multi_site: "תמיכה מרובת אתרים",
+    onboarding_multi_site_desc:
+      "פועל בצורה חלקה ברמי לוי ובשופרסל. העוזר מזהה אוטומטית באיזה אתר אתם נמצאים ומתאים בהתאם.",
+    onboarding_pro_tip: "טיפ מקצועי",
+    onboarding_pro_tip_desc:
+      "לתוצאות הטובות ביותר, וודאו שאתם מחוברים לאתר הקניות לפני השימוש בעוזר. זה מאפשר ניהול עגלה מלא והמלצות מותאמות אישית.",
+    onboarding_secure_data: "טיפול מאובטח בנתונים",
+    onboarding_secure_data_desc:
+      "פרטי הכניסה שלכם מוצפנים ומאוחסנים בצורה מאובטחת. אנו ניגשים אליהם רק כדי לבצע פעולות שאתם מבקשים דרך העוזר.",
+    onboarding_data_collection: "איסוף נתונים",
+    onboarding_data_collection_item1: "• העדפות קנייה (להתאמה אישית של המלצות)",
+    onboarding_data_collection_item2: "• פרטי כניסה לאתר (לניהול עגלה והזמנות)",
+    onboarding_data_collection_item3: "• היסטוריית שיחות (לשיפור השירות)",
+    onboarding_data_collection_item4:
+      "• אנליטיקת שימוש (אנונימית, לשיפור האפליקציה)",
+    onboarding_user_rights: "הזכויות שלכם",
+    onboarding_user_rights_item1: "• עדכן העדפות בכל עת בהגדרות",
+    onboarding_user_rights_item2: "• מחק את החשבון וכל הנתונים",
+    onboarding_user_rights_item3: "• יצא את היסטוריית השיחות",
+    onboarding_user_rights_item4: "• פנה לתמיכה עם חששות פרטיות",
+    onboarding_agreement:
+      "על ידי השלמת ההגדרה, אתם מסכימים ל{terms} ול{privacy} שלנו. תוכלו לשנות את ההעדפות האלה בכל עת בהגדרות.",
+    onboarding_terms: "תנאי השירות",
+    onboarding_privacy_policy: "מדיניות פרטיות",
+    onboarding_skip: "דלג על ההגדרה",
+    onboarding_previous: "הקודם",
+    onboarding_next: "הבא",
+    onboarding_complete: "השלם הגדרה",
+    onboarding_completing: "משלים...",
+    onboarding_step_of: "שלב {current} מתוך {total}",
+
+    // Step 3 - Additional translations
+    onboarding_language_preference: "העדפת שפה",
+    onboarding_preferred_shopping_sites: "אתרים מועדפים לקניות",
+    onboarding_other: "אחר",
+    onboarding_other_placeholder: "הזן שם אתר אחר...",
+    onboarding_favorite_categories_optional: "קטגוריות מועדפות (אופציונלי)",
+    onboarding_brand_preferences_optional: "העדפות מותג (אופציונלי)",
+
+    // Step 4 - Features translations
+    onboarding_auto_credential_capture: "לכידת אישורים אוטומטית",
+    onboarding_auto_credential_capture_desc:
+      "אנו לוכדים אוטומטית את פרטי הכניסה שלכם כאשר אתם גולשים ברמי לוי או בשופרסל. אם הדף מתרענן, זה רק כדי ללכוד את הסשן שלכם לסיוע חלק בקניות.",
+    onboarding_smart_chat_commands: "פקודות צ'אט חכמות",
+    onboarding_smart_chat_commands_desc:
+      'נסו פקודות כמו: "מצא עגבניות אורגניות", "הוסף חלב לעגלה", "השווה מחירי לחם", או "הראה לי את העגלה". הבינה המלאכותית מבינה שפה טבעית!',
+    onboarding_credit_system_title: "מערכת קרדיטים",
+    onboarding_credit_system_desc_detailed:
+      "אתם מקבלים 50 קרדיטים בחינם מדי חודש. כל שיחה משתמשת בקרדיט אחד. עקבו אחר השימוש שלכם בכותרת וקבלו התראות כשהקרדיטים נגמרים.",
+    onboarding_multi_site_support: "תמיכה מרובת אתרים",
+    onboarding_multi_site_support_desc:
+      "פועל בצורה חלקה ברמי לוי ובשופרסל. העוזר מזהה אוטומטית באיזה אתר אתם נמצאים ומתאים בהתאם.",
+    onboarding_pro_tip_title: "טיפ מקצועי",
+    onboarding_pro_tip_content:
+      "לתוצאות הטובות ביותר, וודאו שאתם מחוברים לאתר הקניות לפני השימוש בעוזר. זה מאפשר ניהול עגלה מלא והמלצות מותאמות אישית.",
+
+    // Step 5 - Privacy translations
+    onboarding_secure_data_handling: "טיפול מאובטח בנתונים",
+    onboarding_secure_data_handling_desc:
+      "פרטי הכניסה שלכם מוצפנים ומאוחסנים בצורה מאובטחת. אנו ניגשים אליהם רק כדי לבצע פעולות שאתם מבקשים דרך העוזר.",
+    onboarding_data_collection_title: "איסוף נתונים",
+    onboarding_data_collection_item_1:
+      "• העדפות קנייה (להתאמה אישית של המלצות)",
+    onboarding_data_collection_item_2:
+      "• פרטי כניסה לאתר (לניהול עגלה והזמנות)",
+    onboarding_data_collection_item_3: "• היסטוריית שיחות (לשיפור השירות)",
+    onboarding_data_collection_item_4:
+      "• אנליטיקת שימוש (אנונימית, לשיפור האפליקציה)",
+    onboarding_your_rights: "הזכויות שלכם",
+    onboarding_your_rights_item_1: "• עדכן העדפות בכל עת בהגדרות",
+    onboarding_your_rights_item_2: "• מחק את החשבון וכל הנתונים",
+    onboarding_your_rights_item_3: "• יצא את היסטוריית השיחות",
+    onboarding_your_rights_item_4: "• פנה לתמיכה עם חששות פרטיות",
+    onboarding_agreement_text: "על ידי השלמת ההגדרה, אתם מסכימים ל",
+    onboarding_terms_of_service: "תנאי השירות",
+    onboarding_privacy_policy_link: "מדיניות פרטיות",
+    onboarding_agreement_suffix:
+      "שלנו. תוכלו לשנות את ההעדפות האלה בכל עת בהגדרות.",
   },
   en: {
     // Header
@@ -264,6 +415,166 @@ const translations: Translations = {
     version_history: "Version History",
     new_version_available: "New Version Available!",
     view_changelog: "View Changelog",
+
+    // Onboarding
+    onboarding_title: "Shopping Copilot Setup",
+    onboarding_welcome: "Welcome to Shopping Copilot!",
+    onboarding_welcome_desc:
+      "Your AI-powered shopping assistant for Israeli grocery stores",
+    onboarding_smart_search: "Smart Search",
+    onboarding_smart_search_desc:
+      "Find products quickly across Rami Levy & Shufersal",
+    onboarding_cart_management: "Cart Management",
+    onboarding_cart_management_desc:
+      "Add, remove, and manage your shopping cart",
+    onboarding_price_comparison: "Price Comparison",
+    onboarding_price_comparison_desc: "Compare prices and find the best deals",
+    onboarding_personalize_desc:
+      "Let's personalize your shopping experience in just a few steps",
+    onboarding_profile: "Personal Profile",
+    onboarding_profile_desc: "Help us understand your shopping needs",
+    onboarding_preferences: "Shopping Preferences",
+    onboarding_preferences_desc: "Customize your shopping experience",
+    onboarding_features: "Key Features",
+    onboarding_features_desc:
+      "Learn how to get the most out of Shopping Copilot",
+    onboarding_privacy: "Privacy & Security",
+    onboarding_privacy_desc: "Your privacy and security are our top priorities",
+    onboarding_household_size: "Household Size",
+    onboarding_household_1_2: "1-2 people",
+    onboarding_household_3_4: "3-4 people",
+    onboarding_household_5_plus: "5+ people",
+    onboarding_dietary_prefs: "Dietary Preferences (Optional)",
+    onboarding_kosher: "Kosher",
+    onboarding_vegan: "Vegan",
+    onboarding_vegetarian: "Vegetarian",
+    onboarding_gluten_free: "Gluten-Free",
+    onboarding_dairy_free: "Dairy-Free",
+    onboarding_organic: "Organic Preferred",
+    onboarding_budget_pref: "Budget Preference",
+    onboarding_budget_conscious: "Budget-Conscious",
+    onboarding_budget_conscious_desc: "Focus on deals & discounts",
+    onboarding_moderate: "Moderate",
+    onboarding_moderate_desc: "Balance of price & quality",
+    onboarding_premium: "Premium",
+    onboarding_premium_desc: "Quality over price",
+    onboarding_shopping_frequency: "How often do you shop?",
+    onboarding_daily: "Daily",
+    onboarding_weekly: "Weekly",
+    onboarding_monthly: "Monthly",
+    onboarding_language_pref: "Language Preference",
+    onboarding_hebrew: "עברית",
+    onboarding_english: "English",
+    onboarding_preferred_sites: "Preferred Shopping Sites",
+    onboarding_rami_levy: "Rami Levy",
+    onboarding_shufersal: "Shufersal",
+    onboarding_favorite_categories: "Favorite Product Categories (Optional)",
+    onboarding_fresh_produce: "🥬 Fresh Produce",
+    onboarding_meat_fish: "🥩 Meat & Fish",
+    onboarding_dairy: "🧀 Dairy Products",
+    onboarding_bakery: "🍞 Bakery",
+    onboarding_pantry: "🥫 Pantry Items",
+    onboarding_frozen: "🧊 Frozen Foods",
+    onboarding_snacks: "🍿 Snacks",
+    onboarding_beverages: "🥤 Beverages",
+    onboarding_household_items: "🧽 Household Items",
+    onboarding_baby_products: "👶 Baby Products",
+    onboarding_brand_prefs: "Brand Preferences (Optional)",
+    onboarding_store_brands: "Store Brands",
+    onboarding_national_brands: "National Brands",
+    onboarding_premium_brands: "Premium Brands",
+    onboarding_auto_credentials: "Automatic Credential Capture",
+    onboarding_auto_credentials_desc:
+      "We automatically capture your login credentials when you browse Rami Levy or Shufersal. If the page refreshes, it's just capturing your session for seamless shopping assistance.",
+    onboarding_smart_commands: "Smart Chat Commands",
+    onboarding_smart_commands_desc:
+      'Try commands like: "Find organic tomatoes", "Add milk to cart", "Compare bread prices", or "Show my cart". The AI understands natural language!',
+    onboarding_credit_system: "Credit System",
+    onboarding_credit_system_desc:
+      "You get 50 free credits monthly. Each conversation uses 1 credit. Monitor your usage in the header and get notifications when running low.",
+    onboarding_multi_site: "Multi-Site Support",
+    onboarding_multi_site_desc:
+      "Works seamlessly across Rami Levy and Shufersal. The assistant automatically detects which site you're on and adapts accordingly.",
+    onboarding_pro_tip: "Pro Tip",
+    onboarding_pro_tip_desc:
+      "For best results, make sure you're logged into the shopping site before using the assistant. This enables full cart management and personalized recommendations.",
+    onboarding_secure_data: "Secure Data Handling",
+    onboarding_secure_data_desc:
+      "Your shopping credentials are encrypted and stored securely. We only access them to perform actions you request through the assistant.",
+    onboarding_data_collection: "Data Collection",
+    onboarding_data_collection_item1:
+      "• Shopping preferences (to personalize recommendations)",
+    onboarding_data_collection_item2:
+      "• Site credentials (to manage your cart and orders)",
+    onboarding_data_collection_item3:
+      "• Conversation history (to improve service)",
+    onboarding_data_collection_item4:
+      "• Usage analytics (anonymous, for app improvement)",
+    onboarding_user_rights: "Your Rights",
+    onboarding_user_rights_item1: "• Update preferences anytime in settings",
+    onboarding_user_rights_item2: "• Delete your account and all data",
+    onboarding_user_rights_item3: "• Export your conversation history",
+    onboarding_user_rights_item4: "• Contact support with privacy concerns",
+    onboarding_agreement:
+      "By completing setup, you agree to our {terms} and {privacy}. You can change these preferences anytime in settings.",
+    onboarding_terms: "Terms of Service",
+    onboarding_privacy_policy: "Privacy Policy",
+    onboarding_skip: "Skip Setup",
+    onboarding_previous: "Previous",
+    onboarding_next: "Next",
+    onboarding_complete: "Complete Setup",
+    onboarding_completing: "Completing...",
+    onboarding_step_of: "Step {current} of {total}",
+
+    // Step 3 - Additional translations
+    onboarding_language_preference: "Language Preference",
+    onboarding_preferred_shopping_sites: "Preferred Shopping Sites",
+    onboarding_other: "Other",
+    onboarding_other_placeholder: "Enter other site name...",
+    onboarding_favorite_categories_optional:
+      "Favorite Product Categories (Optional)",
+    onboarding_brand_preferences_optional: "Brand Preferences (Optional)",
+
+    // Step 4 - Features translations
+    onboarding_auto_credential_capture: "Automatic Credential Capture",
+    onboarding_auto_credential_capture_desc:
+      "We automatically capture your login credentials when you browse Rami Levy or Shufersal. If the page refreshes, it's just capturing your session for seamless shopping assistance.",
+    onboarding_smart_chat_commands: "Smart Chat Commands",
+    onboarding_smart_chat_commands_desc:
+      'Try commands like: "Find organic tomatoes", "Add milk to cart", "Compare bread prices", or "Show my cart". The AI understands natural language!',
+    onboarding_credit_system_title: "Credit System",
+    onboarding_credit_system_desc_detailed:
+      "You get 50 free credits monthly. Each conversation uses 1 credit. Monitor your usage in the header and get notifications when running low.",
+    onboarding_multi_site_support: "Multi-Site Support",
+    onboarding_multi_site_support_desc:
+      "Works seamlessly across Rami Levy and Shufersal. The assistant automatically detects which site you're on and adapts accordingly.",
+    onboarding_pro_tip_title: "Pro Tip",
+    onboarding_pro_tip_content:
+      "For best results, make sure you're logged into the shopping site before using the assistant. This enables full cart management and personalized recommendations.",
+
+    // Step 5 - Privacy translations
+    onboarding_secure_data_handling: "Secure Data Handling",
+    onboarding_secure_data_handling_desc:
+      "Your shopping credentials are encrypted and stored securely. We only access them to perform actions you request through the assistant.",
+    onboarding_data_collection_title: "Data Collection",
+    onboarding_data_collection_item_1:
+      "• Shopping preferences (to personalize recommendations)",
+    onboarding_data_collection_item_2:
+      "• Site credentials (to manage your cart and orders)",
+    onboarding_data_collection_item_3:
+      "• Conversation history (to improve service)",
+    onboarding_data_collection_item_4:
+      "• Usage analytics (anonymous, for app improvement)",
+    onboarding_your_rights: "Your Rights",
+    onboarding_your_rights_item_1: "• Update preferences anytime in settings",
+    onboarding_your_rights_item_2: "• Delete your account and all data",
+    onboarding_your_rights_item_3: "• Export your conversation history",
+    onboarding_your_rights_item_4: "• Contact support with privacy concerns",
+    onboarding_agreement_text: "By completing setup, you agree to our",
+    onboarding_terms_of_service: "Terms of Service",
+    onboarding_privacy_policy_link: "Privacy Policy",
+    onboarding_agreement_suffix:
+      ". You can change these preferences anytime in settings.",
   },
 };
 
