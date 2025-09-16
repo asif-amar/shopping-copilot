@@ -178,7 +178,9 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
 
               {error && (
                 <div className="p-4 m-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                  <p className="text-red-600 dark:text-red-400 text-sm">
+                    {error}
+                  </p>
                   <button
                     onClick={fetchConversations}
                     className="mt-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm underline"
@@ -190,7 +192,10 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
 
               {!isLoading && !error && conversations.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                  <MessageSquare size={48} className="text-muted-foreground/50 mb-4" />
+                  <MessageSquare
+                    size={48}
+                    className="text-muted-foreground/50 mb-4"
+                  />
                   <h3 className="text-muted-foreground font-medium mb-2">
                     {t("no_conversations") || "No conversations yet"}
                   </h3>
@@ -253,7 +258,7 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
 
             {/* Footer */}
             {conversations.length > 0 && (
-              <div className="p-3 border-t border-slate-200 bg-slate-50">
+              <div className="p-3 border-t border-border bg-muted/50">
                 <button
                   onClick={fetchConversations}
                   className="w-full py-2 px-3 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"

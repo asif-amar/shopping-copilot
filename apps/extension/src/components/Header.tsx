@@ -177,9 +177,11 @@ export const Header: React.FC<HeaderProps> = ({
                 transition: "all 0.2s ease",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "hsl(var(--secondary) / 0.8)";
+                e.currentTarget.style.backgroundColor =
+                  "hsl(var(--secondary) / 0.8)";
                 e.currentTarget.style.transform = "translateY(-1px)";
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 12px rgba(0, 0, 0, 0.15)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = "hsl(var(--secondary))";
@@ -210,14 +212,18 @@ export const Header: React.FC<HeaderProps> = ({
               transition: "all 0.2s ease",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%)";
+              e.currentTarget.style.background =
+                "linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%)";
               e.currentTarget.style.transform = "translateY(-1px)";
-              e.currentTarget.style.boxShadow = "0 4px 12px rgba(124, 58, 237, 0.35)";
+              e.currentTarget.style.boxShadow =
+                "0 4px 12px rgba(124, 58, 237, 0.35)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)";
+              e.currentTarget.style.background =
+                "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)";
               e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 2px 6px rgba(124, 58, 237, 0.25)";
+              e.currentTarget.style.boxShadow =
+                "0 2px 6px rgba(124, 58, 237, 0.25)";
             }}
           >
             <Plus size={14} />
