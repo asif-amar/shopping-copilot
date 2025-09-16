@@ -25,6 +25,7 @@ import { SettingsModal } from "./SettingsModal";
 import { FeedbackModal } from "./FeedbackModal";
 import { ChangelogModal } from "./ChangelogModal";
 import { TooltipButton } from "./TooltipButton";
+import { ModeToggle } from "./mode-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -118,7 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="px-4 py-3 bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 flex-shrink-0"
+      className="px-4 py-3 bg-background border-b border-border flex-shrink-0"
       style={{ direction: isRTL ? "rtl" : "ltr" }}
     >
       <div className="flex items-center justify-between">
@@ -135,19 +136,19 @@ export const Header: React.FC<HeaderProps> = ({
             <ShoppingBag size={16} color="white" />
           </div>
           <div className="flex-1">
-            <h1 className="m-0 text-base font-bold text-slate-800 tracking-tight">
+            <h1 className="m-0 text-base font-bold text-foreground tracking-tight">
               {t("shopping_assistant")}
             </h1>
-            <div className="mt-1 text-xs text-slate-500 flex items-center gap-2">
+            <div className="mt-1 text-xs text-muted-foreground flex items-center gap-2">
               <span>{displayName || t("loading")}</span>
               {isSupported ? (
-                <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 bg-green-600 rounded-full" />
+                <span className="bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 px-2 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-green-600 dark:bg-green-400 rounded-full" />
                   {t("supported")}
                 </span>
               ) : (
-                <span className="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 bg-red-600 rounded-full" />
+                <span className="bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 px-2 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-red-600 dark:bg-red-400 rounded-full" />
                   {t("not_supported")}
                 </span>
               )}
@@ -165,34 +166,25 @@ export const Header: React.FC<HeaderProps> = ({
               buttonStyle={{
                 width: "32px",
                 height: "32px",
-                background: "#f1f5f9",
-                border: "1px solid #e2e8f0",
-                color: "#64748b",
                 borderRadius: "8px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: "pointer",
-                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                border: "1px solid hsl(var(--border))",
+                backgroundColor: "hsl(var(--secondary))",
+                color: "hsl(var(--secondary-foreground))",
                 transition: "all 0.2s ease",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background =
-                  "#e2e8f0";
-                (e.currentTarget as HTMLButtonElement).style.color = "#475569";
-                (e.currentTarget as HTMLButtonElement).style.transform =
-                  "translateY(-1px)";
-                (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                  "0 2px 4px rgba(0, 0, 0, 0.1)";
+                e.currentTarget.style.backgroundColor = "hsl(var(--secondary) / 0.8)";
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background =
-                  "#f1f5f9";
-                (e.currentTarget as HTMLButtonElement).style.color = "#64748b";
-                (e.currentTarget as HTMLButtonElement).style.transform =
-                  "translateY(0)";
-                (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                  "0 1px 2px rgba(0, 0, 0, 0.05)";
+                e.currentTarget.style.backgroundColor = "hsl(var(--secondary))";
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "none";
               }}
             >
               <MessageSquare size={14} />
@@ -206,7 +198,7 @@ export const Header: React.FC<HeaderProps> = ({
             buttonStyle={{
               width: "32px",
               height: "32px",
-              background: "linear-gradient(135deg, #642BFE 0%, #732BFF 100%)",
+              background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)",
               border: "none",
               color: "white",
               borderRadius: "8px",
@@ -214,29 +206,30 @@ export const Header: React.FC<HeaderProps> = ({
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
-              boxShadow: "0 2px 6px rgba(100, 43, 254, 0.25)",
+              boxShadow: "0 2px 6px rgba(124, 58, 237, 0.25)",
               transition: "all 0.2s ease",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform =
-                "translateY(-1px)";
-              (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                "0 4px 12px rgba(100, 43, 254, 0.35)";
+              e.currentTarget.style.background = "linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%)";
+              e.currentTarget.style.transform = "translateY(-1px)";
+              e.currentTarget.style.boxShadow = "0 4px 12px rgba(124, 58, 237, 0.35)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform =
-                "translateY(0)";
-              (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                "0 2px 6px rgba(100, 43, 254, 0.25)";
+              e.currentTarget.style.background = "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)";
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 2px 6px rgba(124, 58, 237, 0.25)";
             }}
           >
             <Plus size={14} />
           </TooltipButton>
 
+          {/* Theme Toggle */}
+          <ModeToggle />
+
           {/* Dropdown Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg flex items-center justify-center transition-all duration-200 border border-slate-300 cursor-pointer">
+              <button className="w-8 h-8 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg flex items-center justify-center transition-all duration-200 border border-border cursor-pointer">
                 <Menu size={16} />
               </button>
             </DropdownMenuTrigger>
@@ -244,7 +237,7 @@ export const Header: React.FC<HeaderProps> = ({
               align={isRTL ? "start" : "end"}
               side="bottom"
               className={cn(
-                "w-56 bg-white border border-slate-200 shadow-lg max-h-[70vh] overflow-y-auto",
+                "w-56 bg-popover border border-border shadow-lg max-h-[70vh] overflow-y-auto",
                 isRTL ? "text-right" : "text-left"
               )}
               style={{ direction: isRTL ? "rtl" : "ltr" }}
@@ -277,7 +270,7 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent
-                  className="w-32 bg-white border border-slate-200 shadow-lg max-h-[60vh] overflow-y-auto"
+                  className="w-32 bg-popover border border-border shadow-lg max-h-[60vh] overflow-y-auto"
                   style={{ direction: isRTL ? "rtl" : "ltr" }}
                   avoidCollisions={true}
                   collisionPadding={12}

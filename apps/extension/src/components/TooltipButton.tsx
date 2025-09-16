@@ -42,8 +42,9 @@ export const TooltipButton: React.FC<TooltipButtonProps> = ({
           bottom: "-35px",
           left: "50%",
           transform: "translateX(-50%)",
-          backgroundColor: "#1e293b",
-          color: "white",
+          backgroundColor: "hsl(var(--popover))",
+          color: "hsl(var(--popover-foreground))",
+          border: "1px solid hsl(var(--border))",
           padding: "6px 8px",
           borderRadius: "6px",
           fontSize: "12px",
@@ -67,7 +68,7 @@ export const TooltipButton: React.FC<TooltipButtonProps> = ({
             height: "0",
             borderLeft: "4px solid transparent",
             borderRight: "4px solid transparent",
-            borderBottom: "4px solid #1e293b",
+            borderBottom: "4px solid hsl(var(--popover))",
           }}
         />
       </div>

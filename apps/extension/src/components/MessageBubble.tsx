@@ -143,14 +143,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         }}
       >
         <div
+          className="max-w-[70%] bg-purple-600 text-white p-3 rounded-2xl text-sm leading-relaxed"
           style={{
-            maxWidth: "70%",
-            background: "#642BFE",
-            color: "white",
-            padding: "12px 16px",
-            borderRadius: "18px",
-            fontSize: "14px",
-            lineHeight: "1.4",
             direction: isHebrew(getTextContent()) ? "rtl" : "ltr",
             textAlign: isHebrew(getTextContent()) ? "right" : "left",
           }}
@@ -181,14 +175,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           return (
             <div
               key={part.id}
+              className="text-sm leading-relaxed text-foreground whitespace-pre-wrap"
               style={{
-                // maxWidth: "85%",
-                fontSize: "14px",
-                lineHeight: "1.6",
-                color: "#374151",
                 direction: isHebrew(textPart.content) ? "rtl" : "ltr",
                 textAlign: isHebrew(textPart.content) ? "right" : "left",
-                whiteSpace: "pre-wrap",
                 marginBottom: index < message.parts.length - 1 ? "8px" : "0",
               }}
             >
@@ -318,25 +308,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             onClick={handleCopy}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            style={{
-              background: copied ? "#dcfce7" : "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "6px",
-              borderRadius: "6px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.2s",
-              color: copied ? "#16a34a" : "#6b7280",
-            }}
-            onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-              if (!copied) e.currentTarget.style.backgroundColor = "#f3f4f6";
-            }}
-            onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-              if (!copied)
-                e.currentTarget.style.backgroundColor = "transparent";
-            }}
+            className={`p-1.5 rounded border-none cursor-pointer flex items-center justify-center transition-all duration-200 ${
+              copied 
+                ? "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400" 
+                : "bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+            }`}
             title={copied ? "Copied!" : "Copy message"}
           >
             <motion.div
@@ -352,24 +328,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             onClick={handleLike}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            style={{
-              background: liked ? "#eff6ff" : "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "6px",
-              borderRadius: "6px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.2s",
-              color: liked ? "#3b82f6" : "#6b7280",
-            }}
-            onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-              if (!liked) e.currentTarget.style.backgroundColor = "#f3f4f6";
-            }}
-            onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-              if (!liked) e.currentTarget.style.backgroundColor = "transparent";
-            }}
+            className={`p-1.5 rounded border-none cursor-pointer flex items-center justify-center transition-all duration-200 ${
+              liked 
+                ? "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400" 
+                : "bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+            }`}
             title="Like message"
           >
             <motion.div
@@ -378,7 +341,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
               }}
               transition={{ duration: 0.3 }}
             >
-              <ThumbsUp size={16} fill={liked ? "#93c5fd" : "none"} />
+              <ThumbsUp size={16} fill={liked ? "currentColor" : "none"} />
             </motion.div>
           </motion.button>
 
@@ -386,25 +349,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             onClick={handleDislike}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            style={{
-              background: disliked ? "#fef7f7" : "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "6px",
-              borderRadius: "6px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.2s",
-              color: disliked ? "#ef4444" : "#6b7280",
-            }}
-            onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-              if (!disliked) e.currentTarget.style.backgroundColor = "#f3f4f6";
-            }}
-            onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-              if (!disliked)
-                e.currentTarget.style.backgroundColor = "transparent";
-            }}
+            className={`p-1.5 rounded border-none cursor-pointer flex items-center justify-center transition-all duration-200 ${
+              disliked 
+                ? "bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400" 
+                : "bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+            }`}
             title="Dislike message"
           >
             <motion.div
@@ -413,16 +362,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
               }}
               transition={{ duration: 0.3 }}
             >
-              <ThumbsDown size={16} fill={disliked ? "#fca5a5" : "none"} />
+              <ThumbsDown size={16} fill={disliked ? "currentColor" : "none"} />
             </motion.div>
           </motion.button>
 
           <span
-            style={{
-              fontSize: "12px",
-              color: "#9ca3af",
-              marginLeft: "8px",
-            }}
+            className="text-xs text-muted-foreground ml-2"
           >
             {formatTime(message.timestamp)}
           </span>

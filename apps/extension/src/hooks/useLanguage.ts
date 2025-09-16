@@ -304,6 +304,11 @@ const translations: Translations = {
     settings_reset_to_default: "אפס לברירת מחדל",
     settings_preferences_saved: "העדפות נשמרו בהצלחה",
     settings_preferences_error: "שגיאה בשמירת העדפות",
+
+    // Theme
+    theme_light: "בהיר",
+    theme_dark: "כהה",
+    theme_system: "מערכת",
   },
   en: {
     // Header
@@ -607,6 +612,11 @@ const translations: Translations = {
     settings_reset_to_default: "Reset to Default",
     settings_preferences_saved: "Preferences saved successfully",
     settings_preferences_error: "Error saving preferences",
+
+    // Theme
+    theme_light: "Light",
+    theme_dark: "Dark",
+    theme_system: "System",
   },
 };
 

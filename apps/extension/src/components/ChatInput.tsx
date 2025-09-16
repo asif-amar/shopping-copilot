@@ -53,13 +53,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [preferences, setPreferences] =
     useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [showCreditWarning, setShowCreditWarning] = useState(true);
-  
+
   const isSupported = isShoppingSite(currentHostname);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || isLoading || !isSupported) return;
-    
+
     // Check if credits are exhausted
     if (creditStatus?.credits_exhausted) {
       return; // Don't send message if no credits
@@ -68,7 +68,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const message = inputText.trim();
     setInputText("");
     await onSendMessage(message, preferences);
-    
+
     // Refresh credits after sending message
     await refreshCredits();
   };
@@ -80,7 +80,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const canSend = inputText.trim() && !isLoading && !creditStatus?.credits_exhausted && isSupported;
+  const canSend =
+    inputText.trim() &&
+    !isLoading &&
+    !creditStatus?.credits_exhausted &&
+    isSupported;
 
   const getAIStyleConfig = (style: AIStyle) => {
     switch (style) {
@@ -116,7 +120,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <div
-      className="p-3 bg-white border-t border-slate-200 shrink-0"
+      className="p-3 bg-background border-t border-border shrink-0"
       style={{ direction: isRTL ? "rtl" : "ltr" }}
     >
       {/* Credit Warning Banner */}
@@ -129,7 +133,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onClose={() => setShowCreditWarning(false)}
         />
       )}
-      
+
       <motion.form
         onSubmit={handleSubmit}
         initial={{ opacity: 0, y: 10 }}
@@ -140,8 +144,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         {/* Main input container */}
         <div
           className={cn(
-            "relative bg-slate-50 rounded-xl border transition-all duration-200 pb-12",
-            isFocused ? "border-slate-300" : "border-slate-200"
+            "relative bg-muted/50 rounded-xl border transition-all duration-200 pb-12",
+            isFocused ? "border-ring" : "border-border"
           )}
         >
           <Textarea
@@ -152,14 +156,20 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             onBlur={() => setIsFocused(false)}
             placeholder={
               !isSupported
-                ? (isRTL ? "אתר לא נתמך - חזור לאתר קניות נתמך" : "Unsupported site - navigate to a supported shopping site")
-                : creditStatus?.credits_exhausted 
-                  ? (isRTL ? "הקרדיטים אזלו - לא ניתן לשלוח הודעות" : "Credits exhausted - cannot send messages")
+                ? isRTL
+                  ? "אתר לא נתמך - חזור לאתר קניות נתמך"
+                  : "Unsupported site - navigate to a supported shopping site"
+                : creditStatus?.credits_exhausted
+                  ? isRTL
+                    ? "הקרדיטים אזלו - לא ניתן לשלוח הודעות"
+                    : "Credits exhausted - cannot send messages"
                   : t("type_message")
             }
-            disabled={isLoading || creditStatus?.credits_exhausted || !isSupported}
+            disabled={
+              isLoading || creditStatus?.credits_exhausted || !isSupported
+            }
             className={cn(
-              "w-full min-h-[20px] max-h-[120px] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-3 pb-4 ring-0 border-none rounded-xl text-sm resize-none outline-none bg-transparent text-slate-700 leading-5 box-border placeholder:text-slate-400",
+              "w-full min-h-[20px] max-h-[120px] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-3 pb-4 ring-0 border-none rounded-xl text-sm resize-none outline-none !bg-transparent text-foreground leading-5 box-border placeholder:text-muted-foreground",
               isRTL ? "text-right" : "text-left"
             )}
             style={{ direction: isRTL ? "rtl" : "ltr" }}
@@ -179,8 +189,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     className={cn(
                       "w-8 h-8 rounded-full transition-colors flex items-center justify-center",
                       isSupported
-                        ? "bg-slate-200 hover:bg-slate-300 text-slate-600 hover:text-slate-700"
-                        : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                        ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground hover:text-foreground"
+                        : "bg-muted text-muted-foreground cursor-not-allowed"
                     )}
                   >
                     <Hint
@@ -193,7 +203,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align={isRTL ? "end" : "start"}
-                  className="w-56 bg-white border border-slate-200 shadow-lg max-h-[70vh] overflow-y-auto"
+                  className="w-56 bg-popover border border-border shadow-lg max-h-[70vh] overflow-y-auto"
                   side="top"
                   sideOffset={12}
                   style={{ direction: isRTL ? "rtl" : "ltr" }}
@@ -201,7 +211,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   collisionPadding={16}
                   alignOffset={isRTL ? 8 : -8}
                 >
-                  <DropdownMenuLabel className="text-slate-700 font-medium">
+                  <DropdownMenuLabel className="text-popover-foreground font-medium">
                     {t("preferences")}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -228,14 +238,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       </span>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent
-                      className="w-56 max-w-[80vw] bg-white border border-slate-200 shadow-lg max-h-[50vh] overflow-y-auto"
+                      className="w-56 max-w-[80vw] bg-popover border border-border shadow-lg max-h-[50vh] overflow-y-auto"
                       style={{ direction: isRTL ? "rtl" : "ltr" }}
                       avoidCollisions={true}
                       collisionPadding={12}
                       alignOffset={isRTL ? -80 : 80}
                       sideOffset={4}
                     >
-                      <DropdownMenuLabel className="text-slate-700 font-medium">
+                      <DropdownMenuLabel className="text-popover-foreground font-medium">
                         {t("ai_behavior_style")}
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
@@ -251,19 +261,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                           className={cn(
                             "flex flex-col items-start gap-1 py-3 px-3 rounded-md transition-colors cursor-pointer",
                             preferences.aiStyle === "flexible"
-                              ? "bg-green-50"
-                              : "hover:bg-slate-50"
+                              ? "bg-green-50 dark:bg-green-950/50"
+                              : "hover:bg-accent/50"
                           )}
                         >
                           <div className="flex items-center gap-2">
                             <Zap size={14} className="text-green-600" />
-                            <span className="font-medium text-slate-700">
+                            <span className="font-medium text-popover-foreground">
                               {t("flexible")}
                             </span>
                           </div>
                           <p
                             className={cn(
-                              "text-xs text-slate-500",
+                              "text-xs text-muted-foreground",
                               isRTL ? "mr-5 text-right" : "ml-5 text-left"
                             )}
                           >
@@ -282,19 +292,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                           className={cn(
                             "flex flex-col items-start gap-1 py-3 px-3 rounded-md transition-colors cursor-pointer",
                             preferences.aiStyle === "balanced"
-                              ? "bg-purple-50"
-                              : "hover:bg-slate-50"
+                              ? "bg-purple-50 dark:bg-purple-950/50"
+                              : "hover:bg-accent/50"
                           )}
                         >
                           <div className="flex items-center gap-2">
                             <Target size={14} className="text-purple-600" />
-                            <span className="font-medium text-slate-700">
+                            <span className="font-medium text-popover-foreground">
                               {t("balanced")}
                             </span>
                           </div>
                           <p
                             className={cn(
-                              "text-xs text-slate-500",
+                              "text-xs text-muted-foreground",
                               isRTL ? "mr-5 text-right" : "ml-5 text-left"
                             )}
                           >
@@ -313,19 +323,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                           className={cn(
                             "flex flex-col items-start gap-1 py-3 px-3 rounded-md transition-colors cursor-pointer",
                             preferences.aiStyle === "strict"
-                              ? "bg-orange-50"
-                              : "hover:bg-slate-50"
+                              ? "bg-orange-50 dark:bg-orange-950/50"
+                              : "hover:bg-accent/50"
                           )}
                         >
                           <div className="flex items-center gap-2">
                             <Shield size={14} className="text-orange-600" />
-                            <span className="font-medium text-slate-700">
+                            <span className="font-medium text-popover-foreground">
                               {t("strict")}
                             </span>
                           </div>
                           <p
                             className={cn(
-                              "text-xs text-slate-500",
+                              "text-xs text-muted-foreground",
                               isRTL ? "mr-5 text-right" : "ml-5 text-left"
                             )}
                           >
@@ -389,15 +399,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 "w-8 h-8 rounded-full border-none transition-all duration-200 flex items-center justify-center shrink-0",
                 canSend
                   ? "bg-purple-500 hover:bg-purple-600 text-white shadow-sm"
-                  : "bg-slate-300 text-slate-500 cursor-not-allowed"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
               )}
               title={
                 !isSupported
-                  ? (isRTL ? "אתר לא נתמך" : "Unsupported site")
-                  : creditStatus?.credits_exhausted 
-                    ? (isRTL ? "הקרדיטים אזלו" : "Credits exhausted")
-                    : canSend 
-                      ? t("send_message") 
+                  ? isRTL
+                    ? "אתר לא נתמך"
+                    : "Unsupported site"
+                  : creditStatus?.credits_exhausted
+                    ? isRTL
+                      ? "הקרדיטים אזלו"
+                      : "Credits exhausted"
+                    : canSend
+                      ? t("send_message")
                       : t("type_message")
               }
             >

@@ -7,6 +7,7 @@ import { AuthModal } from "@/components/AuthModal";
 import { ConversationsDrawer } from "@/components/ConversationsDrawer";
 import { ApiService } from "@/services/api";
 import { UserPreferences } from "@/types/preferences";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const SidePanelContent: React.FC = () => {
   const {
@@ -87,12 +88,7 @@ const SidePanelContent: React.FC = () => {
 
   return (
     <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        background: "#ffffff",
-      }}
+      className="h-screen flex flex-col bg-background"
     >
       <Header
         currentHostname={currentHostname}
@@ -134,8 +130,10 @@ const SidePanelContent: React.FC = () => {
 
 export const SidePanel: React.FC = () => {
   return (
-    <LanguageProvider>
-      <SidePanelContent />
-    </LanguageProvider>
+    <ThemeProvider defaultTheme="system" storageKey="vibe-shopping-theme">
+      <LanguageProvider>
+        <SidePanelContent />
+      </LanguageProvider>
+    </ThemeProvider>
   );
 };

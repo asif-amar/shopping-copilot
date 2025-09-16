@@ -121,7 +121,7 @@ export function OnboardingModal({
                     "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors",
                     currentStep >= step.id
                       ? "bg-purple-600 text-white"
-                      : "bg-gray-200 text-gray-600"
+                      : "bg-muted text-muted-foreground"
                   )}
                 >
                   {currentStep > step.id ? (
@@ -134,7 +134,7 @@ export function OnboardingModal({
                   <div
                     className={cn(
                       "w-8 h-0.5 transition-colors",
-                      currentStep > step.id ? "bg-purple-600" : "bg-gray-200"
+                      currentStep > step.id ? "bg-purple-600" : "bg-border"
                     )}
                   />
                 )}
@@ -177,7 +177,7 @@ export function OnboardingModal({
         {/* Navigation */}
         <div
           className={cn(
-            "flex justify-between items-center mt-6 pt-4 border-t border-gray-200 gap-4",
+            "flex justify-between items-center mt-6 pt-4 border-t border-border gap-4",
             isRTL && "flex-row-reverse"
           )}
         >
@@ -248,58 +248,58 @@ function WelcomeStep({
 }) {
   return (
     <div className="text-center space-y-6">
-      <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
+      <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center mx-auto">
         <ShoppingCart className="w-10 h-10 text-purple-600" />
       </div>
 
       <div>
         <h2
-          className="text-2xl font-bold text-gray-900 mb-3"
+          className="text-2xl font-bold text-foreground mb-3"
           dir={isRTL ? "rtl" : "ltr"}
         >
           {t("onboarding_welcome")}
         </h2>
-        <p className="text-gray-600 text-lg" dir={isRTL ? "rtl" : "ltr"}>
+        <p className="text-muted-foreground text-lg" dir={isRTL ? "rtl" : "ltr"}>
           {t("onboarding_welcome_desc")}
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-        <div className="p-4 bg-green-50 rounded-lg">
+        <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
           <Settings className="w-8 h-8 text-green-600 mx-auto mb-2" />
           <h3
-            className="font-medium text-gray-900 mb-1"
+            className="font-medium text-foreground mb-1"
             dir={isRTL ? "rtl" : "ltr"}
           >
             {t("onboarding_smart_search")}
           </h3>
-          <p className="text-sm text-gray-600" dir={isRTL ? "rtl" : "ltr"}>
+          <p className="text-sm text-muted-foreground" dir={isRTL ? "rtl" : "ltr"}>
             {t("onboarding_smart_search_desc")}
           </p>
         </div>
 
-        <div className="p-4 bg-purple-50 rounded-lg">
+        <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
           <ShoppingCart className="w-8 h-8 text-purple-600 mx-auto mb-2" />
           <h3
-            className="font-medium text-gray-900 mb-1"
+            className="font-medium text-foreground mb-1"
             dir={isRTL ? "rtl" : "ltr"}
           >
             {t("onboarding_cart_management")}
           </h3>
-          <p className="text-sm text-gray-600" dir={isRTL ? "rtl" : "ltr"}>
+          <p className="text-sm text-muted-foreground" dir={isRTL ? "rtl" : "ltr"}>
             {t("onboarding_cart_management_desc")}
           </p>
         </div>
 
-        <div className="p-4 bg-orange-50 rounded-lg">
+        <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
           <Zap className="w-8 h-8 text-orange-600 mx-auto mb-2" />
           <h3
-            className="font-medium text-gray-900 mb-1"
+            className="font-medium text-foreground mb-1"
             dir={isRTL ? "rtl" : "ltr"}
           >
             {t("onboarding_price_comparison")}
           </h3>
-          <p className="text-sm text-gray-600" dir={isRTL ? "rtl" : "ltr"}>
+          <p className="text-sm text-muted-foreground" dir={isRTL ? "rtl" : "ltr"}>
             {t("onboarding_price_comparison_desc")}
           </p>
         </div>
@@ -327,10 +327,10 @@ function ProfileStep({
     <div className="space-y-6">
       <div className="text-center mb-6">
         <Users className="w-12 h-12 text-purple-600 mx-auto mb-3" />
-        <h2 className="text-xl font-bold text-gray-900 mb-2">
+        <h2 className="text-xl font-bold text-foreground mb-2">
           {t("onboarding_profile")}
         </h2>
-        <p className="text-gray-600">{t("onboarding_profile_desc")}</p>
+        <p className="text-muted-foreground">{t("onboarding_profile_desc")}</p>
       </div>
 
       <div className="space-y-4">
@@ -338,7 +338,7 @@ function ProfileStep({
         <div>
           <label
             className={cn(
-              "block text-sm font-medium text-gray-700 mb-2",
+              "block text-sm font-medium text-foreground mb-2",
               isRTL && "text-right"
             )}
           >
@@ -371,8 +371,8 @@ function ProfileStep({
                   isRTL ? "text-right" : "text-left",
 
                   data.household_size === option.value
-                    ? "border-purple-500 bg-purple-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-purple-500 bg-purple-50 dark:bg-purple-900/50"
+                    : "border-border hover:border-ring"
                 )}
               >
                 {/* <div className="text-lg mb-1">{option.icon}</div> */}
@@ -386,7 +386,7 @@ function ProfileStep({
         <div>
           <label
             className={cn(
-              "block text-sm font-medium text-gray-700 mb-2",
+              "block text-sm font-medium text-foreground mb-2",
               isRTL && "text-right"
             )}
           >
@@ -414,8 +414,8 @@ function ProfileStep({
                   "p-2 rounded-lg border text-sm transition-colors",
                   isRTL ? "text-right" : "text-left",
                   (data.dietary_restrictions || []).includes(option.value)
-                    ? "border-green-500 bg-green-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-green-500 bg-green-50 dark:bg-green-900/50"
+                    : "border-border hover:border-ring"
                 )}
               >
                 {option.label}
@@ -428,7 +428,7 @@ function ProfileStep({
         <div>
           <label
             className={cn(
-              "block text-sm font-medium text-gray-700 mb-2",
+              "block text-sm font-medium text-foreground mb-2",
               isRTL && "text-right"
             )}
           >
@@ -459,12 +459,12 @@ function ProfileStep({
                   "p-3 rounded-lg border transition-colors",
                   isRTL ? "text-right" : "text-left",
                   data.budget_preference === option.value
-                    ? "border-purple-500 bg-purple-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-purple-500 bg-purple-50 dark:bg-purple-900/50"
+                    : "border-border hover:border-ring"
                 )}
               >
                 <div className="text-sm font-medium mb-1">{option.label}</div>
-                <div className="text-xs text-gray-500">{option.desc}</div>
+                <div className="text-xs text-muted-foreground">{option.desc}</div>
               </button>
             ))}
           </div>
@@ -474,7 +474,7 @@ function ProfileStep({
         <div>
           <label
             className={cn(
-              "block text-sm font-medium text-gray-700 mb-2",
+              "block text-sm font-medium text-foreground mb-2",
               isRTL && "text-right"
             )}
           >
@@ -492,8 +492,8 @@ function ProfileStep({
                 className={cn(
                   "p-3 rounded-lg border text-center transition-colors",
                   data.shopping_frequency === option.value
-                    ? "border-orange-500 bg-orange-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-orange-500 bg-orange-50 dark:bg-orange-900/50"
+                    : "border-border hover:border-ring"
                 )}
               >
                 {/* <div className="text-lg mb-1">{option.icon}</div> */}
@@ -517,43 +517,16 @@ function PreferencesStep({
   t: (key: string) => string;
 }) {
   const { isRTL } = useLanguage();
-  const [customSiteInput, setCustomSiteInput] = useState("");
 
-  const sanitizeInput = (input: string): string => {
-    return input
-      .replace(/<[^>]*>/g, "")
-      .replace(/['"`;\\]/g, "")
-      .replace(
-        /\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b/gi,
-        ""
-      )
-      .trim()
-      .substring(0, 50);
-  };
-
-  const handleCustomSiteAdd = () => {
-    if (customSiteInput.trim()) {
-      const sanitizedInput = sanitizeInput(customSiteInput);
-      if (sanitizedInput) {
-        const current = data.primary_sites || [];
-        if (!current.includes(`custom:${sanitizedInput}`)) {
-          updateData({
-            primary_sites: [...current, `custom:${sanitizedInput}`],
-          });
-        }
-        setCustomSiteInput("");
-      }
-    }
-  };
 
   return (
     <div className="space-y-6">
       <div className="text-center mb-6">
         <Heart className="w-12 h-12 text-pink-600 mx-auto mb-3" />
-        <h2 className="text-xl font-bold text-gray-900 mb-2">
+        <h2 className="text-xl font-bold text-foreground mb-2">
           {t("onboarding_preferences")}
         </h2>
-        <p className="text-gray-600">{t("onboarding_preferences_desc")}</p>
+        <p className="text-muted-foreground">{t("onboarding_preferences_desc")}</p>
       </div>
 
       <div className="space-y-4">
@@ -561,7 +534,7 @@ function PreferencesStep({
         {/* <div>
           <label
             className={cn(
-              "block text-sm font-medium text-gray-700 mb-2",
+              "block text-sm font-medium text-foreground mb-2",
               isRTL && "text-right"
             )}
           >
@@ -580,8 +553,8 @@ function PreferencesStep({
                 className={cn(
                   "p-3 rounded-lg border text-center transition-colors",
                   data.language_preference === option.value
-                    ? "border-purple-500 bg-purple-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-purple-500 bg-purple-50 dark:bg-purple-900/50"
+                    : "border-border hover:border-ring"
                 )}
               >
                 <div className="text-lg mb-1">{option.flag}</div>
@@ -595,7 +568,7 @@ function PreferencesStep({
         <div>
           <label
             className={cn(
-              "block text-sm font-medium text-gray-700 mb-2",
+              "block text-sm font-medium text-foreground mb-2",
               isRTL && "text-right"
             )}
           >
@@ -624,8 +597,8 @@ function PreferencesStep({
                 className={cn(
                   "p-3 rounded-lg border text-center transition-colors",
                   (data.primary_sites || []).includes(option.value)
-                    ? "border-green-500 bg-green-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-green-500 bg-green-50 dark:bg-green-900/50"
+                    : "border-border hover:border-ring"
                 )}
               >
                 <div
@@ -704,7 +677,7 @@ function PreferencesStep({
         <div>
           <label
             className={cn(
-              "block text-sm font-medium text-gray-700 mb-2",
+              "block text-sm font-medium text-foreground mb-2",
               isRTL && "text-right"
             )}
           >
@@ -736,8 +709,8 @@ function PreferencesStep({
                   "p-2 rounded-lg border text-sm transition-colors",
                   isRTL ? "text-right" : "text-left",
                   (data.preferred_categories || []).includes(option.value)
-                    ? "border-purple-500 bg-purple-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-purple-500 bg-purple-50 dark:bg-purple-900/50"
+                    : "border-border hover:border-ring"
                 )}
               >
                 {option.label}
@@ -750,7 +723,7 @@ function PreferencesStep({
         <div>
           <label
             className={cn(
-              "block text-sm font-medium text-gray-700 mb-2",
+              "block text-sm font-medium text-foreground mb-2",
               isRTL && "text-right"
             )}
           >
@@ -780,8 +753,8 @@ function PreferencesStep({
                 className={cn(
                   "p-2 rounded-lg border text-xs text-center transition-colors",
                   (data.brand_preferences || []).includes(option.value)
-                    ? "border-indigo-500 bg-indigo-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/50"
+                    : "border-border hover:border-ring"
                 )}
               >
                 {option.label}
@@ -813,7 +786,7 @@ function FeaturesStep({ t }: { t: (key: string) => string }) {
       </div>
 
       <div className="space-y-4">
-        <div className="p-4 bg-purple-50 rounded-lg">
+        <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
           <div
             className={cn(
               "flex items-start gap-3",
@@ -823,19 +796,19 @@ function FeaturesStep({ t }: { t: (key: string) => string }) {
             <Settings className="w-6 h-6 text-purple-600 mt-0.5" />
             <div className={cn(isRTL && "text-right")}>
               <h3
-                className="font-medium text-gray-900 mb-1"
+                className="font-medium text-foreground mb-1"
                 dir={isRTL ? "rtl" : "ltr"}
               >
                 {t("onboarding_auto_credential_capture")}
               </h3>
-              <p className="text-sm text-gray-600" dir={isRTL ? "rtl" : "ltr"}>
+              <p className="text-sm text-muted-foreground" dir={isRTL ? "rtl" : "ltr"}>
                 {t("onboarding_auto_credential_capture_desc")}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="p-4 bg-green-50 rounded-lg">
+        <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
           <div
             className={cn(
               "flex items-start gap-3",
@@ -845,19 +818,19 @@ function FeaturesStep({ t }: { t: (key: string) => string }) {
             <ShoppingCart className="w-6 h-6 text-green-600 mt-0.5" />
             <div className={cn(isRTL && "text-right")}>
               <h3
-                className="font-medium text-gray-900 mb-1"
+                className="font-medium text-foreground mb-1"
                 dir={isRTL ? "rtl" : "ltr"}
               >
                 {t("onboarding_smart_chat_commands")}
               </h3>
-              <p className="text-sm text-gray-600" dir={isRTL ? "rtl" : "ltr"}>
+              <p className="text-sm text-muted-foreground" dir={isRTL ? "rtl" : "ltr"}>
                 {t("onboarding_smart_chat_commands_desc")}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="p-4 bg-purple-50 rounded-lg">
+        <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
           <div
             className={cn(
               "flex items-start gap-3",
@@ -867,19 +840,19 @@ function FeaturesStep({ t }: { t: (key: string) => string }) {
             <Zap className="w-6 h-6 text-purple-600 mt-0.5" />
             <div className={cn(isRTL && "text-right")}>
               <h3
-                className="font-medium text-gray-900 mb-1"
+                className="font-medium text-foreground mb-1"
                 dir={isRTL ? "rtl" : "ltr"}
               >
                 {t("onboarding_credit_system_title")}
               </h3>
-              <p className="text-sm text-gray-600" dir={isRTL ? "rtl" : "ltr"}>
+              <p className="text-sm text-muted-foreground" dir={isRTL ? "rtl" : "ltr"}>
                 {t("onboarding_credit_system_desc_detailed")}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="p-4 bg-orange-50 rounded-lg">
+        <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
           <div
             className={cn(
               "flex items-start gap-3",
@@ -889,12 +862,12 @@ function FeaturesStep({ t }: { t: (key: string) => string }) {
             <Globe className="w-6 h-6 text-orange-600 mt-0.5" />
             <div className={cn(isRTL && "text-right")}>
               <h3
-                className="font-medium text-gray-900 mb-1"
+                className="font-medium text-foreground mb-1"
                 dir={isRTL ? "rtl" : "ltr"}
               >
                 {t("onboarding_multi_site_support")}
               </h3>
-              <p className="text-sm text-gray-600" dir={isRTL ? "rtl" : "ltr"}>
+              <p className="text-sm text-muted-foreground" dir={isRTL ? "rtl" : "ltr"}>
                 {t("onboarding_multi_site_support_desc")}
               </p>
             </div>
@@ -934,12 +907,12 @@ function PrivacyStep({ t }: { t: (key: string) => string }) {
             <CheckCircle className="w-6 h-6 text-green-600 mt-0.5" />
             <div className={cn(isRTL && "text-right")}>
               <h3
-                className="font-medium text-gray-900 mb-1"
+                className="font-medium text-foreground mb-1"
                 dir={isRTL ? "rtl" : "ltr"}
               >
                 {t("onboarding_secure_data_handling")}
               </h3>
-              <p className="text-sm text-gray-600" dir={isRTL ? "rtl" : "ltr"}>
+              <p className="text-sm text-muted-foreground" dir={isRTL ? "rtl" : "ltr"}>
                 {t("onboarding_secure_data_handling_desc")}
               </p>
             </div>
@@ -956,7 +929,7 @@ function PrivacyStep({ t }: { t: (key: string) => string }) {
             <Shield className="w-6 h-6 text-purple-600 mt-0.5" />
             <div className={cn(isRTL && "text-right")}>
               <h3
-                className="font-medium text-gray-900 mb-1"
+                className="font-medium text-foreground mb-1"
                 dir={isRTL ? "rtl" : "ltr"}
               >
                 {t("onboarding_data_collection_title")}
@@ -984,7 +957,7 @@ function PrivacyStep({ t }: { t: (key: string) => string }) {
             <Users className="w-6 h-6 text-purple-600 mt-0.5" />
             <div className={cn(isRTL && "text-right")}>
               <h3
-                className="font-medium text-gray-900 mb-1"
+                className="font-medium text-foreground mb-1"
                 dir={isRTL ? "rtl" : "ltr"}
               >
                 {t("onboarding_your_rights")}

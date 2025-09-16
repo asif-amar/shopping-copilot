@@ -55,17 +55,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-        style={{
-          width: "64px",
-          height: "64px",
-          background: "linear-gradient(135deg, #642BFE 0%, #732BFF 100%)",
-          borderRadius: "16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: "16px",
-          boxShadow: "0 6px 24px rgba(100, 43, 254, 0.3)",
-        }}
+        className="w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-700 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
       >
         {/* <ShoppingCart size={30} color="white" /> */}
         <img
@@ -82,13 +72,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        style={{
-          fontSize: "16px",
-          fontWeight: "600",
-          color: "#1e293b",
-          margin: "0 0 8px 0",
-          lineHeight: "1.4",
-        }}
+        className="text-base font-semibold text-foreground m-0 mb-2 leading-relaxed"
       >
         {t("empty_welcome")}
       </motion.h2>
@@ -98,12 +82,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
-        style={{
-          fontSize: "13px",
-          color: "#64748b",
-          margin: "0 0 20px 0",
-          lineHeight: "1.5",
-        }}
+        className="text-sm text-muted-foreground m-0 mb-5 leading-relaxed"
       >
         {t("empty_try_typing")}
       </motion.p>
@@ -132,62 +111,21 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
               initial={{ opacity: 0, x: isRTL ? 20 : -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6 + index * 0.1 }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "10px 14px",
-                background: "#f8fafc",
-                border: "1px solid #e2e8f0",
-                borderRadius: "12px",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                textAlign: isRTL ? "right" : "left",
-                flexDirection: isRTL ? "row-reverse" : "row",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#f1f5f9";
-                e.currentTarget.style.borderColor = "#cbd5e1";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#f8fafc";
-                e.currentTarget.style.borderColor = "#e2e8f0";
-              }}
+              className={`flex items-center gap-2.5 p-3 bg-muted/50 border border-border rounded-xl cursor-pointer transition-all duration-200 hover:bg-muted hover:border-ring ${
+                isRTL ? "text-right flex-row-reverse" : "text-left flex-row"
+              }`}
             >
-              <div
-                style={{
-                  width: "32px",
-                  height: "32px",
-                  background: "rgba(100, 43, 254, 0.1)",
-                  borderRadius: "8px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <Icon size={16} color="#642BFE" />
+              <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Icon size={16} className="text-purple-600 dark:text-purple-400" />
               </div>
-              <div style={{ flex: 1 }}>
-                <div
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: action.descKey ? "2px" : "0",
-                  }}
-                >
+              <div className="flex-1">
+                <div className={`text-sm font-medium text-foreground ${action.descKey ? "mb-0.5" : "mb-0"}`}>
                   {t(action.key)
                     .replace(/🥛|🥦|🛒/, "")
                     .trim()}
                 </div>
                 {action.descKey && (
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "#6b7280",
-                    }}
-                  >
+                  <div className="text-xs text-muted-foreground">
                     {t(action.descKey)}
                   </div>
                 )}
@@ -202,12 +140,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onQuickAction }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.9 }}
-        style={{
-          fontSize: "12px",
-          color: "#9ca3af",
-          margin: "16px 0 0 0",
-          fontStyle: "italic",
-        }}
+        className="text-xs text-muted-foreground/70 mt-4 mb-0 italic"
       >
         {t("empty_tagline")}
       </motion.p>

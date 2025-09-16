@@ -238,14 +238,14 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
             {t("auth_agree_terms")}{" "}
             <button
               onClick={() => setLegalModalType("terms")}
-              className="text-purple-600 hover:text-purple-800 underline"
+              className="text-primary hover:text-primary/80 underline"
             >
               {t("auth_terms_of_use")}
             </button>{" "}
             {t("auth_and")}{" "}
             <button
               onClick={() => setLegalModalType("privacy")}
-              className="text-purple-600 hover:text-purple-800 underline"
+              className="text-primary hover:text-primary/80 underline"
             >
               {t("auth_privacy_policy")}
             </button>

@@ -42,25 +42,19 @@ export const ToolCall: React.FC<ToolCallProps> = ({ toolCall }) => {
     switch (displayStatus) {
       case "running":
         return (
-          <div style={{ 
-            color: "#6366f1", 
-            display: "flex", 
-            alignItems: "center",
-            width: "14px",
-            height: "14px"
-          }}>
+          <div className="text-indigo-500 dark:text-indigo-400 flex items-center w-3.5 h-3.5">
             <Loader2 
               size={14} 
-              style={{ animation: "spin 1s linear infinite" }}
+              className="animate-spin"
             />
           </div>
         );
       case "completed":
-        return <Check size={14} style={{ color: "#059669" }} />;
+        return <Check size={14} className="text-green-600 dark:text-green-400" />;
       case "error":
-        return <AlertCircle size={14} style={{ color: "#dc2626" }} />;
+        return <AlertCircle size={14} className="text-red-600 dark:text-red-400" />;
       default:
-        return <Loader2 size={14} style={{ color: "#6366f1", animation: "spin 1s linear infinite" }} />;
+        return <Loader2 size={14} className="text-indigo-500 dark:text-indigo-400 animate-spin" />;
     }
   };
 
@@ -71,39 +65,20 @@ export const ToolCall: React.FC<ToolCallProps> = ({ toolCall }) => {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
+      className="bg-muted/50 border border-border rounded-lg p-3 flex items-center gap-3 text-sm"
       style={{
-        background: "#f8fafc",
-        border: "1px solid #e2e8f0",
-        borderRadius: "8px",
-        padding: "12px 16px",
-        display: "flex",
-        alignItems: "center",
-        gap: "12px",
-        fontSize: "14px",
         direction: "rtl",
         fontFamily: "system-ui, -apple-system, sans-serif",
       }}
     >
       {/* Status Icon */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          minWidth: "14px",
-        }}
-      >
+      <div className="flex items-center min-w-[14px]">
         {getStatusIcon()}
       </div>
 
       {/* Tool Info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontWeight: "500",
-            color: "#1e293b",
-            marginBottom: toolCall.message ? "2px" : 0,
-          }}
-        >
+      <div className="flex-1 min-w-0">
+        <div className={`font-medium text-foreground ${toolCall.message ? "mb-0.5" : "mb-0"}`}>
           {toolCall.displayName}
         </div>
         {/* {toolCall.message && (

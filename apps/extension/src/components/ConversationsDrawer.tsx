@@ -140,26 +140,26 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
             exit={{ x: isRTL ? "100%" : "-100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
             className={cn(
-              "fixed top-0 bottom-0 w-80 max-w-[90vw] bg-white shadow-xl z-50 flex flex-col",
+              "fixed top-0 bottom-0 w-80 max-w-[90vw] bg-background shadow-xl z-50 flex flex-col",
               isRTL
-                ? "right-0 border-l border-slate-200"
-                : "left-0 border-r border-slate-200"
+                ? "right-0 border-l border-border"
+                : "left-0 border-r border-border"
             )}
             style={{ direction: isRTL ? "rtl" : "ltr" }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+            <div className="flex items-center justify-between p-4 border-b border-border bg-muted/50">
               <div className="flex items-center gap-2">
-                <MessageSquare size={18} className="text-slate-600" />
-                <h2 className="text-lg font-semibold text-slate-800">
+                <MessageSquare size={18} className="text-muted-foreground" />
+                <h2 className="text-lg font-semibold text-foreground">
                   {t("conversations") || "Conversations"}
                 </h2>
               </div>
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors"
               >
-                <X size={16} className="text-slate-600" />
+                <X size={16} className="text-secondary-foreground" />
               </button>
             </div>
 
@@ -167,7 +167,7 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
             <div className="flex-1 overflow-y-auto">
               {isLoading && (
                 <div className="flex items-center justify-center py-12">
-                  <div className="flex flex-col items-center gap-2 text-slate-500">
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
                     <span className="text-sm">
                       {t("loading") || "Loading..."}
@@ -177,11 +177,11 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
               )}
 
               {error && (
-                <div className="p-4 m-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-600 text-sm">{error}</p>
+                <div className="p-4 m-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
                   <button
                     onClick={fetchConversations}
-                    className="mt-2 text-red-600 hover:text-red-700 text-sm underline"
+                    className="mt-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm underline"
                   >
                     {t("retry") || "Retry"}
                   </button>
@@ -190,11 +190,11 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
 
               {!isLoading && !error && conversations.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                  <MessageSquare size={48} className="text-slate-300 mb-4" />
-                  <h3 className="text-slate-600 font-medium mb-2">
+                  <MessageSquare size={48} className="text-muted-foreground/50 mb-4" />
+                  <h3 className="text-muted-foreground font-medium mb-2">
                     {t("no_conversations") || "No conversations yet"}
                   </h3>
-                  <p className="text-slate-400 text-sm">
+                  <p className="text-muted-foreground/70 text-sm">
                     {t("start_chatting_desc") ||
                       "Start chatting to see your conversation history here"}
                   </p>
@@ -211,13 +211,13 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
                       transition={{ delay: index * 0.1 }}
                       onClick={() => handleConversationClick(conversation.id)}
                       className={cn(
-                        "w-full p-3 text-left hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0",
+                        "w-full p-3 text-left hover:bg-accent/50 transition-colors border-b border-border last:border-b-0",
                         "flex items-center justify-between group"
                       )}
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="text-sm font-medium text-slate-800 truncate">
+                          <h4 className="text-sm font-medium text-foreground truncate">
                             {conversation.title}
                           </h4>
                           {/* <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
@@ -227,7 +227,7 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
                         {/* <p className="text-xs text-slate-500 truncate mb-1">
                           {conversation.lastMessage}
                         </p> */}
-                        <div className="flex items-center gap-1 text-xs text-slate-400">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock size={12} />
                           <span>
                             {formatRelativeTime(conversation.timestamp)}
@@ -241,7 +241,7 @@ export const ConversationsDrawer: React.FC<ConversationsDrawerProps> = ({
                       <ChevronRight
                         size={16}
                         className={cn(
-                          "text-slate-400 group-hover:text-slate-600 transition-colors flex-shrink-0",
+                          "text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0",
                           isRTL && "rotate-180"
                         )}
                       />

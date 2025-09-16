@@ -81,7 +81,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           {/* Sidebar */}
           <div
             className={cn(
-              "flex flex-col bg-slate-50 border-r border-slate-200",
+              "flex flex-col bg-muted/50 border-r border-border",
               sidebarCollapsed ? "w-16" : "w-48",
               isRTL
                 ? "border-l border-r-0 rounded-r-2xl"
@@ -89,16 +89,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             )}
           >
             {/* Header */}
-            <div className="p-4 border-b border-slate-200">
+            <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between">
                 {!sidebarCollapsed && (
-                  <h2 className="text-lg font-semibold text-slate-800">
+                  <h2 className="text-lg font-semibold text-foreground">
                     {language === "he" ? "הגדרות" : "Settings"}
                   </h2>
                 )}
                 <button
                   onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                  className="p-1 rounded-md hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="p-1 rounded-md hover:bg-muted transition-colors cursor-pointer"
                 >
                   {sidebarCollapsed ? (
                     isRTL ? (
@@ -128,8 +128,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     className={cn(
                       "cursor-pointer w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all mb-1",
                       isActive
-                        ? "bg-slate-800 text-white shadow-sm"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-800",
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                       isRTL ? "flex flex-row text-right" : "flex-row text-left",
                       sidebarCollapsed ? "justify-center px-2" : ""
                     )}
@@ -143,11 +143,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </nav>
 
             {/* Close button */}
-            <div className="p-4 border-t border-slate-200">
+            <div className="p-4 border-t border-border">
               <button
                 onClick={onClose}
                 className={cn(
-                  "cursor-pointer w-full px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all",
+                  "cursor-pointer w-full px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all",
                   sidebarCollapsed ? "px-2" : ""
                 )}
                 title={
@@ -260,7 +260,7 @@ function AccountTab({ language }: { language: string }) {
   if (error && !user) {
     return (
       <div className="p-6">
-        <div className="text-center text-red-600 bg-red-50 rounded-lg p-4">
+        <div className="text-center text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
           <p className="font-medium mb-2">
             {language === "he"
               ? "שגיאה בטעינת פרטי החשבון"
@@ -297,10 +297,10 @@ function AccountTab({ language }: { language: string }) {
   return (
     <div className="p-6 pb-8" style={{ direction: isRTL ? "rtl" : "ltr" }}>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2">
+        <h1 className="text-2xl font-bold text-foreground mb-2">
           {language === "he" ? "חשבון" : "Account"}
         </h1>
-        <p className="text-slate-600">
+        <p className="text-muted-foreground">
           {language === "he"
             ? "נהל את מידע החשבון שלך"
             : "Manage your account information"}
@@ -310,10 +310,10 @@ function AccountTab({ language }: { language: string }) {
       <div className="space-y-8">
         {/* Profile Section */}
         <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             {language === "he" ? "פרופיל" : "Profile"}
           </h3>
-          <div className="p-4 bg-slate-50 rounded-lg">
+          <div className="p-4 bg-muted/50 rounded-lg">
             {/* Profile Picture and Basic Info */}
             <div
               className={cn(
@@ -346,11 +346,11 @@ function AccountTab({ language }: { language: string }) {
               </div>
 
               <div className={cn("flex-1", isRTL ? "text-right" : "text-left")}>
-                <div className="text-lg font-semibold text-slate-800">
+                <div className="text-lg font-semibold text-foreground">
                   {user.full_name || user.email}
                 </div>
-                <div className="text-sm text-slate-600">{user.email}</div>
-                <div className="text-xs text-slate-500 mt-1">
+                <div className="text-sm text-muted-foreground">{user.email}</div>
+                <div className="text-xs text-muted-foreground mt-1">
                   {language === "he" ? "חבר מאז" : "Member since"}{" "}
                   {formatDate(user.created_at)}
                 </div>
@@ -358,13 +358,13 @@ function AccountTab({ language }: { language: string }) {
             </div>
 
             {/* Full Name Edit Section */}
-            <div className="border-t border-slate-200 pt-4">
+            <div className="border-t border-border pt-4">
               <div
                 className={cn(
                   "flex flex-row items-center justify-between mb-3"
                 )}
               >
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-sm font-medium text-foreground">
                   {language === "he" ? "שם מלא" : "Full name"}
                 </label>
                 {!isEditingName && (
@@ -399,7 +399,7 @@ function AccountTab({ language }: { language: string }) {
                     onChange={(e) => setEditedName(e.target.value)}
                     onKeyDown={handleKeyPress}
                     className={cn(
-                      "w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent",
+                      "w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring",
                       isRTL ? "text-right" : "text-left"
                     )}
                     placeholder={
@@ -410,7 +410,7 @@ function AccountTab({ language }: { language: string }) {
                   />
 
                   {nameError && (
-                    <div className="text-sm text-red-600">{nameError}</div>
+                    <div className="text-sm text-red-600 dark:text-red-400">{nameError}</div>
                   )}
 
                   <div
@@ -453,7 +453,7 @@ function AccountTab({ language }: { language: string }) {
                       onClick={handleCancelEdit}
                       disabled={updating}
                       className={cn(
-                        "cursor-pointer  flex items-center gap-2 px-3 py-1.5 bg-slate-200 text-slate-700 text-sm rounded-md hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
+                        "cursor-pointer  flex items-center gap-2 px-3 py-1.5 bg-secondary text-secondary-foreground text-sm rounded-md hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
                         isRTL ? "flex-row-reverse" : "flex-row"
                       )}
                     >
@@ -474,8 +474,8 @@ function AccountTab({ language }: { language: string }) {
               ) : (
                 <div
                   className={cn(
-                    "text-slate-800 font-medium",
-                    !user.full_name ? "text-slate-500 italic" : ""
+                    "text-foreground font-medium",
+                    !user.full_name ? "text-muted-foreground italic" : ""
                   )}
                 >
                   {user.full_name ||
@@ -490,10 +490,10 @@ function AccountTab({ language }: { language: string }) {
 
         {/* Credits Section */}
         <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             {language === "he" ? "קרדיטים" : "Credits"}
           </h3>
-          <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
+          <div className="p-6 bg-card rounded-xl border border-border shadow-sm">
             {creditsLoading ? (
               <div className="flex items-center gap-3 text-slate-600 justify-center py-4">
                 <Loader2 size={20} className="animate-spin" />
@@ -503,16 +503,16 @@ function AccountTab({ language }: { language: string }) {
               <div className="space-y-6">
                 {/* Main Credits Display */}
                 <div className="text-center space-y-2">
-                  <div className="text-3xl font-bold text-slate-800">
+                  <div className="text-3xl font-bold text-foreground">
                     {creditStatus.credits_remaining}
                   </div>
-                  <div className="text-sm text-slate-500">
+                  <div className="text-sm text-muted-foreground">
                     {language === "he" ? "קרדיטים נותרו" : "Credits remaining"}
                   </div>
 
                   {/* Progress Bar */}
                   <div className="mt-4">
-                    <div className="w-full bg-slate-100 rounded-full h-2 mb-2">
+                    <div className="w-full bg-secondary rounded-full h-2 mb-2">
                       <div
                         className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-300"
                         style={{
@@ -520,7 +520,7 @@ function AccountTab({ language }: { language: string }) {
                         }}
                       />
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-muted-foreground">
                       {creditStatus.credits_remaining}{" "}
                       {language === "he" ? "מתוך" : "of"}{" "}
                       {creditStatus.credits_total_monthly}{" "}
@@ -585,36 +585,8 @@ function AISettingsTab({ language }: { language: string }) {
   const { isRTL, t } = useLanguage();
   const { preferences, loading, error, updating, updatePreferences } =
     usePreferences();
-  const [customSiteInput, setCustomSiteInput] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Input sanitization function (same as in onboarding)
-  const sanitizeInput = (input: string): string => {
-    return input
-      .replace(/<[^>]*>/g, "")
-      .replace(/['"`;\\]/g, "")
-      .replace(
-        /\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b/gi,
-        ""
-      )
-      .trim()
-      .substring(0, 50);
-  };
-
-  const handleCustomSiteAdd = async () => {
-    if (customSiteInput.trim() && preferences) {
-      const sanitizedInput = sanitizeInput(customSiteInput);
-      if (sanitizedInput) {
-        const current = preferences.primary_sites || [];
-        if (!current.includes(`custom:${sanitizedInput}`)) {
-          await updatePreferences({
-            primary_sites: [...current, `custom:${sanitizedInput}`],
-          });
-          setCustomSiteInput("");
-        }
-      }
-    }
-  };
 
   const handlePreferenceUpdate = async (
     updates: Partial<UserPreferencesData>
@@ -644,7 +616,7 @@ function AISettingsTab({ language }: { language: string }) {
   if (error) {
     return (
       <div className="p-6">
-        <div className="text-center text-red-600 bg-red-50 rounded-lg p-4">
+        <div className="text-center text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
           <p className="font-medium mb-2">
             {language === "he"
               ? "שגיאה בטעינת העדפות"
@@ -659,10 +631,10 @@ function AISettingsTab({ language }: { language: string }) {
   return (
     <div className="p-6 pb-8" style={{ direction: isRTL ? "rtl" : "ltr" }}>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2">
+        <h1 className="text-2xl font-bold text-foreground mb-2">
           {t("settings_preferences")}
         </h1>
-        <p className="text-slate-600">{t("settings_preferences_desc")}</p>
+        <p className="text-muted-foreground">{t("settings_preferences_desc")}</p>
 
         {showSuccess && (
           <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
@@ -674,7 +646,7 @@ function AISettingsTab({ language }: { language: string }) {
       <div className="space-y-8">
         {/* Household Size */}
         <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             {t("settings_household_size")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -693,7 +665,7 @@ function AISettingsTab({ language }: { language: string }) {
                   "p-3 rounded-lg border transition-colors text-center",
                   preferences?.household_size === option.value
                     ? "border-purple-500 bg-purple-50 text-purple-700"
-                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                    : "border-border hover:border-ring hover:bg-accent/30"
                 )}
                 dir={isRTL ? "rtl" : "ltr"}
               >
@@ -705,7 +677,7 @@ function AISettingsTab({ language }: { language: string }) {
 
         {/* Budget Preference */}
         <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             {t("settings_budget_preference")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -737,7 +709,7 @@ function AISettingsTab({ language }: { language: string }) {
                   isRTL && "text-right",
                   preferences?.budget_preference === option.value
                     ? "border-purple-500 bg-purple-50 text-purple-700"
-                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                    : "border-border hover:border-ring hover:bg-accent/30"
                 )}
                 dir={isRTL ? "rtl" : "ltr"}
               >
@@ -750,7 +722,7 @@ function AISettingsTab({ language }: { language: string }) {
 
         {/* Shopping Frequency */}
         <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             {t("settings_shopping_frequency")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -769,7 +741,7 @@ function AISettingsTab({ language }: { language: string }) {
                   "p-3 rounded-lg border transition-colors text-center",
                   preferences?.shopping_frequency === option.value
                     ? "border-purple-500 bg-purple-50 text-purple-700"
-                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                    : "border-border hover:border-ring hover:bg-accent/30"
                 )}
                 dir={isRTL ? "rtl" : "ltr"}
               >
@@ -781,7 +753,7 @@ function AISettingsTab({ language }: { language: string }) {
 
         {/* Preferred Sites */}
         <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             {t("settings_preferred_sites")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
@@ -803,7 +775,7 @@ function AISettingsTab({ language }: { language: string }) {
                   "p-3 rounded-lg border transition-colors text-center",
                   (preferences?.primary_sites || []).includes(option.value)
                     ? "border-green-500 bg-green-50 text-green-700"
-                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                    : "border-border hover:border-ring hover:bg-accent/30"
                 )}
                 dir={isRTL ? "rtl" : "ltr"}
               >
@@ -876,7 +848,7 @@ function AISettingsTab({ language }: { language: string }) {
 
         {/* Dietary Preferences */}
         <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             {t("settings_dietary_preferences")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
@@ -905,7 +877,7 @@ function AISettingsTab({ language }: { language: string }) {
                     option.value
                   )
                     ? "border-green-500 bg-green-50 text-green-700"
-                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                    : "border-border hover:border-ring hover:bg-accent/30"
                 )}
                 dir={isRTL ? "rtl" : "ltr"}
               >
@@ -924,10 +896,10 @@ function AppearanceTab({ language }: { language: string }) {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2">
+        <h1 className="text-2xl font-bold text-foreground mb-2">
           {language === "he" ? "מראה" : "Appearance"}
         </h1>
-        <p className="text-slate-600">
+        <p className="text-muted-foreground">
           {language === "he"
             ? "התאם את מראה הממשק"
             : "Customize the interface appearance"}
@@ -950,10 +922,10 @@ function SecurityTab({ language }: { language: string }) {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2">
+        <h1 className="text-2xl font-bold text-foreground mb-2">
           {language === "he" ? "אבטחה" : "Security"}
         </h1>
-        <p className="text-slate-600">
+        <p className="text-muted-foreground">
           {language === "he"
             ? "נהל את העדפות האבטחה שלך"
             : "Manage your security preferences"}

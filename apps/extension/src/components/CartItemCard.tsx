@@ -72,40 +72,18 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      className="bg-card border border-border rounded-xl p-3 relative overflow-hidden w-full mb-2 flex items-center gap-3 min-h-[80px] transition-all duration-300"
       style={{
-        background: "linear-gradient(145deg, #ffffff 0%, #f8f9ff 100%)",
-        border: "1px solid #e1e5f2",
-        borderRadius: "12px",
-        padding: "12px",
         boxShadow: isHovered
-          ? "0 8px 16px -4px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(102, 126, 234, 0.1)"
+          ? "0 8px 16px -4px rgba(0, 0, 0, 0.08), 0 0 0 1px hsl(var(--ring) / 0.1)"
           : "0 2px 8px -1px rgba(0, 0, 0, 0.06)",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        position: "relative",
-        overflow: "hidden",
-        width: "100%",
-        marginBottom: "8px",
-        display: "flex",
-        alignItems: "center",
-        gap: "12px",
-        minHeight: "80px",
       }}
     >
       {/* Subtle gradient overlay */}
       <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: isHovered
-            ? "linear-gradient(145deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%)"
-            : "transparent",
-          transition: "background 0.3s ease",
-          pointerEvents: "none",
-          borderRadius: "12px",
-        }}
+        className={`absolute inset-0 pointer-events-none rounded-xl transition-colors duration-300 ${
+          isHovered ? "bg-gradient-to-br from-primary/5 to-purple-500/5" : "bg-transparent"
+        }`}
       />
 
       {/* Delete Button - Top Left Corner with Tooltip */}
@@ -154,39 +132,14 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
 
           {/* Delete Tooltip */}
           <div
+            className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-popover text-popover-foreground px-2 py-1.5 rounded-md text-xs font-medium whitespace-nowrap z-[1000] shadow-lg transition-opacity duration-200"
             style={{
-              position: "absolute",
-              top: "calc(100% + 8px)",
-              left: "50%",
-              transform: "translateX(-50%)",
-              backgroundColor: "#1e293b",
-              color: "white",
-              padding: "6px 8px",
-              borderRadius: "6px",
-              fontSize: "12px",
-              fontWeight: "500",
-              whiteSpace: "nowrap",
-              zIndex: 1000,
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
               opacity: showDeleteTooltip ? 1 : 0,
               visibility: showDeleteTooltip ? "visible" : "hidden",
-              transition: "opacity 0.2s ease, visibility 0.2s ease",
             }}
           >
             {deleteText}
-            <div
-              style={{
-                position: "absolute",
-                top: "-4px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "0",
-                height: "0",
-                borderLeft: "4px solid transparent",
-                borderRight: "4px solid transparent",
-                borderBottom: "4px solid #1e293b",
-              }}
-            />
+            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-popover" />
           </div>
         </div>
       )}
@@ -226,55 +179,19 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
 
         {/* Tooltip */}
         <div
+          className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-popover text-popover-foreground px-2 py-1.5 rounded-md text-xs font-medium whitespace-nowrap z-[1000] shadow-lg transition-opacity duration-200"
           style={{
-            position: "absolute",
-            top: "calc(100% + 8px)",
-            left: "50%",
-            transform: "translateX(-50%)",
-            backgroundColor: "#1e293b",
-            color: "white",
-            padding: "6px 8px",
-            borderRadius: "6px",
-            fontSize: "12px",
-            fontWeight: "500",
-            whiteSpace: "nowrap",
-            zIndex: 1000,
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
             opacity: showAvailabilityTooltip ? 1 : 0,
             visibility: showAvailabilityTooltip ? "visible" : "hidden",
-            transition: "opacity 0.2s ease, visibility 0.2s ease",
           }}
         >
           {availabilityText}
-          <div
-            style={{
-              position: "absolute",
-              top: "-4px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: "0",
-              height: "0",
-              borderLeft: "4px solid transparent",
-              borderRight: "4px solid transparent",
-              borderBottom: "4px solid #1e293b",
-            }}
-          />
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-popover" />
         </div>
       </div>
 
       {/* Product Image */}
-      <div
-        style={{
-          position: "relative",
-          width: "60px",
-          height: "60px",
-          borderRadius: "8px",
-          overflow: "hidden",
-          background: imageError ? "#f3f4f6" : "#ffffff",
-          border: "1px solid #f1f3f4",
-          flexShrink: 0,
-        }}
-      >
+      <div className="relative w-[60px] h-[60px] rounded-lg overflow-hidden bg-card border border-border flex-shrink-0">
         {item.image && !imageError ? (
           <motion.img
             src={item.image}
@@ -294,17 +211,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
             }}
           />
         ) : (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#9ca3af",
-              fontSize: "20px",
-            }}
-          >
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xl">
             📦
           </div>
         )}
@@ -327,14 +234,9 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
+            className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider text-right"
             style={{
-              fontSize: "10px",
-              color: "#667eea",
-              fontWeight: "600",
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
               direction: "rtl",
-              textAlign: "right",
             }}
           >
             {item.brand}
@@ -347,14 +249,9 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
           title={item.name} // Native HTML tooltip on hover
+          className="text-sm font-semibold text-foreground m-0 leading-snug text-right line-clamp-2"
           style={{
-            fontSize: "14px",
-            fontWeight: "600",
-            color: "#1f2937",
-            margin: 0,
-            lineHeight: "1.3",
             direction: "rtl",
-            textAlign: "right",
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
@@ -369,11 +266,9 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15 }}
+          className="text-xs text-muted-foreground text-right"
           style={{
-            fontSize: "11px",
-            color: "#6b7280",
             direction: "rtl",
-            textAlign: "right",
           }}
         >
           מחיר יחידה: {item.price}
@@ -404,22 +299,10 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
             direction: language === "he" ? "rtl" : "ltr",
           }}
         >
-          <span
-            style={{
-              fontSize: "18px",
-              fontWeight: "700",
-              color: "#667eea",
-            }}
-          >
+          <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
             {item.quantity}
           </span>
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: "500",
-              color: "#6b7280",
-            }}
-          >
+          <span className="text-xs font-medium text-muted-foreground">
             {unitsText}
           </span>
         </motion.div>
@@ -429,10 +312,8 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
+          className="text-sm font-bold text-indigo-600 dark:text-indigo-400"
           style={{
-            fontSize: "13px",
-            fontWeight: "700",
-            color: "#667eea",
             textAlign: language === "he" ? "right" : "left",
             direction: "rtl",
           }}
@@ -448,24 +329,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          style={{
-            position: "absolute",
-            top: "8px",
-            left: "8px",
-            right: "8px",
-            bottom: "8px",
-            backgroundColor: "rgba(255, 255, 255, 0.96)",
-            backdropFilter: "blur(8px)",
-            borderRadius: "8px",
-            zIndex: 100,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "8px",
-            border: "1px solid rgba(239, 68, 68, 0.3)",
-            boxShadow: "0 4px 12px rgba(239, 68, 68, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)",
-          }}
+          className="absolute inset-2 bg-background/95 backdrop-blur-sm rounded-lg z-[100] flex flex-col items-center justify-between p-2 border border-destructive/30 shadow-lg"
         >
           {/* Top Section - Icon and Text */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, justifyContent: "center" }}>
@@ -474,18 +338,9 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.2 }}
-              style={{
-                width: "24px",
-                height: "24px",
-                borderRadius: "50%",
-                backgroundColor: "rgba(239, 68, 68, 0.15)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "4px",
-              }}
+              className="w-6 h-6 rounded-full bg-destructive/15 flex items-center justify-center mb-1"
             >
-              <AlertTriangle size={14} color="#ef4444" />
+              <AlertTriangle size={14} className="text-destructive" />
             </motion.div>
 
             {/* Simplified Message */}
@@ -493,13 +348,8 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
               initial={{ y: 5, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.15, duration: 0.2 }}
+              className="text-xs font-medium text-foreground text-center m-0 leading-snug"
               style={{
-                fontSize: "11px",
-                fontWeight: "500",
-                color: "#374151",
-                textAlign: "center",
-                margin: "0",
-                lineHeight: "1.3",
                 direction: language === "he" ? "rtl" : "ltr",
               }}
             >
@@ -523,31 +373,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
             <button
               onClick={() => setShowDeleteModal(false)}
               disabled={isDeleting}
-              style={{
-                flex: 1,
-                padding: "6px 8px",
-                fontSize: "10px",
-                fontWeight: "500",
-                color: "#6b7280",
-                backgroundColor: "#f8f9fa",
-                border: "1px solid #e5e7eb",
-                borderRadius: "4px",
-                cursor: isDeleting ? "not-allowed" : "pointer",
-                transition: "all 0.15s ease",
-                opacity: isDeleting ? 0.5 : 1,
-              }}
-              onMouseEnter={(e) => {
-                if (!isDeleting) {
-                  e.currentTarget.style.backgroundColor = "#f1f3f4";
-                  e.currentTarget.style.color = "#374151";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isDeleting) {
-                  e.currentTarget.style.backgroundColor = "#f8f9fa";
-                  e.currentTarget.style.color = "#6b7280";
-                }
-              }}
+              className="flex-1 px-2 py-1.5 text-[10px] font-medium text-muted-foreground bg-secondary border border-border rounded cursor-pointer transition-all duration-150 hover:bg-secondary/80 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
               {language === "he" ? "ביטול" : "Cancel"}
             </button>
@@ -556,33 +382,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
             <button
               onClick={handleDelete}
               disabled={isDeleting}
-              style={{
-                flex: 1,
-                padding: "6px 8px",
-                fontSize: "10px",
-                fontWeight: "600",
-                color: "white",
-                backgroundColor: "#ef4444",
-                border: "none",
-                borderRadius: "4px",
-                cursor: isDeleting ? "not-allowed" : "pointer",
-                transition: "all 0.15s ease",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "3px",
-                opacity: isDeleting ? 0.8 : 1,
-              }}
-              onMouseEnter={(e) => {
-                if (!isDeleting) {
-                  e.currentTarget.style.backgroundColor = "#dc2626";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isDeleting) {
-                  e.currentTarget.style.backgroundColor = "#ef4444";
-                }
-              }}
+              className="flex-1 px-2 py-1.5 text-[10px] font-semibold text-destructive-foreground bg-destructive border-none rounded cursor-pointer transition-all duration-150 hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-80 flex items-center justify-center gap-1"
             >
               {isDeleting ? (
                 <>

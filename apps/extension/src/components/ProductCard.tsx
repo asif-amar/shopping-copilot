@@ -82,54 +82,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleOpenProduct}
+      className="bg-card border border-border rounded-2xl p-3 cursor-pointer relative overflow-hidden w-full min-w-0 h-[250px] flex flex-col transition-all duration-300"
       style={{
-        background: "linear-gradient(145deg, #ffffff 0%, #f8f9ff 100%)",
-        border: "1px solid #e1e5f2",
-        borderRadius: "16px",
-        padding: "12px",
-        cursor: "pointer",
         boxShadow: isHovered
-          ? "0 12px 24px -4px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(102, 126, 234, 0.1)"
+          ? "0 12px 24px -4px rgba(0, 0, 0, 0.08), 0 0 0 1px hsl(var(--ring) / 0.1)"
           : "0 2px 8px -1px rgba(0, 0, 0, 0.06)",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        position: "relative",
-        overflow: "hidden",
-        width: "100%",
-        minWidth: "0",
-        height: "250px",
-        display: "flex",
-        flexDirection: "column",
       }}
     >
       {/* Subtle gradient overlay */}
       <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: isHovered
-            ? "linear-gradient(145deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%)"
-            : "transparent",
-          transition: "background 0.3s ease",
-          pointerEvents: "none",
-          borderRadius: "16px",
-        }}
+        className={`absolute inset-0 pointer-events-none rounded-2xl transition-colors duration-300 ${
+          isHovered ? "bg-gradient-to-br from-primary/5 to-purple-500/5" : "bg-transparent"
+        }`}
       />
 
       {/* Product Image */}
       <div
-        style={{
-          position: "relative",
-          width: "100%",
-          height: "100px",
-          borderRadius: "10px",
-          overflow: "hidden",
-          marginBottom: "8px",
-          background: imageError ? "#f3f4f6" : "#ffffff",
-          border: "1px solid #f1f3f4",
-        }}
+        className={`relative w-full h-[100px] rounded-xl overflow-hidden mb-2 border border-border ${
+          imageError ? "bg-muted" : "bg-card"
+        }`}
       >
         {product.image && !imageError ? (
           <motion.img
@@ -181,34 +152,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             }}
             whileHover={!isAdding ? { scale: 1.1 } : {}}
             whileTap={!isAdding ? { scale: 0.9 } : {}}
-            style={{
-              position: "absolute",
-              top: "6px",
-              left: "6px",
-              zIndex: 30,
-              width: "24px",
-              height: "24px",
-              borderRadius: "50%",
-              border: "none",
-              background: isAdding ? "rgba(34, 197, 94, 0.7)" : "rgba(34, 197, 94, 0.9)",
-              cursor: isAdding ? "not-allowed" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-              backdropFilter: "blur(8px)",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              if (!isAdding) {
-                (e.currentTarget as HTMLButtonElement).style.background = "rgba(22, 163, 74, 0.9)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isAdding) {
-                (e.currentTarget as HTMLButtonElement).style.background = "rgba(34, 197, 94, 0.9)";
-              }
-            }}
+            className={`absolute top-1.5 left-1.5 z-30 w-6 h-6 rounded-full border-none flex items-center justify-center shadow-lg backdrop-blur-sm transition-all duration-200 ${
+              isAdding 
+                ? "bg-green-600/70 cursor-not-allowed" 
+                : "bg-green-600/90 hover:bg-green-700 cursor-pointer"
+            }`}
           >
             <Plus size={12} color="white" />
           </motion.button>
@@ -221,23 +169,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               transition={{ delay: 0.2 }}
               onMouseEnter={() => setShowUnavailableTooltip(true)}
               onMouseLeave={() => setShowUnavailableTooltip(false)}
-              style={{
-                position: "absolute",
-                top: "6px",
-                left: "6px",
-                zIndex: 30,
-                width: "24px",
-                height: "24px",
-                borderRadius: "50%",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-                background: "rgba(239, 68, 68, 0.9)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-                backdropFilter: "blur(8px)",
-                cursor: "default",
-              }}
+              className="absolute top-1.5 left-1.5 z-30 w-6 h-6 rounded-full border border-white/20 bg-red-600/90 flex items-center justify-center shadow-lg backdrop-blur-sm cursor-default"
             >
               <AlertCircle size={14} color="white" />
             </motion.div>
@@ -245,37 +177,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {/* Unavailable Tooltip */}
             {showUnavailableTooltip && (
               <div
-                style={{
-                  position: "absolute",
-                  top: "44px",
-                  left: "22px",
-                  backgroundColor: "#1e293b",
-                  color: "white",
-                  padding: "6px 10px",
-                  borderRadius: "6px",
-                  fontSize: "11px",
-                  fontWeight: "500",
-                  whiteSpace: "nowrap",
-                  zIndex: 999999,
-                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.25)",
-                  pointerEvents: "none",
-                  transform: "translateX(-50%)",
-                }}
+                className="absolute top-11 left-5.5 bg-popover text-popover-foreground px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap z-[999999] shadow-lg pointer-events-none -translate-x-1/2"
               >
                 {unavailableText}
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "-4px",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    width: "0",
-                    height: "0",
-                    borderLeft: "4px solid transparent",
-                    borderRight: "4px solid transparent",
-                    borderBottom: "4px solid #1e293b",
-                  }}
-                />
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-popover" />
               </div>
             )}
           </>
@@ -319,18 +224,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="text-sm font-semibold text-foreground m-0 mb-1.5 leading-relaxed line-clamp-2 overflow-hidden"
           style={{
-            fontSize: "13px",
-            fontWeight: "600",
-            color: "#1f2937",
-            margin: "0 0 6px 0",
-            lineHeight: "1.4",
             direction: "rtl",
             textAlign: "right",
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
-            overflow: "hidden",
           }}
         >
           {product.name}
@@ -374,11 +274,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
+          className="text-base font-bold text-indigo-600 dark:text-indigo-400 mb-2"
           style={{
-            fontSize: "16px",
-            fontWeight: "700",
-            color: "#667eea",
-            marginBottom: "8px",
             direction: "rtl",
             textAlign: "right",
           }}

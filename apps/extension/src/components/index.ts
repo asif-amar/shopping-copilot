@@ -11,3 +11,5 @@ export { CartItemCard } from './CartItemCard';
 export { CartItemList } from './CartItemList';
 export { ConversationsDrawer } from './ConversationsDrawer';
 export { OnboardingModal } from './OnboardingModal';
+export { ThemeProvider, useTheme } from './theme-provider';
+export { ModeToggle } from './mode-toggle';
