@@ -19,3 +19,4 @@ googlesearch-python
 pycountry
 python-jose[cryptography]
 httpx
+pydantic[email]

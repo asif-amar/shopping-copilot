@@ -125,6 +125,15 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
+    # Check if user email is in the friends-only whitelist
+    from .services.allowed_users_service import AllowedUsersService
+    if not AllowedUsersService.is_email_allowed(db, db_user.email):
+        logger.warning(f"Access denied - user not in whitelist: {db_user.email}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access restricted. Please contact the extension owner for authorization.",
+        )
+    
     return UserResponse(
         id=db_user.id,
         email=db_user.email,

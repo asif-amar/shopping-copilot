@@ -8,10 +8,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from ..database import get_db_dependency
-from ..auth import get_current_active_user, UserResponse
+from ..auth import get_current_active_user, UserResponse, verify_token
 from ..services.user_service import UserService
 from ..services.credit_service import CreditService
 from ..services.preferences_service import PreferencesService
+from ..services.allowed_users_service import AllowedUsersService
+from ..services.beta_access_service import BetaAccessService
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import Request
 
 logger = logging.getLogger(__name__)
 
@@ -138,6 +142,36 @@ class OnboardingStatusResponse(BaseModel):
     onboarding_completed: bool
     onboarding_completed_at: Optional[str]
     preferences_exist: bool
+
+
+class WhitelistStatusResponse(BaseModel):
+    """Response model for whitelist status check."""
+    approved: bool = Field(description="Whether the user is approved to use the extension")
+    email: str = Field(description="User's email address")
+    status: str = Field(description="Status description: 'approved' or 'pending'")
+
+
+class BetaAccessRequest(BaseModel):
+    """Request model for submitting beta access request."""
+    message: Optional[str] = Field(None, max_length=2000, description="Optional message from user explaining why they want access")
+    
+    @validator('message')
+    def validate_message(cls, v):
+        if v is not None:
+            v = v.strip()
+            if len(v) == 0:
+                return None
+        return v
+
+
+class BetaAccessResponse(BaseModel):
+    """Response model for beta access request submission."""
+    id: int = Field(description="Request ID")
+    email: str = Field(description="User's email address")
+    message: Optional[str] = Field(description="User's message")
+    status: str = Field(description="Request status: 'pending', 'approved', or 'rejected'")
+    requested_at: str = Field(description="ISO timestamp when request was made")
+    has_existing_request: bool = Field(description="Whether user had an existing pending request that was updated")
 
 
 @router.get("/me", response_model=UserProfileResponse)
@@ -431,4 +465,115 @@ async def get_onboarding_status(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get onboarding status"
+        )
+
+
+# Security scheme for whitelist check (separate from main auth flow)
+security_bearer = HTTPBearer()
+
+
+@router.get("/whitelist-status", response_model=WhitelistStatusResponse)
+async def get_whitelist_status(
+    credentials: HTTPAuthorizationCredentials = Depends(security_bearer),
+    db: Session = Depends(get_db_dependency)
+) -> WhitelistStatusResponse:
+    """
+    Check if user is approved for beta access (bypasses main auth middleware).
+    
+    This endpoint provides a lightweight way to check whitelist status
+    without requiring full authentication, preventing the chicken-and-egg
+    problem where users can't check their status because they're not whitelisted.
+    """
+    try:
+        # Verify the JWT token to get user email (but don't check whitelist)
+        token_data = verify_token(credentials.credentials, db)
+        user_email = token_data.email
+        
+        if not user_email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token - no email found"
+            )
+        
+        # Check if user is in the allowed users list
+        is_approved = AllowedUsersService.is_email_allowed(db, user_email)
+        
+        logger.info(f"Whitelist status check for {user_email}: {'approved' if is_approved else 'pending'}")
+        
+        return WhitelistStatusResponse(
+            approved=is_approved,
+            email=user_email,
+            status="approved" if is_approved else "pending"
+        )
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 401 Unauthorized)
+        raise
+    except Exception as e:
+        logger.error(f"Error checking whitelist status: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to check whitelist status"
+        )
+
+
+@router.post("/beta-access-request", response_model=BetaAccessResponse)
+async def submit_beta_access_request(
+    request_data: BetaAccessRequest,
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security_bearer),
+    db: Session = Depends(get_db_dependency)
+) -> BetaAccessResponse:
+    """
+    Submit a beta access request (bypasses main auth middleware).
+    
+    This endpoint allows users to submit beta access requests even if they're not
+    whitelisted yet. It requires a valid JWT token but doesn't check whitelist status.
+    """
+    try:
+        # Verify the JWT token to get user email (but don't check whitelist)
+        token_data = verify_token(credentials.credentials, db)
+        user_email = token_data.email
+        
+        if not user_email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token - no email found"
+            )
+        
+        # Extract user agent and IP for tracking
+        user_agent = request.headers.get("user-agent")
+        ip_address = request.client.host if request.client else None
+        
+        # Check if user already has a pending request (for response flag)
+        had_existing_request = BetaAccessService.has_pending_request(db, user_email)
+        
+        # Submit the request (this will either create new or update existing)
+        beta_request = BetaAccessService.submit_request(
+            db=db,
+            email=user_email,
+            message=request_data.message,
+            user_agent=user_agent,
+            ip_address=ip_address
+        )
+        
+        logger.info(f"Beta access request submitted by {user_email} (ID: {beta_request.id})")
+        
+        return BetaAccessResponse(
+            id=beta_request.id,
+            email=beta_request.email,
+            message=beta_request.message,
+            status=beta_request.status,
+            requested_at=beta_request.requested_at.isoformat(),
+            has_existing_request=had_existing_request
+        )
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 401 Unauthorized)
+        raise
+    except Exception as e:
+        logger.error(f"Error submitting beta access request: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to submit beta access request"
         )

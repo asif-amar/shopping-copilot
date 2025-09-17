@@ -158,6 +158,58 @@ class UserCreditLog(Base):
         return f"<UserCreditLog(id={self.id}, user_email='{self.user_email}', change={self.credit_change}, reason='{self.reason}')>"
 
 
+class AllowedUsers(Base):
+    """Model for managing friends-only access control whitelist."""
+    __tablename__ = "allowed_users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    added_by_email = Column(String(255), index=True, nullable=True)  # Admin who added this user
+    added_at = Column(DateTime(timezone=True), default=func.now(), nullable=False)
+    last_seen_at = Column(DateTime(timezone=True), nullable=True)  # Track when user last accessed the system
+    is_active = Column(Boolean, default=True, nullable=False)
+    notes = Column(Text, nullable=True)  # Optional notes about the user
+    
+    # Indexes for efficient queries
+    __table_args__ = (
+        Index('idx_allowed_users_email_active', 'email', 'is_active'),
+        Index('idx_allowed_users_added_by', 'added_by_email'),
+        Index('idx_allowed_users_last_seen', 'last_seen_at'),
+    )
+    
+    def __repr__(self):
+        return f"<AllowedUsers(email='{self.email}', is_active={self.is_active}, added_by='{self.added_by_email}')>"
+
+
+class BetaAccessRequests(Base):
+    """Model for storing beta access requests from users."""
+    __tablename__ = "beta_access_requests"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), index=True, nullable=False)
+    message = Column(Text, nullable=True)  # Optional message from user
+    status = Column(String(50), default="pending", nullable=False)  # pending, approved, rejected
+    requested_at = Column(DateTime(timezone=True), default=func.now(), nullable=False)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    reviewed_by_email = Column(String(255), nullable=True)  # Admin who reviewed the request
+    review_notes = Column(Text, nullable=True)  # Admin notes about the decision
+    
+    # User agent and additional context
+    user_agent = Column(String(512), nullable=True)
+    ip_address = Column(String(45), nullable=True)  # IPv6 can be up to 45 chars
+    
+    # Indexes for efficient queries
+    __table_args__ = (
+        Index('idx_beta_requests_email', 'email'),
+        Index('idx_beta_requests_status', 'status'),
+        Index('idx_beta_requests_requested_at', 'requested_at'),
+        Index('idx_beta_requests_email_status', 'email', 'status'),
+    )
+    
+    def __repr__(self):
+        return f"<BetaAccessRequests(email='{self.email}', status='{self.status}', requested_at='{self.requested_at}')>"
+
+
 class UserPreferences(Base):
     """Model for storing user shopping preferences and onboarding data."""
     __tablename__ = "user_preferences"

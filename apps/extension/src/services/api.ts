@@ -118,6 +118,25 @@ export interface OnboardingStatus {
   preferences_exist: boolean;
 }
 
+export interface WhitelistStatus {
+  approved: boolean;
+  email: string;
+  status: string;
+}
+
+export interface BetaAccessRequest {
+  message?: string;
+}
+
+export interface BetaAccessResponse {
+  id: number;
+  email: string;
+  message?: string;
+  status: string;
+  requested_at: string;
+  has_existing_request: boolean;
+}
+
 export class ApiService {
   private static readonly BASE_URL = BACKEND_URL;
 
@@ -278,6 +297,10 @@ export class ApiService {
       if (response.status === 401) {
         throw new Error("Authentication required. Please sign in again.");
       }
+      if (response.status === 403) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || "Access restricted. Please contact the extension owner for authorization.");
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
@@ -299,6 +322,10 @@ export class ApiService {
     if (!response.ok) {
       if (response.status === 401) {
         throw new Error("Authentication required. Please sign in again.");
+      }
+      if (response.status === 403) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || "Access restricted. Please contact the extension owner for authorization.");
       }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -877,6 +904,59 @@ export class ApiService {
       const error = await response.json().catch(() => ({}));
       throw new Error(
         error.detail || `Failed to get onboarding status! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Check user's whitelist status for beta access
+   */
+  static async getWhitelistStatus(): Promise<WhitelistStatus> {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/user/whitelist-status`, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+      if (response.status === 403) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || "Access restricted. Please contact the extension owner for authorization.");
+      }
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.detail || `Failed to get whitelist status! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Submit a beta access request
+   */
+  static async submitBetaAccessRequest(
+    message?: string
+  ): Promise<BetaAccessResponse> {
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.BASE_URL}/user/beta-access-request`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ message }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.detail || `Failed to submit beta access request! status: ${response.status}`
       );
     }
 

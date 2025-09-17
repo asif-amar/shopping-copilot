@@ -13,3 +13,5 @@ export { ConversationsDrawer } from './ConversationsDrawer';
 export { OnboardingModal } from './OnboardingModal';
 export { ThemeProvider, useTheme } from './theme-provider';
 export { ModeToggle } from './mode-toggle';
+export { UnauthorizedState } from './UnauthorizedState';
+export { BetaWaitlistState } from './BetaWaitlistState';

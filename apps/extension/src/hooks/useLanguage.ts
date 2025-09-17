@@ -25,6 +25,7 @@ const translations: Translations = {
     sign_out: "התנתק",
     switch_to: "עבור ל",
     language: "שפה",
+    modeToggle: "ערכת נושא",
 
     // Chat Input
     type_message: "איך אוכל לעזור לך היום?",
@@ -320,6 +321,7 @@ const translations: Translations = {
     sign_out: "Sign Out",
     switch_to: "Switch to",
     language: "Language",
+    modeToggle: "Theme",
 
     // Chat Input
     type_message: "How can I help you today?",

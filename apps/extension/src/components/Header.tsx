@@ -26,6 +26,7 @@ import { FeedbackModal } from "./FeedbackModal";
 import { ChangelogModal } from "./ChangelogModal";
 import { TooltipButton } from "./TooltipButton";
 import { ModeToggle } from "./mode-toggle";
+import { Hint } from "./ui/hint";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +45,7 @@ interface HeaderProps {
   onNewConversation: () => void;
   onOpenConversations?: () => void;
   onSignOut?: () => void;
+  onAuthSuccess?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -51,6 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNewConversation,
   onOpenConversations,
   onSignOut,
+  onAuthSuccess,
 }) => {
   const { language, isRTL, toggleLanguage, t } = useLanguage();
   const siteAdapter = getSiteAdapterFromHostname(currentHostname);
@@ -83,7 +86,14 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const handleAuthSuccess = async () => {
+    console.log("🎉 Header: handleAuthSuccess called");
     await checkAuthStatus(); // Refresh auth status
+    
+    // Notify parent component (SidePanel) about successful auth
+    if (onAuthSuccess) {
+      console.log("🎯 Header: Calling parent onAuthSuccess callback");
+      onAuthSuccess();
+    }
   };
 
   const handleSignOut = async () => {
@@ -160,37 +170,14 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2">
           {/* Conversations Button */}
           {onOpenConversations && (
-            <TooltipButton
-              tooltip={t("conversations") || "Conversations"}
-              onClick={onOpenConversations}
-              buttonStyle={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                border: "1px solid hsl(var(--border))",
-                backgroundColor: "hsl(var(--secondary))",
-                color: "hsl(var(--secondary-foreground))",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor =
-                  "hsl(var(--secondary) / 0.8)";
-                e.currentTarget.style.transform = "translateY(-1px)";
-                e.currentTarget.style.boxShadow =
-                  "0 4px 12px rgba(0, 0, 0, 0.15)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "hsl(var(--secondary))";
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            >
-              <MessageSquare size={14} />
-            </TooltipButton>
+            <Hint text={t("conversations") || "Conversations"}>
+              <button 
+                onClick={onOpenConversations}
+                className="w-8 h-8 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg flex items-center justify-center transition-all duration-200 border border-border cursor-pointer"
+              >
+                <MessageSquare size={14} />
+              </button>
+            </Hint>
           )}
 
           {/* New Chat Button */}

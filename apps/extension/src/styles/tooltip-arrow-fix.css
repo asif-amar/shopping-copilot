@@ -1,0 +1,17 @@
+/* Fix for tooltip arrow in dark mode */
+.dark [data-radix-tooltip-content] [data-radix-tooltip-arrow] {
+  fill: hsl(var(--popover));
+}
+
+/* Alternative selector for tooltip arrow */
+[data-radix-tooltip-content] svg {
+  fill: hsl(var(--popover)) !important;
+}
+
+/* More specific selector */
+[data-side="top"] [data-radix-tooltip-arrow],
+[data-side="bottom"] [data-radix-tooltip-arrow],
+[data-side="left"] [data-radix-tooltip-arrow],
+[data-side="right"] [data-radix-tooltip-arrow] {
+  fill: hsl(var(--popover));
+}

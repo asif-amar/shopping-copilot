@@ -32,12 +32,15 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
 
     setIsSigningIn(true);
     try {
+      console.log("🔒 Starting Google sign-in from AuthModal...");
       await ApiService.signInWithGoogle();
-      console.log("User signed in successfully from modal!");
+      console.log("✅ User signed in successfully from modal!");
+      console.log("🎯 Calling onAuthSuccess callback...");
       onAuthSuccess?.();
+      console.log("🚪 Closing auth modal...");
       onClose();
     } catch (error) {
-      console.error("Sign-in failed:", error);
+      console.error("❌ Sign-in failed:", error);
     } finally {
       setIsSigningIn(false);
     }
