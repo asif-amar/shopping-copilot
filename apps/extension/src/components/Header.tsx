@@ -146,22 +146,36 @@ export const Header: React.FC<HeaderProps> = ({
             <ShoppingBag size={16} color="white" />
           </div>
           <div className="flex-1">
-            <h1 className="m-0 text-base font-bold text-foreground tracking-tight">
+            <h1 className="m-0 text-sm font-bold text-foreground tracking-tight whitespace-nowrap">
               {t("shopping_assistant")}
             </h1>
-            <div className="mt-1 text-xs text-muted-foreground flex items-center gap-2">
-              <span>{displayName || t("loading")}</span>
-              {isSupported ? (
-                <span className="bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 px-2 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 bg-green-600 dark:bg-green-400 rounded-full" />
-                  {t("supported")}
+            <div className="mt-1 text-xs text-muted-foreground flex items-center gap-1 min-w-0">
+              <div className="flex items-center gap-1 min-w-0 flex-1">
+                <span
+                  className="min-w-0 max-w-[80px] overflow-hidden whitespace-nowrap"
+                  style={{
+                    direction: isRTL ? 'rtl' : 'ltr',
+                    textOverflow: 'ellipsis',
+                    unicodeBidi: 'embed'
+                  }}
+                  title={displayName || t("loading")}
+                >
+                  {displayName || t("loading")}
                 </span>
-              ) : (
-                <span className="bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 px-2 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 bg-red-600 dark:bg-red-400 rounded-full" />
-                  {t("not_supported")}
-                </span>
-              )}
+                {isSupported ? (
+                  <Hint text={t("supported")}>
+                    <span className="bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 w-4 h-4 rounded-full text-xs font-bold flex items-center justify-center flex-shrink-0 cursor-default">
+                      ✓
+                    </span>
+                  </Hint>
+                ) : (
+                  <Hint text={t("not_supported")}>
+                    <span className="bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 w-4 h-4 rounded-full text-xs font-bold flex items-center justify-center flex-shrink-0 cursor-default">
+                      ✗
+                    </span>
+                  </Hint>
+                )}
+              </div>
             </div>
           </div>
         </div>
